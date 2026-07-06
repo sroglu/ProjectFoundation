@@ -1,0 +1,37 @@
+/* =========================================================
+   M3 Badge — badge.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+.m3-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Small dot (no count) */
+.m3-badge--small {
+    width: 6px;
+    height: 6px;
+    border-radius: 3px;
+    background-color: var(--m3-error);
+}
+
+/* Large pill (with count) */
+.m3-badge--large {
+    height: 16px;
+    min-width: 16px;
+    border-radius: 8px;
+    background-color: var(--m3-error);
+    padding-left: 4px;
+    padding-right: 4px;
+}
+
+.m3-badge__count {
+    color: var(--m3-on-error);
+    font-size: 11px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}

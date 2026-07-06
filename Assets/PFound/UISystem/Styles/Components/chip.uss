@@ -1,0 +1,69 @@
+/*
+ * chip.uss — M3 Chip Component Styles
+ *
+ * M3 Chip spec:
+ *   Height: 32dp, corners: 8dp (shape-small)
+ *   Border: 1dp outline
+ *   Horizontal padding: 12dp
+ */
+
+/* ============================================================ */
+/*  Wrapper (touch target)                                      */
+/* ============================================================ */
+
+.m3-chip {
+    align-self: flex-start;
+}
+
+/* ============================================================ */
+/*  Container (visible chip body)                               */
+/* ============================================================ */
+
+.m3-chip__container {
+    height: 32px;
+    overflow: hidden;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path) so the SDF shader can read the per-instance fill colour through the
+     * Vertex.tint encoding. Setting background-color HERE in USS would clobber
+     * the encoded tint bytes and corrupt the shader path (fill goes white on
+     * hover). USS keeps only the structural rules. Same gotcha as fab.uss. */
+}
+
+/* ============================================================ */
+/*  Label                                                       */
+/* ============================================================ */
+
+.m3-chip__label {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+.m3-chip__container.m3-chip--selected .m3-chip__label {
+    color: var(--m3-on-secondary-container, rgb(29, 25, 43));
+}
+
+/* ============================================================ */
+/*  Leading icon (check for selected filter)                   */
+/* ============================================================ */
+
+.m3-chip__leading-icon {
+    color: var(--m3-on-secondary-container, rgb(29, 25, 43));
+    margin-right: 4px;
+}
+
+/* ============================================================ */
+/*  Trailing icon (close X for input chip)                     */
+/* ============================================================ */
+
+.m3-chip__trailing-icon {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    margin-left: 4px;
+}
+
+/* ============================================================ */
+/*  Disabled                                                    */
+/* ============================================================ */
+
+/* Global .m3-disabled (state-layer.uss) handles opacity 0.62.
+   No chip-specific overrides — avoids compounding. */

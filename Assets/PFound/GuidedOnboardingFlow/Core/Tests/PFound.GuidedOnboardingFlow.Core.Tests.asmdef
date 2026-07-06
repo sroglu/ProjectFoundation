@@ -1,0 +1,16 @@
+{
+    "name": "PFound.GuidedOnboardingFlow.Core.Tests",
+    "rootNamespace": "PFound.GuidedOnboardingFlow.Core.Tests",
+    "references": [
+        "PFound.GuidedOnboardingFlow.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

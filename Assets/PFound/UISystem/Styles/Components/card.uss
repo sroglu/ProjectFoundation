@@ -1,0 +1,122 @@
+/*
+ * card.uss — M3 Card Component Styles
+ * WP-6: UISystem Card (006-uisystem-card)
+ *
+ * All colors via var(--m3-*) tokens. Corner radius is set in C# (M3Card.cs)
+ * because Unity renders border-radius: 9999px as an ellipse.
+ *
+ * Tonal elevation overlay (M3 dark theme primary tint) is applied in C# via
+ * M3Surface.TonalOverlayOpacity/Color — see M3Card.ApplyVariant().
+ */
+
+/* ============================================================ */
+/*  Base card                                                    */
+/* ============================================================ */
+
+.m3-card {
+    /* Sizing: cards grow to fit their content */
+    flex-direction: column;
+    flex-shrink: 0;
+    overflow: hidden;
+    /* Clips ripple/state-layer to card bounds (same as .m3-button).
+       Note: Painter2D content IS clipped to element layout rect.
+       Shadow visibility is handled via M3Surface.ShadowPadding
+       which insets the visual rect so shadow fits within bounds. */
+
+    /* M3 spec: minimum touch target for clickable cards */
+    min-width: 100px;
+    min-height: 48px;
+}
+
+/* ============================================================ */
+/*  Variants                                                     */
+/* ============================================================ */
+
+/* Elevated — SurfaceContainerLow + elevation 1 shadow (applied via C# on M3Surface)
+ * M3 spec: "Elevated cards use surface container low as their container color"
+ * This makes the card visually distinct from the page background (--m3-background = surface). */
+.m3-card--elevated {
+    background-color: var(--m3-surface-container-low, rgb(247, 242, 250));
+}
+
+/* Filled — SurfaceContainerHighest, no shadow */
+.m3-card--filled {
+    background-color: var(--m3-surface-container-highest, rgb(230, 224, 233));
+}
+
+/* Outlined — Surface + 1dp OutlineVariant border (applied via C# on M3Surface) */
+.m3-card--outlined {
+    background-color: var(--m3-surface, rgb(255, 251, 254));
+}
+
+/* ============================================================ */
+/*  Content area                                                 */
+/* ============================================================ */
+
+/* The internal content container — flex-column, full size */
+.m3-card__body {
+    flex-direction: column;
+    flex-grow: 1;
+    width: 100%;
+}
+
+/* ============================================================ */
+/*  Optional anatomy utility classes                             */
+/*  Users add these to their own VisualElements inside the card. */
+/* ============================================================ */
+
+/* Header area — 16dp horizontal padding, 16dp top, 4dp bottom */
+.m3-card__header {
+    flex-direction: column;
+    padding: 16px 16px 4px 16px;
+}
+
+/* Media area — no padding, image fills full width */
+.m3-card__media {
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+/* Supporting text / body area — 16dp horizontal, 4dp top, 16dp bottom */
+.m3-card__content {
+    flex-direction: column;
+    padding: 4px 16px 16px 16px;
+}
+
+/* Actions area — button row, 8dp padding, 8dp gap */
+.m3-card__actions {
+    flex-direction: row;
+    padding: 8px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================ */
+/*  Typography helpers inside cards                             */
+/* ============================================================ */
+
+/* Card headline — Title size (22px, medium weight) */
+.m3-card__headline {
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+    font-size: 22px;
+    -unity-font-style: bold;
+    margin: 0;
+    padding: 0;
+}
+
+/* Card subhead — Body size (16px) */
+.m3-card__subhead {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 16px;
+    -unity-font-style: normal;
+    margin: 0;
+    padding: 0;
+}
+
+/* Card supporting text — Body size (16px) */
+.m3-card__supporting-text {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 16px;
+    -unity-font-style: normal;
+    margin: 0;
+    padding: 0;
+}

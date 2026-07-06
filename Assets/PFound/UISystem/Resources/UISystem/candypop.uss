@@ -1,0 +1,188 @@
+/*
+ * candypop.uss — Candypop Theme
+ * A vibrant, glossy, candy-inspired theme for kids & casual game UIs.
+ *
+ * Design philosophy:
+ *   Everything looks like candy — saturated colors, glossy highlights,
+ *   puffy rounded shapes, bouncy motion. M3 structure stays intact
+ *   (elevation, FAB, card, surface) but the visual rendering is playful.
+ *
+ * Palette:
+ *   Primary   = Bubblegum Pink (#E91E63) — bold, joyful, main action color
+ *   Secondary = Ocean Blue     (#2196F3) — cool contrast, trust, info
+ *   Tertiary  = Sunny Yellow   (#FFC107) — warm, reward, highlight
+ *   Surface   = Soft Cream     (#FFF8F0) — warm white, never cold
+ *   Error     = Candy Red      (#FF1744) — clear, not scary
+ *
+ * Shape: Extra-rounded (everything feels puffy and squeezable)
+ * Elevation: Stronger shadows + higher tonal alpha (glossy pop-out)
+ * Motion: Slightly bouncier (longer emphasized, snappy standard)
+ */
+
+:root {
+    /* ------------------------------------------------------------------ */
+    /*  Color Palette — Candypop                                           */
+    /* ------------------------------------------------------------------ */
+
+    /* Primary — Bubblegum Pink */
+    --m3-primary:                  rgb(233, 30, 99);      /* #E91E63 */
+    --m3-on-primary:               rgb(255, 255, 255);    /* #FFFFFF */
+    --m3-primary-container:        rgb(255, 209, 226);    /* #FFD1E2 */
+    --m3-on-primary-container:     rgb(62, 0, 22);        /* #3E0016 */
+
+    /* Secondary — Ocean Blue */
+    --m3-secondary:                rgb(33, 150, 243);     /* #2196F3 */
+    --m3-on-secondary:             rgb(255, 255, 255);    /* #FFFFFF */
+    --m3-secondary-container:      rgb(187, 222, 251);    /* #BBDEFB */
+    --m3-on-secondary-container:   rgb(0, 30, 60);        /* #001E3C */
+
+    /* Tertiary — Sunny Yellow */
+    --m3-tertiary:                 rgb(255, 193, 7);      /* #FFC107 */
+    --m3-on-tertiary:              rgb(42, 32, 0);        /* #2A2000 */
+    --m3-tertiary-container:       rgb(255, 243, 199);    /* #FFF3C7 */
+    --m3-on-tertiary-container:    rgb(42, 32, 0);        /* #2A2000 */
+
+    /* Surface — Soft Cream */
+    --m3-surface:                  rgb(255, 248, 240);    /* #FFF8F0 */
+    --m3-on-surface:               rgb(38, 35, 33);       /* #262321 */
+    --m3-surface-variant:          rgb(245, 232, 220);    /* #F5E8DC */
+    --m3-on-surface-variant:       rgb(82, 72, 65);       /* #524841 */
+    --m3-surface-container-lowest: rgb(255, 255, 252);    /* #FFFFFC */
+    --m3-surface-container-low:    rgb(255, 250, 243);    /* #FFFAF3 */
+    --m3-surface-container:        rgb(252, 243, 233);    /* #FCF3E9 */
+    --m3-surface-container-high:   rgb(247, 237, 225);    /* #F7EDE1 */
+    --m3-surface-container-highest:rgb(241, 230, 218);    /* #F1E6DA */
+
+    /* Error — Candy Red */
+    --m3-error:                    rgb(255, 23, 68);      /* #FF1744 */
+    --m3-on-error:                 rgb(255, 255, 255);    /* #FFFFFF */
+    --m3-error-container:          rgb(255, 218, 218);    /* #FFDADA */
+    --m3-on-error-container:       rgb(80, 0, 7);         /* #500007 */
+
+    /* Outline — softer, candy-like */
+    --m3-outline:                  rgb(180, 165, 155);    /* #B4A59B */
+    --m3-outline-variant:          rgb(220, 210, 200);    /* #DCD2C8 */
+
+    /* Background */
+    --m3-background:               rgb(255, 248, 240);    /* #FFF8F0 — same as surface */
+    --m3-on-background:            rgb(38, 35, 33);       /* #262321 */
+
+    /* Scrim & Tint */
+    --m3-scrim:                    rgba(0, 0, 0, 0.36);   /* slightly stronger for glossy contrast */
+    --m3-surface-tint:             rgb(233, 30, 99);      /* same as primary */
+
+    /* Fixed colors (theme-invariant) */
+    --m3-primary-fixed:              rgb(255, 209, 226);  /* #FFD1E2 */
+    --m3-primary-fixed-dim:          rgb(255, 154, 188);  /* #FF9ABC */
+    --m3-on-primary-fixed:           rgb(62, 0, 22);      /* #3E0016 */
+    --m3-on-primary-fixed-variant:   rgb(194, 0, 70);     /* #C20046 */
+    --m3-secondary-fixed:            rgb(187, 222, 251);  /* #BBDEFB */
+    --m3-secondary-fixed-dim:        rgb(100, 181, 246);  /* #64B5F6 */
+    --m3-on-secondary-fixed:         rgb(0, 30, 60);      /* #001E3C */
+    --m3-on-secondary-fixed-variant: rgb(25, 118, 210);   /* #1976D2 */
+    --m3-tertiary-fixed:             rgb(255, 243, 199);  /* #FFF3C7 */
+    --m3-tertiary-fixed-dim:         rgb(255, 213, 79);   /* #FFD54F */
+    --m3-on-tertiary-fixed:          rgb(42, 32, 0);      /* #2A2000 */
+    --m3-on-tertiary-fixed-variant:  rgb(255, 160, 0);    /* #FFA000 */
+
+    /* Surface dim / bright */
+    --m3-surface-dim:                rgb(230, 220, 210);  /* #E6DCD2 */
+    --m3-surface-bright:             rgb(255, 252, 248);  /* #FFFCF8 */
+
+    /* Shadow — slightly tinted warm for candy feel */
+    --m3-shadow:                     rgba(60, 30, 15, 1); /* warm brown-black */
+
+    /* State layer */
+    --m3-state-hover:                rgba(38, 35, 33, 0.08);
+
+    /* Inverse (snackbar, tooltip) */
+    --m3-inverse-surface:            rgb(55, 46, 40);     /* #372E28 */
+    --m3-inverse-on-surface:         rgb(252, 243, 233);  /* #FCF3E9 */
+    --m3-inverse-primary:            rgb(255, 154, 188);  /* #FF9ABC */
+
+    /* ------------------------------------------------------------------ */
+    /*  Shape — Puffier, rounder = more candy                              */
+    /* ------------------------------------------------------------------ */
+    --m3-shape-none:               0px;
+    --m3-shape-extra-small:        8px;    /* M3 baseline: 4px  */
+    --m3-shape-small:              12px;   /* M3 baseline: 8px  */
+    --m3-shape-medium:             16px;   /* M3 baseline: 12px */
+    --m3-shape-large:              24px;   /* M3 baseline: 16px */
+    --m3-shape-extra-large:        32px;   /* M3 baseline: 28px */
+    --m3-shape-full:               9999px;
+
+    /* ------------------------------------------------------------------ */
+    /*  Elevation — Stronger shadows for glossy pop-out                    */
+    /* ------------------------------------------------------------------ */
+    --m3-elevation-0-shadow-blur:     0px;
+    --m3-elevation-0-shadow-offset-x: 0px;
+    --m3-elevation-0-shadow-offset-y: 0px;
+    --m3-elevation-0-tonal-alpha:     0;
+
+    --m3-elevation-1-shadow-blur:     4px;    /* M3: 2px */
+    --m3-elevation-1-shadow-offset-x: 0px;
+    --m3-elevation-1-shadow-offset-y: 2px;    /* M3: 1px */
+    --m3-elevation-1-tonal-alpha:     0.08;   /* M3: 0.05 */
+
+    --m3-elevation-2-shadow-blur:     8px;    /* M3: 4px */
+    --m3-elevation-2-shadow-offset-x: 0px;
+    --m3-elevation-2-shadow-offset-y: 3px;    /* M3: 1px */
+    --m3-elevation-2-tonal-alpha:     0.12;   /* M3: 0.08 */
+
+    --m3-elevation-3-shadow-blur:     12px;   /* M3: 6px */
+    --m3-elevation-3-shadow-offset-x: 0px;
+    --m3-elevation-3-shadow-offset-y: 4px;    /* M3: 2px */
+    --m3-elevation-3-tonal-alpha:     0.16;   /* M3: 0.11 */
+
+    --m3-elevation-4-shadow-blur:     16px;   /* M3: 8px */
+    --m3-elevation-4-shadow-offset-x: 0px;
+    --m3-elevation-4-shadow-offset-y: 6px;    /* M3: 3px */
+    --m3-elevation-4-tonal-alpha:     0.18;   /* M3: 0.12 */
+
+    --m3-elevation-5-shadow-blur:     24px;   /* M3: 12px */
+    --m3-elevation-5-shadow-offset-x: 0px;
+    --m3-elevation-5-shadow-offset-y: 8px;    /* M3: 4px */
+    --m3-elevation-5-tonal-alpha:     0.22;   /* M3: 0.14 */
+
+    /* ------------------------------------------------------------------ */
+    /*  Motion — Bouncier emphasized, snappy standard                      */
+    /* ------------------------------------------------------------------ */
+    --m3-motion-emphasized-duration:             600ms;   /* M3: 500ms — bouncier */
+    --m3-motion-standard-duration:               250ms;   /* M3: 300ms — snappier */
+    --m3-motion-emphasized-decelerate-duration:  450ms;   /* M3: 400ms */
+    --m3-motion-standard-decelerate-duration:    200ms;   /* M3: 250ms */
+
+    --m3-motion-duration-short:    80ms;    /* M3: 100ms — snappier feedback */
+    --m3-motion-duration-float:    120ms;   /* M3: 150ms */
+    --m3-motion-duration-standard: 180ms;   /* M3: 200ms */
+    --m3-motion-duration-long:     350ms;   /* M3: 300ms — bouncier complex */
+
+    /* ------------------------------------------------------------------ */
+    /*  Theme Structure Tokens — Candy/Bubble                              */
+    /*  Bevel widths, glossy shine geometry, and shape radii.              */
+    /*  COLORS are NOT defined here — see candy-palette.uss in consumers.  */
+    /*  Flat themes set widths/alphas to 0 to disappear bevel + shine.     */
+    /* ------------------------------------------------------------------ */
+
+    /* Bevel border widths (per-side colors set by consumer) */
+    --theme-bevel-width:           5px;     /* default beveled element */
+    --theme-bevel-width-thick:     6px;     /* large surfaces (game tiles) */
+    --theme-bevel-width-medium:    4px;     /* sections, pills */
+    --theme-bevel-width-thin:      3px;     /* small badges, thumbnails */
+
+    /* Glossy shine overlay (absolute-positioned VisualElement at top of element) */
+    --theme-shine-alpha:           0.25;    /* white overlay opacity */
+    --theme-shine-height-pct:      38%;     /* height as percent of parent */
+    --theme-shine-radius-top:      22px;    /* upper corner radius */
+    --theme-shine-radius-bottom:   50%;     /* lower curve (creates arc shape) */
+    --theme-shine-inset:           12px;    /* horizontal inset from parent edge */
+
+    /* Shape radii — puffier than M3 baseline for candy feel */
+    --theme-tile-radius:           40px;    /* game tiles */
+    --theme-card-radius:           28px;    /* general candy cards */
+    --theme-section-radius:        28px;    /* settings sections */
+    --theme-modal-radius:          36px;    /* parent gate, dialogs */
+    --theme-bubble-radius:         9999px;  /* circles, pill buttons */
+    --theme-collection-bar-radius: 32px;    /* bottom-attached tray */
+    --theme-thumbnail-radius:      20px;    /* photos, stickers, badges */
+}

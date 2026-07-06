@@ -1,0 +1,39 @@
+/*
+ * snackbar.uss — M3 Snackbar Component Styles
+ *
+ * M3 Snackbar spec:
+ *   Colors: inverse-surface bg, inverse-on-surface text, inverse-primary action
+ *   Corners: 4dp
+ *   Position: bottom-center
+ */
+
+.m3-snackbar {
+    min-width: 288px;
+    max-width: 600px;
+    min-height: 48px;
+    border-radius: 4px;
+    background-color: var(--m3-inverse-surface, rgb(49, 48, 51));
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 8px 12px 16px;
+    position: absolute;
+    bottom: 8px;
+    align-self: center;
+}
+
+.m3-snackbar__message {
+    flex-grow: 1;
+    color: var(--m3-inverse-on-surface, rgb(244, 239, 244));
+    white-space: normal;
+}
+
+.m3-snackbar__action {
+    color: var(--m3-inverse-primary, rgb(208, 188, 255));
+    margin-left: 8px;
+}
+
+.m3-snackbar__close {
+    color: var(--m3-inverse-on-surface, rgb(244, 239, 244));
+    margin-left: 4px;
+    font-size: 20px;
+}

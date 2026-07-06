@@ -1,0 +1,14 @@
+{
+    "name": "PFound.AssetPipeline.Core",
+    "rootNamespace": "PFound.AssetPipeline.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

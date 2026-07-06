@@ -1,0 +1,91 @@
+/* =========================================================
+   M3 Date Picker — date-picker.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+.m3-date-picker {
+    /* Inherits M3Dialog styling for the surface */
+}
+
+.m3-date-picker__header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+}
+
+.m3-date-picker__nav-btn {
+    font-size: 24px;
+    color: var(--m3-on-surface-variant);
+    width: 40px;
+    height: 40px;
+    -unity-text-align: middle-center;
+    border-radius: 20px;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.m3-date-picker__nav-btn:hover {
+    background-color: rgba(28, 27, 31, 0.08);
+}
+
+.m3-date-picker__month-label {
+    flex: 1;
+    -unity-text-align: middle-center;
+    color: var(--m3-on-surface);
+}
+
+/* Day-of-week header */
+.m3-date-picker__days-header {
+    flex-direction: row;
+    margin-bottom: 4px;
+}
+
+.m3-date-picker__day-label {
+    flex: 1;
+    -unity-text-align: middle-center;
+    color: var(--m3-on-surface-variant);
+    height: 32px;
+}
+
+/* Calendar grid */
+.m3-date-picker__grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 280px;
+}
+
+.m3-date-picker__day-btn {
+    width: 40px;
+    height: 40px;
+    -unity-text-align: middle-center;
+    color: var(--m3-on-surface);
+    border-radius: 20px;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.m3-date-picker__day-btn:hover {
+    background-color: rgba(28, 27, 31, 0.08);
+}
+
+.m3-date-picker__day-btn--selected {
+    background-color: var(--m3-primary);
+    color: var(--m3-on-primary);
+}
+
+.m3-date-picker__day-btn--today {
+    border-width: 1px;
+    border-color: var(--m3-primary);
+}
+
+.m3-date-picker__day-btn--other-month {
+    color: rgba(0, 0, 0, 0); /* invisible */
+}
+
+/* Actions */
+.m3-date-picker__actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 16px;
+}

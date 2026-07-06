@@ -1,0 +1,16 @@
+{
+    "name": "PFound.TweenPresetLibrary.Core.Tests",
+    "rootNamespace": "PFound.TweenPresetLibrary.Core.Tests",
+    "references": [
+        "PFound.TweenPresetLibrary.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

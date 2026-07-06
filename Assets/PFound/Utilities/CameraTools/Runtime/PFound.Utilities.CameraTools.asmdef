@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.CameraTools",
+    "rootNamespace": "PFound.Utilities.CameraTools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

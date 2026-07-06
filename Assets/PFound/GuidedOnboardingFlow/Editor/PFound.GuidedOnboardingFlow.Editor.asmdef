@@ -1,0 +1,19 @@
+{
+    "name": "PFound.GuidedOnboardingFlow.Editor",
+    "rootNamespace": "PFound.GuidedOnboardingFlow.EditorTools",
+    "references": [
+        "PFound.GuidedOnboardingFlow.Core",
+        "PFound.GuidedOnboardingFlow"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

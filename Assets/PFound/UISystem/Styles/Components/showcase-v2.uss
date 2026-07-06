@@ -1,0 +1,357 @@
+/*
+ * showcase-v2.uss — M3 Showcase Scene Layout Styles
+ * UISystem Feature 006-m3-uisystem-overhaul
+ *
+ * Layout: TopAppBar + two-column (NavigationPanel + ContentPanel)
+ * All sizes and colors use M3 USS tokens.
+ */
+
+/* ================================================================== */
+/*  Root                                                                */
+/* ================================================================== */
+
+.showcase-root {
+    flex-direction: column;
+    flex-grow: 1;
+    background-color: var(--m3-background, rgb(254, 251, 255));
+}
+
+/* ================================================================== */
+/*  Top App Bar                                                         */
+/* ================================================================== */
+
+.showcase-top-bar {
+    flex-direction: row;
+    align-items: center;
+    height: 64px;
+    padding-left: 16px;
+    padding-right: 16px;
+    background-color: var(--m3-surface, rgb(255, 251, 254));
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-outline-variant, rgb(202, 196, 208));
+}
+
+.showcase-top-bar__title {
+    flex-grow: 1;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.showcase-top-bar__actions {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* ================================================================== */
+/*  Body (below top bar)                                               */
+/* ================================================================== */
+
+.showcase-body {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+/* ================================================================== */
+/*  Navigation Panel (left sidebar)                                    */
+/* ================================================================== */
+
+.showcase-nav {
+    width: 280px;
+    flex-shrink: 0;
+    background-color: var(--m3-surface-container-low, rgb(247, 242, 250));
+    border-right-width: 1px;
+    border-right-color: var(--m3-outline-variant, rgb(202, 196, 208));
+    padding-top: 8px;
+    padding-bottom: 8px;
+    overflow: hidden;
+}
+
+.showcase-nav__section-header {
+    padding-left: 16px;
+    padding-right: 16px;
+    padding-top: 12px;
+    padding-bottom: 4px;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 11px;
+}
+
+.showcase-nav__item {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-radius: 24px;
+    margin-left: 8px;
+    margin-right: 8px;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.showcase-nav__item:hover {
+    background-color: var(--m3-surface-container, rgb(243, 237, 247));
+}
+
+.showcase-nav__item.showcase-nav__item--active {
+    background-color: var(--m3-secondary-container, rgb(232, 222, 248));
+    color: var(--m3-on-secondary-container, rgb(28, 25, 35));
+}
+
+.showcase-nav__item.showcase-nav__item--active:hover {
+    background-color: var(--m3-secondary-container, rgb(232, 222, 248));
+    color: var(--m3-on-secondary-container, rgb(28, 25, 35));
+}
+
+.showcase-nav__item-icon {
+    font-size: 20px;
+    width: 24px;
+    -unity-text-align: middle-center;
+    margin-right: 12px;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+.showcase-nav__item-label {
+    flex-grow: 1;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+.showcase-nav__item.showcase-nav__item--active > .showcase-nav__item-icon,
+.showcase-nav__item.showcase-nav__item--active > .showcase-nav__item-label {
+    color: var(--m3-on-secondary-container, rgb(28, 25, 35));
+}
+
+/* ================================================================== */
+/*  Content Panel (right side)                                         */
+/* ================================================================== */
+
+.showcase-content {
+    flex-direction: column;
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+/* ================================================================== */
+/*  Tab Bar                                                             */
+/* ================================================================== */
+
+.showcase-tab-bar {
+    flex-direction: row;
+    height: 48px;
+    background-color: var(--m3-surface, rgb(255, 251, 254));
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-outline-variant, rgb(202, 196, 208));
+}
+
+.showcase-tab {
+    flex-grow: 1;
+    align-items: center;
+    justify-content: center;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    border-bottom-width: 2px;
+    border-bottom-color: rgba(0, 0, 0, 0);
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.showcase-tab:hover {
+    background-color: var(--m3-surface-container, rgb(243, 237, 247));
+}
+
+.showcase-tab.showcase-tab--active {
+    color: var(--m3-primary, rgb(103, 80, 164));
+    border-bottom-color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+.showcase-tab.showcase-tab--active > Label {
+    color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+.showcase-tab.showcase-tab--active:hover {
+    color: var(--m3-primary, rgb(103, 80, 164));
+    border-bottom-color: var(--m3-primary, rgb(103, 80, 164));
+    background-color: var(--m3-surface-container, rgb(243, 237, 247));
+}
+
+/* ================================================================== */
+/*  Tab Content Area                                                    */
+/* ================================================================== */
+
+.showcase-tab-content {
+    flex-grow: 1;
+    padding: 24px;
+    overflow: scroll;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.showcase-tab-panel {
+    display: none;
+}
+
+.showcase-tab-panel--active {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ================================================================== */
+/*  Component Demo Area (inside Overview tab)                          */
+/* ================================================================== */
+
+.showcase-demo-area {
+    flex-direction: column;
+    margin-bottom: 24px;
+}
+
+.showcase-demo-card {
+    min-width: 200px;
+    margin: 8px;
+    padding: 16px;
+    background-color: var(--m3-surface-container, rgb(243, 237, 247));
+    border-radius: 12px;
+}
+
+.showcase-demo-label {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 12px;
+    margin-bottom: 8px;
+}
+
+/* ================================================================== */
+/*  Spec Table (inside Specs tab)                                      */
+/* ================================================================== */
+
+.showcase-spec-table {
+    margin-bottom: 16px;
+}
+
+.showcase-spec-row {
+    flex-direction: row;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-outline-variant, rgb(202, 196, 208));
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.showcase-spec-row__key {
+    width: 200px;
+    flex-shrink: 0;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 13px;
+}
+
+.showcase-spec-row__value {
+    flex-grow: 1;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+    font-size: 13px;
+}
+
+/* ================================================================== */
+/*  Guidelines content                                                  */
+/* ================================================================== */
+
+.showcase-guideline-item {
+    flex-direction: row;
+    margin-bottom: 12px;
+    align-items: flex-start;
+}
+
+.showcase-guideline-icon {
+    font-size: 18px;
+    margin-right: 12px;
+    margin-top: 2px;
+}
+
+.showcase-guideline-text {
+    flex-grow: 1;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ================================================================== */
+/*  M3 Spec link                                                        */
+/* ================================================================== */
+
+.showcase-spec-link {
+    color: var(--m3-primary, rgb(103, 80, 164));
+    /* underline not supported in USS — the ↗ arrow signals clickability */
+    font-size: 13px;
+    padding-left: 12px;
+    padding-right: 12px;
+    -unity-text-align: middle-center;
+}
+
+.showcase-spec-link:hover {
+    color: var(--m3-tertiary, rgb(125, 82, 96));
+}
+
+/* ================================================================== */
+/*  Spec Table                                                          */
+/* ================================================================== */
+
+.showcase-spec-table {
+    margin-bottom: 16px;
+    border-top-width: 1px;
+    border-top-color: var(--m3-outline-variant, rgb(202, 196, 208));
+}
+
+.showcase-spec-table-header {
+    flex-direction: row;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-outline-variant, rgb(202, 196, 208));
+    background-color: var(--m3-surface-container-low, rgba(247, 242, 250, 0.5));
+}
+
+.showcase-spec-table-row {
+    flex-direction: row;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-outline-variant, rgba(202, 196, 208, 0.3));
+}
+
+.showcase-spec-cell {
+    padding-left: 12px;
+    padding-right: 12px;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.showcase-spec-cell--name {
+    width: 160px;
+    flex-shrink: 0;
+}
+
+.showcase-spec-cell--type {
+    width: 120px;
+    flex-shrink: 0;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+.showcase-spec-cell--default {
+    flex-grow: 1;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+/* ================================================================== */
+/*  Guidelines Do/Don't                                                 */
+/* ================================================================== */
+
+.showcase-do-item {
+    flex-direction: row;
+    margin-bottom: 8px;
+    align-items: flex-start;
+}
+
+.showcase-do-icon {
+    font-size: 18px;
+    margin-right: 10px;
+    margin-top: 2px;
+    width: 24px;
+    -unity-text-align: middle-center;
+}
+
+.showcase-do-icon--do {
+    color: rgb(56, 142, 60);
+}
+
+.showcase-do-icon--dont {
+    color: rgb(211, 47, 47);
+}

@@ -1,0 +1,26 @@
+{
+    "name": "PFound.AssetPipeline.Tests",
+    "rootNamespace": "PFound.AssetPipeline.Tests",
+    "references": [
+        "PFound.AssetPipeline.Core",
+        "PFound.AssetPipeline.Editor",
+        "PFound.ContentDelivery.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

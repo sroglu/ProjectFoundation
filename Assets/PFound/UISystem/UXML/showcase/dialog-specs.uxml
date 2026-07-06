@@ -1,0 +1,1 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"><ui:Style src="../../Styles/Components/showcase-v2.uss" /><ui:VisualElement class="showcase-tab-panel showcase-tab-panel--active"><ui:Label class="m3-headline-small" text="dialog" /><ui:Label class="showcase-spec-link m3-label-medium" text="See M3 spec for full details." /></ui:VisualElement></ui:UXML>

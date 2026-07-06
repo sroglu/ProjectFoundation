@@ -1,0 +1,65 @@
+/* AgeBandPickerModal layout (Papercut). */
+
+.pc-age-band-overlay {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-age-band-card {
+    width: 480px;
+    max-width: 92%;
+    padding: 32px 28px;
+    align-items: center;
+}
+
+.pc-age-band-title {
+    color: rgb(140, 50, 40);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.pc-age-band-subtitle {
+    color: rgb(82, 50, 65);
+    -unity-text-align: middle-center;
+    font-size: 16px;
+    margin-bottom: 22px;
+}
+
+.pc-age-band-choices {
+    flex-direction: row;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+.pc-age-band-choice {
+    flex: 1;
+    min-width: 110px;
+    min-height: 110px;
+    margin: 0 6px;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-age-band-choice-label {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+
+.pc-age-band-cancel {
+    margin-top: 12px;
+}
+
+.pc-age-band-cancel-label {
+    color: var(--pc-primary-edge);
+    -unity-font-style: bold;
+    font-size: 16px;
+    -unity-text-align: middle-center;
+}

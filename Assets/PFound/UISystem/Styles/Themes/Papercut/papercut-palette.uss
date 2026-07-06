@@ -1,0 +1,111 @@
+/* ============================================================
+   Papercut Theme — Palette (skeleton)
+   ============================================================
+   Color slots for the Papercut theme. PALETTE ONLY — surface
+   treatment (edge band + highlight curve) lives in
+   papercut-treatment.uss; component classes in
+   papercut-components.uss.
+
+   Slot mapping (semantic — concrete hex TBD in Phase 1
+   by sampling Assets/UIArt/uiRef.png):
+
+     --pc-primary       hot pink        buttons, segmented selected,
+                                        slider, chip-selected
+     --pc-toggle        yellow          radio fill, switch track
+                                        (kasıtlı renk ayrımı)
+     --pc-surface       coral           cards
+     --pc-info          blue            checkbox
+     --pc-input         teal            text fields, list items
+     --pc-inactive-fill cream           chip-unselected, switch-off
+     --pc-inactive-line gray            outline on inactive
+
+   Per-slot edge band darken token:
+     --pc-<slot>-edge   fill darkened ~25-35% (concrete curve TBD)
+
+   Namespace `--pc-*` keeps Papercut isolated from `--candy-*`.
+   Never mix the two prefixes inside one screen.
+
+   See: docs/PAPERCUT-THEME.md (spec) + docs/PAPERCUT-THEME-TODO.md
+   ============================================================ */
+
+/* ============================================================
+   Slot hex values — estimated from uiRef.png visual inspection.
+   PapercutHexSamplingTests (T008) sample at the coordinates
+   recorded in specs/001-papercut-theme/research.md §R5 and
+   assert the fill colour at each (x,y) matches the value below.
+   First test run pins the values; adjust hex here if the test
+   reports drift > 8 LAB units from the sampled pixel.
+
+   Edge tokens (`--pc-*-edge`) are derived via HSL lightness × 0.6
+   per research.md R5 hybrid approach.
+   ============================================================ */
+
+:root {
+    /* Primary — hot pink (Button, Chip-selected, Slider, Segmented selected)
+       Sampled from CHIPSa-Selected row in uiRef.png. */
+    --pc-primary:        rgb(208, 47, 103);
+    --pc-primary-edge:   rgb(125, 28, 62);
+
+    /* Toggle — yellow (Radio, Switch track)
+       Sampled from RADIO row in uiRef.png. */
+    --pc-toggle:         rgb(244, 174, 8);
+    --pc-toggle-edge:    rgb(146, 104, 5);
+
+    /* Surface — coral / muted red (Card)
+       Sampled from CARDS row in uiRef.png — actual fill skews darker / more
+       red than a literal coral; treating the slot value as what the sheet
+       depicts. */
+    --pc-surface:        rgb(211, 57, 59);
+    --pc-surface-edge:   rgb(127, 34, 35);
+
+    /* Information — blue (Checkbox)
+       Sampled from CHECKBOX row in uiRef.png. */
+    --pc-info:           rgb(96, 111, 162);
+    --pc-info-edge:      rgb(58, 67, 97);
+
+    /* Input — teal (Text Field accent, List Item fill)
+       Sampled from LIST ITEMS row in uiRef.png. */
+    --pc-input:          rgb(120, 147, 135);
+    --pc-input-edge:     rgb(72, 88, 81);
+
+    /* Inactive Fill — cream (Chip-unselected, Switch-off, Segmented-unselected) */
+    --pc-inactive-fill:  rgb(245, 230, 211); /* ≈ #F5E6D3 */
+
+    /* Inactive Outline — gray (outline colour when Inactive state active) */
+    --pc-inactive-line:  rgb(170, 156, 140); /* ≈ #AA9C8C */
+
+    /* ------------------------------------------------------------
+       Pressed-state darken tokens (FR-010: fill darkens ~10% on
+       Pressed). USS has no HSL or filter function in UI Toolkit,
+       so the darkened variants live here as their own tokens.
+       Each is base × 0.9 RGB.
+       ------------------------------------------------------------ */
+    --pc-primary-pressed:  rgb(187, 42, 93);
+    --pc-toggle-pressed:   rgb(220, 157, 7);
+    --pc-surface-pressed:  rgb(190, 51, 53);
+    --pc-info-pressed:     rgb(86, 100, 146);
+    --pc-input-pressed:    rgb(108, 132, 122);
+
+    /* ------------------------------------------------------------
+       Semantic accent slots (Phase 2 polish)
+       --pc-danger  — destructive actions (Settings Reset Progress).
+       --pc-success — affirmative cards (AgeBand 3-4 tile).
+       Edge tokens follow same HSL × 0.6 darken; pressed = base × 0.9.
+       ------------------------------------------------------------ */
+    --pc-danger:           rgb(150, 40, 40);
+    --pc-danger-edge:      rgb(80, 20, 20);
+    --pc-danger-pressed:   rgb(135, 36, 36);
+
+    --pc-success:          rgb(60, 175, 95);
+    --pc-success-edge:     rgb(20, 100, 50);
+    --pc-success-pressed:  rgb(54, 158, 86);
+
+    /* ============================================================
+       Text colours — alias the Candy text tokens to avoid drift.
+       Defined in candy-palette.uss; usable here only when a
+       Papercut screen ALSO references candy-palette.uss.
+       Today no Papercut screen does, so Papercut screens that need
+       text colour should set it inline per component class
+       (papercut-components.uss).
+       ============================================================ */
+}

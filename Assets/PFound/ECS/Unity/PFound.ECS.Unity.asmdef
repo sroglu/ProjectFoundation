@@ -1,0 +1,16 @@
+{
+    "name": "PFound.ECS.Unity",
+    "rootNamespace": "PFound.ECS.Unity",
+    "references": [
+        "PFound.ECS"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

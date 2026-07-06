@@ -1,0 +1,41 @@
+/* =========================================================
+   M3 Progress Indicator — progress-indicator.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+/* ── Linear ── */
+.m3-progress--linear {
+    height: 4px;
+    width: 100%;
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.m3-progress__track {
+    flex: 1;
+    height: 4px;
+    border-radius: 2px;
+    background-color: var(--m3-secondary-container);
+    overflow: hidden;
+}
+
+.m3-progress__indicator {
+    height: 100%;
+    border-radius: 2px;
+    background-color: var(--m3-primary);
+    width: 0%;
+    transition-property: width;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
+}
+
+/* ── Circular ── */
+.m3-progress--circular {
+    width: 48px;
+    height: 48px;
+}
+
+.m3-progress__circle {
+    width: 100%;
+    height: 100%;
+}

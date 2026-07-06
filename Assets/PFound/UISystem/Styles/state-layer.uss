@@ -1,0 +1,31 @@
+/*
+ * state-layer.uss — M3 State Layer USS Classes
+ * UISystem Button (005-uisystem-button) — WP-4
+ *
+ * Disabled state is applied via USS (element-level opacity).
+ * Hover/pressed/focused overlays are driven by C# (StateLayerController sets
+ * M3Surface.StateOverlayOpacity) because the overlay must be clipped to
+ * the rounded rect shape — USS background-color cannot do this.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Disabled State                                                      */
+/* ------------------------------------------------------------------ */
+
+/* Applied by StateLayerController when Disabled = true.
+   Dims the entire element subtree to M3's disabled opacity (38%). */
+.m3-disabled {
+    opacity: 0.80;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Documentary Classes (visual effect driven by C#, not USS)          */
+/* ------------------------------------------------------------------ */
+
+/* These class names are listed for documentation only.
+   StateLayerController sets M3Surface.StateOverlayOpacity:
+     hovered  → 0.08
+     pressed  → 0.10
+     focused  → 0.10
+     idle     → 0.00
+*/

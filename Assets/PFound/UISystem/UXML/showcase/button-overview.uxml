@@ -1,0 +1,54 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:components="PFound.UISystem.Components">
+    <ui:Style src="../../Styles/Components/showcase-v2.uss" />
+    <ui:Style src="../../Styles/Components/button.uss" />
+
+    <ui:VisualElement class="showcase-tab-panel showcase-tab-panel--active">
+
+        <ui:Label class="m3-headline-small" text="Button" style="margin-bottom: 4px;" />
+        <ui:Label class="m3-body-medium"
+            text="Buttons help people initiate actions, from sending an email to sharing a document or liking a post."
+            style="white-space: normal; margin-bottom: 24px;" />
+
+        <!-- Variant demos -->
+        <ui:VisualElement class="showcase-demo-area">
+
+            <ui:VisualElement class="showcase-demo-card">
+                <ui:Label class="showcase-demo-label m3-label-small" text="FILLED" />
+                <components:M3Button variant="Filled" text="Filled" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="showcase-demo-card">
+                <ui:Label class="showcase-demo-label m3-label-small" text="TONAL" />
+                <components:M3Button variant="Tonal" text="Tonal" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="showcase-demo-card">
+                <ui:Label class="showcase-demo-label m3-label-small" text="ELEVATED" />
+                <components:M3Button variant="Elevated" text="Elevated" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="showcase-demo-card">
+                <ui:Label class="showcase-demo-label m3-label-small" text="OUTLINED" />
+                <components:M3Button variant="Outlined" text="Outlined" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="showcase-demo-card">
+                <ui:Label class="showcase-demo-label m3-label-small" text="TEXT" />
+                <components:M3Button variant="Text" text="Text" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="showcase-demo-card">
+                <ui:Label class="showcase-demo-label m3-label-small" text="DISABLED" />
+                <components:M3Button variant="Filled" text="Disabled" disabled="true" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <ui:Label class="showcase-spec-link m3-label-medium"
+            text="M3 Spec: https://m3.material.io/components/buttons"
+            style="margin-top: 16px;" />
+
+    </ui:VisualElement>
+
+</ui:UXML>

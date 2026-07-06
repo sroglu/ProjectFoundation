@@ -1,0 +1,9 @@
+{
+    "policy": "maxTextureSize<=2048, require-compressed, disallow-crunch, pot-or-npot-scale, disallow-texture-readwrite, disallow-sprite-mipmaps, disallow-mesh-readwrite",
+    "assetsScanned": 0,
+    "violationCount": 0,
+    "byCode": [],
+    "violations": [],
+    "duplicateCount": 0,
+    "duplicateDependencies": []
+}

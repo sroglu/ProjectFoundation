@@ -1,0 +1,177 @@
+/*
+ * button.uss — M3 Button Component Styles
+ * UISystem Button (005-uisystem-button) — WP-5
+ *
+ * All colors via var(--m3-*) USS tokens with M3 baseline light-theme fallbacks.
+ * Corner radius is set in C# (M3Surface.CornerRadius = 9999) — not here.
+ * Shadow (elevation-2) is set in C# for Filled only — not here.
+ * Disabled state is in state-layer.uss (.m3-disabled).
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Base                                                                */
+/* ------------------------------------------------------------------ */
+
+.m3-button {
+    height: 40px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 24px;
+    padding-right: 24px;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    flex-shrink: 0;
+    /* overflow: hidden — required so the painter2D ripple stays inside the
+       rounded pill silhouette instead of bleeding into a halo around the
+       cursor. The label can sit safely inside because its glyphs are
+       rendered through the default text material (M3Button forces
+       style.unityMaterial = StyleKeyword.Initial on the label) and live
+       inside the padding box, which is fully inside the rounded clip. */
+    overflow: hidden;
+    /* 20px = height/2 for Medium (40dp). Unity renders 9999px as an ellipse (x=w/2, y=h/2),
+       so explicit height/2 is required for circular (pill) corners. M3Button.cs overrides
+       per-size via inline style. */
+    border-radius: 20px;
+}
+
+.m3-button__label {
+    /* Font and size from m3-label (Roboto Medium 14px) */
+    letter-spacing: 0.1px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin: 0;
+    /* Reset Unity's default Label padding and force vertical centering */
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Filled Variant                                                      */
+/* ------------------------------------------------------------------ */
+
+.m3-button--filled {
+    background-color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+.m3-button__label--filled {
+    color: var(--m3-on-primary, rgb(255, 255, 255));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Outlined Variant                                                    */
+/* ------------------------------------------------------------------ */
+
+.m3-button--outlined {
+    background-color: rgba(0, 0, 0, 0);
+    /* Outline drawn via M3Surface.OutlineThickness in C# — clips to rounded rect */
+}
+
+.m3-button__label--outlined {
+    color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Text Variant                                                        */
+/* ------------------------------------------------------------------ */
+
+.m3-button--text {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.m3-button__label--text {
+    color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Tonal Variant                                                       */
+/* ------------------------------------------------------------------ */
+
+.m3-button--tonal {
+    background-color: var(--m3-secondary-container, rgb(232, 222, 248));
+}
+
+.m3-button__label--tonal {
+    color: var(--m3-on-secondary-container, rgb(28, 25, 35));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Size Variants (overrides base height + padding)                     */
+/* ------------------------------------------------------------------ */
+
+.m3-button--xs {
+    height: 24px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+    border-radius: 12px; /* height/2 = 24/2 */
+}
+
+.m3-button__label--xs {
+    font-size: 11px;
+}
+
+.m3-button--sm {
+    height: 32px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-left: 16px;
+    padding-right: 16px;
+    border-radius: 16px; /* height/2 = 32/2 */
+}
+
+.m3-button__label--sm {
+    font-size: 12px;
+}
+
+/* .m3-button--md is the default (.m3-button base class, border-radius: 20px) */
+
+.m3-button--lg {
+    height: 56px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 32px;
+    padding-right: 32px;
+    border-radius: 28px; /* height/2 = 56/2 */
+}
+
+.m3-button__label--lg {
+    font-size: 16px;
+}
+
+.m3-button--xl {
+    height: 96px;
+    padding-top: 24px;
+    padding-bottom: 24px;
+    padding-left: 48px;
+    padding-right: 48px;
+    border-radius: 28px; /* M3 XL fixed radius (not height/2) */
+}
+
+.m3-button__label--xl {
+    font-size: 22px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Shape Variants                                                      */
+/* ------------------------------------------------------------------ */
+
+/* Round (pill) is the default — set by C# CornerRadius=9999 */
+
+/* Square: small corner radius per M3 spec */
+.m3-button--square {
+    border-radius: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Compact Padding (16dp horizontal instead of 24dp baseline)         */
+/* ------------------------------------------------------------------ */
+
+.m3-button--compact {
+    padding-left: 16px;
+    padding-right: 16px;
+}

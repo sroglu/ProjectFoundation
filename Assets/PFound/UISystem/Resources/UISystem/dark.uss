@@ -1,0 +1,173 @@
+/*
+ * dark.uss — M3 Baseline Dark Theme USS Variables
+ * UISystem Foundation Layer (004-uisystem-foundation)
+ *
+ * All --m3-* custom properties define the dark theme design tokens.
+ * ThemeManager.SyncToPanel() swaps this sheet in/out on rootVisualElement.
+ *
+ * Usage: ThemeManager handles the swap. Do not reference this file directly
+ * in UXML — use var(--m3-*) and let ThemeManager apply the correct sheet.
+ */
+
+:root {
+    /* ------------------------------------------------------------------ */
+    /*  Color Palette — M3 Baseline Dark                                   */
+    /* ------------------------------------------------------------------ */
+    --m3-primary:                  rgb(208, 188, 255);   /* #D0BCFF */
+    --m3-on-primary:               rgb(56, 30, 114);     /* #381E72 */
+    --m3-primary-container:        rgb(79, 55, 139);     /* #4F378B */
+    --m3-on-primary-container:     rgb(234, 221, 255);   /* #EADDFF */
+
+    --m3-secondary:                rgb(204, 194, 220);   /* #CCC2DC */
+    --m3-on-secondary:             rgb(50, 44, 63);      /* #332D41 */
+    --m3-secondary-container:      rgb(74, 68, 88);      /* #4A4458 */
+    --m3-on-secondary-container:   rgb(232, 222, 248);   /* #E8DEF8 */
+
+    --m3-surface:                  rgb(28, 27, 31);      /* #1C1B1F */
+    --m3-on-surface:               rgb(230, 225, 229);   /* #E6E1E5 */
+    --m3-surface-variant:          rgb(73, 69, 79);      /* #49454F */
+    --m3-on-surface-variant:       rgb(202, 196, 208);   /* #CAC4D0 */
+    --m3-surface-container-low:    rgb(30, 29, 34);      /* #1E1D22 */
+    --m3-surface-container:        rgb(34, 33, 38);      /* #221F26 */
+    --m3-surface-container-high:   rgb(39, 38, 43);      /* #27262B */
+    --m3-surface-container-highest:rgb(44, 43, 49);      /* #2C2B31 */
+
+    --m3-error:                    rgb(242, 184, 181);   /* #F2B8B5 */
+    --m3-on-error:                 rgb(96, 20, 16);      /* #601410 */
+
+    --m3-outline:                  rgb(147, 143, 153);   /* #938F99 */
+    --m3-outline-variant:          rgb(73, 69, 79);      /* #49454F */
+
+    --m3-background:               rgb(28, 27, 31);      /* #1C1B1F */
+    --m3-on-background:            rgb(230, 225, 229);   /* #E6E1E5 — same as on-surface per M3 */
+
+    --m3-tertiary:                 rgb(239, 184, 200);   /* #EFB8C8 */
+    --m3-on-tertiary:              rgb(73, 37, 50);      /* #492532 */
+    --m3-tertiary-container:       rgb(99, 59, 72);      /* #633B48 */
+    --m3-on-tertiary-container:    rgb(255, 216, 228);   /* #FFD8E4 */
+
+    --m3-surface-container-lowest: rgb(15, 14, 19);      /* #0F0E13 */
+    --m3-scrim:                    rgba(0, 0, 0, 0.32);  /* M3 scrim overlay */
+    --m3-surface-tint:             rgb(208, 188, 255);   /* same as primary (dark) */
+
+    /* Fixed colors — theme-invariant (same in light and dark) */
+    --m3-primary-fixed:              rgb(242, 218, 255);   /* #F2DAFF */
+    --m3-primary-fixed-dim:          rgb(217, 185, 255);   /* #D9B9FF */
+    --m3-on-primary-fixed:           rgb(33, 0, 93);       /* #21005D */
+    --m3-on-primary-fixed-variant:   rgb(79, 55, 139);     /* #4F378B */
+    --m3-secondary-fixed:            rgb(232, 222, 248);   /* #E8DEF8 */
+    --m3-secondary-fixed-dim:        rgb(208, 196, 232);   /* #D0C4E8 */
+    --m3-on-secondary-fixed:         rgb(28, 25, 35);      /* #1D192B */
+    --m3-on-secondary-fixed-variant: rgb(74, 68, 88);      /* #4A4458 */
+    --m3-tertiary-fixed:             rgb(255, 216, 228);   /* #FFD8E4 */
+    --m3-tertiary-fixed-dim:         rgb(239, 184, 200);   /* #EFB8C8 */
+    --m3-on-tertiary-fixed:          rgb(49, 17, 29);      /* #31111D */
+    --m3-on-tertiary-fixed-variant:  rgb(99, 59, 72);      /* #633B48 */
+
+    /* Error container */
+    --m3-error-container:            rgb(140, 29, 24);     /* #8C1D18 */
+    --m3-on-error-container:         rgb(242, 184, 181);   /* #F2B8B5 */
+
+    /* Surface dim / bright */
+    --m3-surface-dim:                rgb(20, 18, 24);      /* #141218 */
+    --m3-surface-bright:             rgb(59, 56, 62);      /* #3B383E */
+
+    /* Shadow */
+    --m3-shadow:                     rgba(0, 0, 0, 1);     /* opaque black */
+
+    /* State layer — on-surface at M3 hover opacity (8%) */
+    --m3-state-hover:                rgba(230, 225, 229, 0.08);
+
+    /* ------------------------------------------------------------------ */
+    /*  Shape Presets (same values — shape is not theme-dependent)         */
+    /* ------------------------------------------------------------------ */
+    --m3-shape-none:               0px;
+    --m3-shape-extra-small:        4px;
+    --m3-shape-small:              8px;
+    --m3-shape-medium:             12px;
+    --m3-shape-large:              16px;
+    --m3-shape-extra-large:        28px;
+    --m3-shape-full:               9999px;
+
+    /* ------------------------------------------------------------------ */
+    /*  Elevation Presets — shadow-blur, shadow-offset-x/y, tonal-alpha    */
+    /* ------------------------------------------------------------------ */
+    --m3-elevation-0-shadow-blur:     0px;
+    --m3-elevation-0-shadow-offset-x: 0px;
+    --m3-elevation-0-shadow-offset-y: 0px;
+    --m3-elevation-0-tonal-alpha:     0;
+
+    --m3-elevation-1-shadow-blur:     2px;
+    --m3-elevation-1-shadow-offset-x: 0px;
+    --m3-elevation-1-shadow-offset-y: 1px;
+    --m3-elevation-1-tonal-alpha:     0.05;
+
+    --m3-elevation-2-shadow-blur:     4px;
+    --m3-elevation-2-shadow-offset-x: 0px;
+    --m3-elevation-2-shadow-offset-y: 1px;
+    --m3-elevation-2-tonal-alpha:     0.08;
+
+    --m3-elevation-3-shadow-blur:     6px;
+    --m3-elevation-3-shadow-offset-x: 0px;
+    --m3-elevation-3-shadow-offset-y: 2px;
+    --m3-elevation-3-tonal-alpha:     0.11;
+
+    --m3-elevation-4-shadow-blur:     8px;
+    --m3-elevation-4-shadow-offset-x: 0px;
+    --m3-elevation-4-shadow-offset-y: 3px;
+    --m3-elevation-4-tonal-alpha:     0.12;
+
+    --m3-elevation-5-shadow-blur:     12px;
+    --m3-elevation-5-shadow-offset-x: 0px;
+    --m3-elevation-5-shadow-offset-y: 4px;
+    --m3-elevation-5-tonal-alpha:     0.14;
+
+    /* ------------------------------------------------------------------ */
+    /*  Motion Durations (ms)                                               */
+    /* ------------------------------------------------------------------ */
+    --m3-motion-emphasized-duration:             500ms;
+    --m3-motion-standard-duration:               300ms;
+    --m3-motion-emphasized-decelerate-duration:  400ms;
+    --m3-motion-standard-decelerate-duration:    250ms;
+
+    /* Component-level motion tokens — use these in component transition declarations */
+    --m3-motion-duration-short:    100ms;  /* checkbox, chip, fab, radio, textfield bg/indicator */
+    --m3-motion-duration-float:    150ms;  /* textfield floating label font-size only */
+    --m3-motion-duration-standard: 200ms;  /* toggle track/thumb, navigation bar */
+    --m3-motion-duration-long:     300ms;  /* ripple, complex animations */
+
+    /* ------------------------------------------------------------------ */
+    /*  Inverse Tokens (for Snackbar)                                       */
+    /* ------------------------------------------------------------------ */
+    --m3-inverse-surface:            rgb(230, 225, 229);    /* #E6E1E5 */
+    --m3-inverse-on-surface:         rgb(49, 48, 51);       /* #313033 */
+    --m3-inverse-primary:            rgb(103, 80, 164);     /* #6750A4 */
+
+    /* ------------------------------------------------------------------ */
+    /*  Theme Structure Tokens — Flat (M3 baseline)                        */
+    /*  Same names as candypop.uss but with bevel/shine effectively off    */
+    /*  so consumers using var(--theme-*) render flat in this theme.       */
+    /* ------------------------------------------------------------------ */
+
+    /* Bevel border widths — 0 hides per-side bevel borders */
+    --theme-bevel-width:           0px;
+    --theme-bevel-width-thick:     0px;
+    --theme-bevel-width-medium:    0px;
+    --theme-bevel-width-thin:      0px;
+
+    /* Glossy shine overlay — 0 alpha hides the shine VisualElement */
+    --theme-shine-alpha:           0;
+    --theme-shine-height-pct:      0%;
+    --theme-shine-radius-top:      0;
+    --theme-shine-radius-bottom:   0;
+    --theme-shine-inset:           0;
+
+    /* Shape radii — M3 baseline */
+    --theme-tile-radius:           16px;
+    --theme-card-radius:           12px;
+    --theme-section-radius:        12px;
+    --theme-modal-radius:          24px;
+    --theme-bubble-radius:         9999px;
+    --theme-collection-bar-radius: 16px;
+    --theme-thumbnail-radius:      8px;
+}

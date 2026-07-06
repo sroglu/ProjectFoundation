@@ -1,0 +1,16 @@
+{
+    "name": "PFound.EpochClock.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.EpochClock"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

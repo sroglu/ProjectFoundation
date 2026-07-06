@@ -1,0 +1,16 @@
+{
+    "name": "PFound.TweenPresetLibrary",
+    "rootNamespace": "PFound.TweenPresetLibrary",
+    "references": [
+        "PFound.TweenPresetLibrary.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

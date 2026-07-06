@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.StringTools.Engine",
+    "rootNamespace": "PFound.Utilities.StringTools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

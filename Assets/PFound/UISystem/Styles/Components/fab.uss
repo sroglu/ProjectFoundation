@@ -1,0 +1,59 @@
+/*
+ * fab.uss — M3 FAB (Floating Action Button) Styles
+ *
+ * M3 FAB spec:
+ *   Small   — 40×40dp, 12dp radius
+ *   Regular — 56×56dp, 16dp radius
+ *   Large   — 96×96dp, 28dp radius
+ *   Extended — icon + label, 16dp radius
+ *   Colors: primary-container bg, on-primary-container icon/text
+ *   Elevation: Level 3 (shadow)
+ */
+
+.m3-fab {
+    align-self: flex-start;
+}
+
+/* ============================================================ */
+/*  Container                                                   */
+/* ============================================================ */
+
+/* NOTE: background-color is set in C# via M3Surface.FillColorOverride (palette
+ * path) so the SDF shader can read the per-instance fill colour through the
+ * Vertex.tint encoding. Setting background-color HERE in USS would clobber the
+ * encoded tint bytes and corrupt the shader path (fill goes white on hover).
+ * USS keeps only the structural rules. */
+.m3-fab__icon-container,
+.m3-fab--small,
+.m3-fab--regular,
+.m3-fab--large,
+.m3-fab--extended {
+    --unity-slice-left: 0;
+}
+
+/* ============================================================ */
+/*  Icon                                                        */
+/* ============================================================ */
+
+.m3-fab__icon {
+    color: var(--m3-on-primary-container, rgb(33, 0, 93));
+    -unity-text-align: middle-center;
+}
+
+/* ============================================================ */
+/*  Label (extended mode)                                       */
+/* ============================================================ */
+
+.m3-fab__label {
+    color: var(--m3-on-primary-container, rgb(33, 0, 93));
+    -unity-text-align: middle-left;
+    white-space: nowrap;
+}
+
+/* ============================================================ */
+/*  Disabled                                                    */
+/* ============================================================ */
+
+.m3-fab.m3-disabled {
+    opacity: 0.38;
+}

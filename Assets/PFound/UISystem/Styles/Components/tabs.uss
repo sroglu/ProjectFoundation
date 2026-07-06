@@ -1,0 +1,110 @@
+/* =========================================================
+   M3 Tabs — tabs.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+/* ── Tab bar ── */
+.m3-tabs {
+    flex-direction: row;
+    align-items: stretch;
+    height: 48px;
+}
+
+/* Primary variant: bottom border divider */
+.m3-tabs--primary {
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-surface-variant);
+}
+
+/* Secondary variant: no divider, surface container background */
+.m3-tabs--secondary {
+    background-color: var(--m3-surface);
+}
+
+/* ── Individual tab item ── */
+.m3-tab-item {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 0;
+    min-width: 48px;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.m3-tab-item:hover {
+    background-color: var(--m3-state-hover, rgba(28, 27, 31, 0.08));
+}
+
+/* ── Tab icon ── */
+.m3-tab-item__icon {
+    font-size: 24px;
+    color: var(--m3-on-surface-variant);
+    margin-top: 0;
+    margin-bottom: 0;
+    transition-property: color;
+    transition-duration: 150ms;
+}
+
+/* ── Tab label ── */
+.m3-tab-item__label {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--m3-on-surface-variant);
+    margin-top: 2px;
+    margin-bottom: 10px;
+    -unity-text-align: middle-center;
+    transition-property: color;
+    transition-duration: 150ms;
+}
+
+/* ── Active state (Primary) ── */
+.m3-tabs--primary .m3-tab-item--active .m3-tab-item__icon {
+    color: var(--m3-primary);
+}
+
+.m3-tabs--primary .m3-tab-item--active .m3-tab-item__label {
+    color: var(--m3-primary);
+}
+
+/* ── Active indicator (Primary): 3dp underline, narrow under label ── */
+.m3-tab-item__indicator {
+    position: absolute;
+    bottom: 0;
+    left: 30%;
+    right: 30%;
+    height: 3px;
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    opacity: 0;
+    transition: opacity var(--m3-motion-duration-standard, 200ms) ease-in-out;
+}
+
+/* Indicator visible when tab is active */
+.m3-tab-item--active .m3-tab-item__indicator {
+    opacity: 1;
+}
+
+.m3-tabs--primary .m3-tab-item__indicator {
+    background-color: var(--m3-primary);
+}
+
+/* ── Active state (Secondary): full-width underline, on-surface text ── */
+.m3-tabs--secondary .m3-tab-item--active .m3-tab-item__icon {
+    color: var(--m3-on-surface);
+}
+
+.m3-tabs--secondary .m3-tab-item--active .m3-tab-item__label {
+    color: var(--m3-on-surface);
+}
+
+/* Secondary indicator: full-width, no rounding */
+.m3-tabs--secondary .m3-tab-item__indicator {
+    left: 0;
+    right: 0;
+    height: 2px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    background-color: var(--m3-primary);
+}

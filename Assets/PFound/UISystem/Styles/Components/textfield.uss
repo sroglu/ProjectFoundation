@@ -1,0 +1,109 @@
+/*
+ * textfield.uss — M3 Text Field Component Styles
+ *
+ * M3 Text Field spec:
+ *   Height: 56dp
+ *   Filled: surface-container-highest bg, 1dp bottom indicator
+ *   Outlined: 1dp outline border, transparent bg
+ */
+
+.m3-textfield {
+    width: 100%;
+    flex-direction: column;
+}
+
+/* ============================================================ */
+/*  Container                                                   */
+/* ============================================================ */
+
+.m3-textfield__container {
+    height: 56px;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path). USS bg here — even `transparent` — would clobber the encoded
+     * tint bytes the SDF shader needs. Same gotcha as fab.uss / chip.uss /
+     * checkbox.uss / radio.uss / toggle.uss. M3TextField.ApplyVariant owns
+     * the fill (surfaceContainerHighest for Filled, Color.clear for Outlined). */
+}
+
+/* ============================================================ */
+/*  Floating label                                              */
+/* ============================================================ */
+
+.m3-textfield__label {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    transition: font-size 150ms ease-in-out;
+    /* pointer-events: none — unsupported by Unity USS; the floating label sets
+       pickingMode = Ignore in M3TextField.cs (line ~187). */
+}
+
+.m3-textfield--focused .m3-textfield__label,
+.m3-textfield--floating .m3-textfield__label {
+    color: var(--m3-primary, rgb(103, 80, 164));
+    font-size: 12px;
+}
+
+.m3-textfield--error .m3-textfield__label {
+    color: var(--m3-error, rgb(184, 38, 33));
+}
+
+/* ============================================================ */
+/*  Input field                                                 */
+/* ============================================================ */
+
+.m3-textfield__input {
+    background-color: transparent;
+    border-width: 0;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+    padding: 0;
+    margin: 0;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+/* Hide Unity's default input chrome */
+.m3-textfield__input > .unity-text-field__input {
+    background-color: transparent;
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ============================================================ */
+/*  Bottom indicator (Filled only)                             */
+/* ============================================================ */
+
+.m3-textfield__indicator {
+    background-color: var(--m3-outline, rgb(121, 116, 126));
+    transition: height 100ms ease-in-out, background-color 100ms ease-in-out;
+}
+
+.m3-textfield--focused .m3-textfield__indicator {
+    background-color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+.m3-textfield--error .m3-textfield__indicator {
+    background-color: var(--m3-error, rgb(184, 38, 33));
+    height: 2px;
+}
+
+/* ============================================================ */
+/*  Helper / error text                                         */
+/* ============================================================ */
+
+.m3-textfield__helper {
+    font-size: 12px;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+.m3-textfield--error .m3-textfield__helper {
+    color: var(--m3-error, rgb(184, 38, 33));
+}
+
+/* ============================================================ */
+/*  Disabled                                                    */
+/* ============================================================ */
+
+.m3-textfield.m3-disabled {
+    opacity: 0.38;
+}

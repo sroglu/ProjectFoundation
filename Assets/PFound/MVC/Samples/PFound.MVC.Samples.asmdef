@@ -1,0 +1,16 @@
+{
+    "name": "PFound.MVC.Samples",
+    "rootNamespace": "PFound.MVC.Samples",
+    "references": [
+        "PFound.MVC"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

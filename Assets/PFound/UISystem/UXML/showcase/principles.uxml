@@ -1,0 +1,63 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="../../Styles/Components/showcase-v2.uss" />
+
+    <ui:VisualElement class="showcase-tab-panel showcase-tab-panel--active">
+
+        <!-- Header -->
+        <ui:Label class="m3-headline-medium" text="M3 Design Principles" />
+        <ui:Label class="m3-body-medium"
+            text="Material Design 3 (Material You) is built on four core principles that shape every component and interaction in UISystem."
+            style="margin-top: 8px; margin-bottom: 24px; white-space: normal;" />
+
+        <!-- Adaptive -->
+        <ui:VisualElement class="showcase-demo-card" style="margin-bottom: 16px;">
+            <ui:Label class="m3-title-large" text="Adaptive" style="margin-bottom: 8px;" />
+            <ui:Label class="m3-body-medium"
+                text="M3 components adapt to any screen size and density. UISystem uses dp-based sizing via USS, ensuring components scale correctly across resolutions without manual scaling code."
+                style="white-space: normal;" />
+            <ui:Label class="m3-label-medium"
+                text="UISystem: All sizes defined in USS using dp units. PanelSettings handles resolution scaling."
+                style="color: var(--m3-on-surface-variant); margin-top: 8px; white-space: normal;" />
+        </ui:VisualElement>
+
+        <!-- Personalized -->
+        <ui:VisualElement class="showcase-demo-card" style="margin-bottom: 16px;">
+            <ui:Label class="m3-title-large" text="Personalized" style="margin-bottom: 8px;" />
+            <ui:Label class="m3-body-medium"
+                text="Dynamic Color lets M3 generate harmonious color schemes from a user's wallpaper or a seed color. Every role in the 26-token color system derives from tonal palettes."
+                style="white-space: normal;" />
+            <ui:Label class="m3-label-medium"
+                text="UISystem: DynamicColorGenerator generates ThemeData assets from any seed color using HCT color math. Light + dark variants included."
+                style="color: var(--m3-on-surface-variant); margin-top: 8px; white-space: normal;" />
+        </ui:VisualElement>
+
+        <!-- Expressive -->
+        <ui:VisualElement class="showcase-demo-card" style="margin-bottom: 16px;">
+            <ui:Label class="m3-title-large" text="Expressive" style="margin-bottom: 8px;" />
+            <ui:Label class="m3-body-medium"
+                text="Shape, motion, and color express personality. M3 defines shape scale (Extra Small to Full), motion tokens, and typography hierarchy to create emotional resonance."
+                style="white-space: normal;" />
+            <ui:Label class="m3-label-medium"
+                text="UISystem: M3Surface renders custom corner radii via GPU SDF shader. Motion duration tokens in USS. Full 15-role typography scale."
+                style="color: var(--m3-on-surface-variant); margin-top: 8px; white-space: normal;" />
+        </ui:VisualElement>
+
+        <!-- Safety -->
+        <ui:VisualElement class="showcase-demo-card" style="margin-bottom: 16px;">
+            <ui:Label class="m3-title-large" text="Safety" style="margin-bottom: 8px;" />
+            <ui:Label class="m3-body-medium"
+                text="Accessible contrast ratios, clear affordances, and predictable interactions ensure M3 interfaces work for everyone, including users with visual or motor impairments."
+                style="white-space: normal;" />
+            <ui:Label class="m3-label-medium"
+                text="UISystem: Color pairs (e.g. Primary + OnPrimary) always meet WCAG 4.5:1 contrast. Disabled states reduce opacity to M3-spec 38%."
+                style="color: var(--m3-on-surface-variant); margin-top: 8px; white-space: normal;" />
+        </ui:VisualElement>
+
+        <!-- Spec link -->
+        <ui:Label class="showcase-spec-link m3-label-medium"
+            text="M3 Foundations: https://m3.material.io/foundations"
+            style="margin-top: 8px;" />
+
+    </ui:VisualElement>
+
+</ui:UXML>

@@ -1,0 +1,56 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="../../Styles/Components/showcase-v2.uss" />
+
+    <ui:VisualElement class="showcase-tab-panel showcase-tab-panel--active">
+
+        <ui:Label class="m3-headline-small" text="Button — Guidelines" style="margin-bottom: 16px;" />
+
+        <!-- Do -->
+        <ui:Label class="m3-title-medium" text="Do" style="color: #386A20; margin-bottom: 8px;" />
+
+        <ui:VisualElement class="showcase-guideline-item">
+            <ui:Label class="m3-icon showcase-guideline-icon" text="&#xe876;" style="color: #386A20;" />
+            <ui:Label class="showcase-guideline-text m3-body-medium"
+                text="Use Filled buttons for the single most important action on a screen." />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="showcase-guideline-item">
+            <ui:Label class="m3-icon showcase-guideline-icon" text="&#xe876;" style="color: #386A20;" />
+            <ui:Label class="showcase-guideline-text m3-body-medium"
+                text="Use Tonal buttons for secondary but still prominent actions." />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="showcase-guideline-item">
+            <ui:Label class="m3-icon showcase-guideline-icon" text="&#xe876;" style="color: #386A20;" />
+            <ui:Label class="showcase-guideline-text m3-body-medium"
+                text="Use Text buttons for less prominent, optional actions like Cancel." />
+        </ui:VisualElement>
+
+        <!-- Don't -->
+        <ui:Label class="m3-title-medium" text="Don't" style="color: #B3261E; margin-top: 16px; margin-bottom: 8px;" />
+
+        <ui:VisualElement class="showcase-guideline-item">
+            <ui:Label class="m3-icon showcase-guideline-icon" text="&#xe14c;" style="color: #B3261E;" />
+            <ui:Label class="showcase-guideline-text m3-body-medium"
+                text="Don't use multiple Filled buttons on the same screen — they compete for attention." />
+        </ui:VisualElement>
+
+        <ui:VisualElement class="showcase-guideline-item">
+            <ui:Label class="m3-icon showcase-guideline-icon" text="&#xe14c;" style="color: #B3261E;" />
+            <ui:Label class="showcase-guideline-text m3-body-medium"
+                text="Don't use Elevated buttons inside cards or dialogs — use Filled or Tonal instead." />
+        </ui:VisualElement>
+
+        <!-- Accessibility note -->
+        <ui:Label class="m3-title-medium" text="Accessibility" style="margin-top: 16px; margin-bottom: 8px;" />
+        <ui:Label class="m3-body-medium"
+            text="Ensure button labels are descriptive. Disabled state reduces opacity to 38% — still readable on most backgrounds. Minimum touch target: 48×48dp."
+            style="white-space: normal;" />
+
+        <ui:Label class="showcase-spec-link m3-label-medium"
+            text="M3 Spec: https://m3.material.io/components/buttons/guidelines"
+            style="margin-top: 16px;" />
+
+    </ui:VisualElement>
+
+</ui:UXML>

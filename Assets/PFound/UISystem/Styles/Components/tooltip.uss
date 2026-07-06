@@ -1,0 +1,35 @@
+/* =========================================================
+   M3 Tooltip — tooltip.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+.m3-tooltip {
+    background-color: var(--m3-inverse-surface);
+    border-radius: 4px;
+    max-width: 200px;
+}
+
+/* ── Plain variant ── */
+.m3-tooltip--plain {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+/* ── Rich variant ── */
+.m3-tooltip--rich {
+    padding: 12px;
+}
+
+/* Title (Rich only) */
+.m3-tooltip__title {
+    color: var(--m3-inverse-on-surface);
+    margin-bottom: 4px;
+}
+
+/* Body */
+.m3-tooltip__body {
+    color: var(--m3-inverse-on-surface);
+    white-space: normal;
+}

@@ -1,0 +1,59 @@
+/* ============================================================
+   PapercutShowcase.uss — grid layout for the Showcase scene.
+   ONLY layout / typography concerns; no palette overrides,
+   no surface treatment overrides. The three Papercut USS files
+   (palette / treatment / components) supply the visuals.
+   ============================================================ */
+
+.ps-root {
+    flex: 1;
+    flex-direction: column;
+    background-color: rgb(252, 220, 189);  /* cream sheet background matching uiRef.png */
+    padding: 32px 24px;
+}
+
+.ps-title {
+    color: rgb(140, 50, 40);
+    -unity-font-style: bold;
+    font-size: 32px;
+    margin-bottom: 24px;
+    -unity-text-align: middle-left;
+}
+
+.ps-header {
+    flex-direction: row;
+    margin-bottom: 16px;
+    margin-left: 200px;
+}
+
+.ps-col-label {
+    flex: 1;
+    color: rgb(82, 50, 65);
+    -unity-font-style: bold;
+    font-size: 16px;
+    -unity-text-align: middle-center;
+    letter-spacing: 2px;
+}
+
+.ps-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 14px;
+    min-height: 72px;
+}
+
+.ps-row-label {
+    width: 200px;
+    color: rgb(82, 50, 65);
+    -unity-font-style: bold;
+    font-size: 16px;
+    -unity-text-align: middle-left;
+    letter-spacing: 2px;
+}
+
+.ps-cell {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+}

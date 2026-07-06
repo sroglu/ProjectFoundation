@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Utilities.FileSystemTools.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.Utilities.FileSystemTools"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

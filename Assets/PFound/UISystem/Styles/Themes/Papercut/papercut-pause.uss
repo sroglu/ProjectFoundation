@@ -1,0 +1,41 @@
+/* Pause overlay layout (Papercut). Theme rules come from the three
+   shared Papercut USS files referenced first in Pause.uxml. */
+
+.pc-pause-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);  /* scrim */
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-pause-card {
+    width: 420px;
+    max-width: 90%;
+    padding: 40px 32px;
+    align-items: center;
+}
+
+.pc-pause-title {
+    color: rgb(140, 50, 40);
+    margin-bottom: 28px;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 32px;
+}
+
+.pc-pause-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+}
+
+.pc-pause-action-btn {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    min-height: 88px;
+    font-size: 24px;
+}

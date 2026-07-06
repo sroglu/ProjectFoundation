@@ -1,0 +1,63 @@
+/* ProfileSelect layout (Papercut). */
+
+.pc-profile-select-header {
+    align-items: center;
+    margin-top: 24px;
+    margin-bottom: 28px;
+}
+
+.pc-profile-select-title {
+    color: rgb(140, 50, 40);
+    -unity-font-style: bold;
+    font-size: 30px;
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+}
+
+.pc-profile-select-subtitle {
+    color: rgb(82, 50, 65);
+    font-size: 16px;
+    -unity-text-align: middle-center;
+}
+
+.pc-profile-select-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 12px;
+}
+
+.pc-profile-select-create-card {
+    width: 160px;
+    height: 200px;
+    margin: 12px;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.pc-profile-select-create-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.55);
+    border-width: 2px;
+    border-color: rgb(255, 255, 255);
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.pc-profile-select-create-plus {
+    color: rgb(255, 255, 255);
+    font-size: 44px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.pc-profile-select-name {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 18px;
+    -unity-text-align: middle-center;
+}

@@ -1,0 +1,262 @@
+/* Shared layout primitives for Papercut shell screens.
+   Used by Settings, PhotoAlbum, BadgeGallery, StickerBoard. */
+
+/* --- Top app bar (back button + title) --- */
+
+.pc-top-bar {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 16px;
+    min-height: 72px;
+}
+
+.pc-top-bar-back-btn {
+    width: 48px;
+    height: 48px;
+    /* Opt out of .pc-button 88×88 default — icon-only top-bar back
+       lives in a 72-px tall bar; full tap target rule yields a
+       broken layout. */
+    min-width: auto;
+    min-height: auto;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+}
+
+.pc-top-bar-back-btn > .pc-highlight {
+    width: 14px;
+    height: 14px;
+}
+
+.pc-top-bar-back-icon {
+    color: rgb(255, 255, 255);
+    font-size: 22px;
+    -unity-text-align: middle-center;
+}
+
+.pc-top-bar-title {
+    color: rgb(140, 50, 40);
+    -unity-font-style: bold;
+    font-size: 26px;
+}
+
+/* --- Section block (header + content) --- */
+
+.pc-shell-section {
+    margin: 12px 16px;
+}
+
+.pc-shell-section-header {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.pc-shell-section-icon {
+    color: var(--pc-primary-edge);
+    font-size: 22px;
+    margin-right: 8px;
+}
+
+.pc-shell-section-title {
+    color: rgb(140, 50, 40);
+    -unity-font-style: bold;
+    font-size: 20px;
+}
+
+/* --- Empty state --- */
+
+.pc-empty-state {
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+}
+
+.pc-empty-state-icon {
+    color: var(--pc-primary-edge);
+    font-size: 64px;
+    margin-bottom: 12px;
+}
+
+.pc-empty-state-title {
+    color: rgb(140, 50, 40);
+    -unity-font-style: bold;
+    font-size: 20px;
+    -unity-text-align: middle-center;
+    margin-bottom: 6px;
+}
+
+.pc-empty-state-subtitle {
+    color: rgb(82, 50, 65);
+    font-size: 14px;
+    -unity-text-align: middle-center;
+}
+
+/* --- Grid scroller (for badges/photos/stickers) --- */
+
+.pc-grid-scroll {
+    flex: 1;
+}
+
+.pc-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    padding: 12px;
+}
+
+/* --- Tab/Filter row (e.g. BadgeGallery filter tabs) --- */
+
+.pc-tabs {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 8px 16px;
+}
+
+.pc-tab {
+    margin: 4px 6px;
+    padding: 6px 16px;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* --- Item-template legacy class shims ---
+   The four item templates under UXML/Items/ are cloned dynamically by
+   shell presenters which call EnableInClassList on BEM modifier classes
+   (locked/earned, bronze/silver/gold tiers etc.). Rather than rewrite
+   the presenter code, the templates keep their original BEM class names
+   and we provide Papercut visual rules below.
+   ============================================================ */
+
+.profile-select__item {
+    width: 144px;
+    height: 184px;
+    margin: 10px;
+    padding: 12px;
+    background-color: var(--pc-primary);
+    border-color: var(--pc-primary-edge);
+    border-width: 2px;
+    border-bottom-width: 8px;
+    border-right-width: 8px;
+    border-radius: 14px;
+    align-items: center;
+    justify-content: center;
+}
+
+.profile-select__avatar {
+    width: 72px;
+    height: 72px;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.55);
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+}
+
+.profile-select__avatar-icon {
+    color: rgb(255, 255, 255);
+    font-size: 32px;
+    -unity-text-align: middle-center;
+}
+
+.profile-select__name {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    font-size: 18px;
+}
+
+.profile-select__age-band {
+    color: rgba(255, 255, 255, 0.85);
+    -unity-text-align: middle-center;
+    font-size: 12px;
+}
+
+/* Badge grid item */
+.badge-gallery__item {
+    width: 96px;
+    height: 132px;
+    margin: 8px;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px;
+}
+
+.badge-gallery__icon-container {
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+    background-color: var(--pc-toggle);
+    border-color: var(--pc-toggle-edge);
+    border-width: 2px;
+    border-bottom-width: 6px;
+    border-right-width: 6px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+.badge-gallery__icon-container--locked {
+    background-color: var(--pc-inactive-fill);
+    border-color: var(--pc-inactive-line);
+}
+
+.badge-gallery__icon {
+    color: rgb(255, 255, 255);
+    font-size: 28px;
+    -unity-text-align: middle-center;
+}
+
+.badge-gallery__icon--locked {
+    color: var(--pc-inactive-line);
+}
+
+.badge-gallery__name {
+    color: rgb(82, 50, 65);
+    -unity-font-style: bold;
+    font-size: 13px;
+    -unity-text-align: middle-center;
+}
+
+.badge-gallery__tier {
+    color: var(--pc-primary-edge);
+    font-size: 11px;
+    -unity-text-align: middle-center;
+}
+
+/* Photo grid item */
+.photo-album__thumbnail {
+    width: 120px;
+    height: 120px;
+    margin: 6px;
+    background-color: rgba(255, 255, 255, 0.55);
+    border-radius: 12px;
+    border-width: 2px;
+    border-color: var(--pc-primary-edge);
+    overflow: hidden;
+}
+
+.photo-album__thumbnail-image {
+    flex: 1;
+}
+
+/* Sticker grid item */
+.sticker-board__item {
+    width: 100px;
+    height: 100px;
+    margin: 6px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 10px;
+    border-width: 2px;
+    border-color: var(--pc-input-edge);
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.sticker-board__sticker-image {
+    flex: 1;
+}

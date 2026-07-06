@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.FileSystemTools",
+    "rootNamespace": "PFound.Utilities.FileSystemTools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

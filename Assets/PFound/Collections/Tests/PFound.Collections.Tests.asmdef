@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Collections.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.Collections"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

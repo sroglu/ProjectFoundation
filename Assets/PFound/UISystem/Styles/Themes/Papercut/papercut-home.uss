@@ -1,0 +1,206 @@
+/* ============================================================
+   papercut-home.uss — Home screen layout (Papercut-themed)
+
+   Layout-only rules for the Home screen. Component visual rules
+   (fills, outlines, edge bands, highlights) come from the three
+   shared Papercut USS files referenced first in Home.uxml.
+
+   Naming: `pc-home-*` for screen-scoped layout classes — distinct
+   from the generic `pc-*` component classes so a future Home
+   redesign can swap them out without touching the theme proper.
+   ============================================================ */
+
+.pc-home-root {
+    flex: 1;
+    flex-direction: column;
+    background-color: rgb(252, 220, 189);  /* cream sheet bg matching Showcase */
+    padding: 16px 16px;
+}
+
+/* --- Top bar: profile chip + settings button --- */
+
+.pc-home-top-bar {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* --- Games section --- */
+
+.pc-home-games-section {
+    flex: 1;
+}
+
+.pc-home-games-title {
+    color: rgb(140, 50, 40);
+    -unity-font-style: bold;
+    font-size: 28px;
+    margin: 8px 4px 12px 4px;
+}
+
+.pc-home-games-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+}
+
+/* A game tile composes `.pc-surface` + `.pc-card` + `.pc-emphasis--filled`
+   for the surface treatment and gets layout + tile-specific colours from
+   the modifier classes below. */
+.pc-home-tile {
+    width: 46%;
+    min-height: 160px;
+    margin: 6px 1%;
+    align-items: center;
+    justify-content: center;
+    padding: 18px 16px;
+}
+
+.pc-home-tile-icon {
+    font-size: 56px;
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    margin-bottom: 8px;
+}
+
+.pc-home-tile-label {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    font-size: 20px;
+}
+
+/* Per-game tile colours — override the Card's Surface palette with a
+   game-specific hue so each tile reads as its own product. */
+.pc-home-tile--tossy {
+    background-color: var(--pc-primary);          /* hot pink */
+    border-color: var(--pc-primary-edge);
+}
+
+.pc-home-tile--camping {
+    background-color: rgb(60, 175, 95);           /* candy green */
+    border-color: rgb(20, 100, 50);
+}
+
+.pc-home-tile--tinytales {
+    background-color: rgb(155, 100, 215);         /* candy purple */
+    border-color: rgb(75, 35, 130);
+}
+
+.pc-home-tile--sumobumo {
+    background-color: rgb(232, 130, 50);          /* candy orange */
+    border-color: rgb(150, 70, 10);
+}
+
+/* Locked tile — pressed pseudo also dimmed; pc-inactive class can be
+   added by presenter code if a tile needs to read as "off but pending". */
+.pc-home-tile--locked {
+    opacity: 0.55;
+}
+
+.pc-home-lock-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 9999px;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-home-lock-badge-icon {
+    color: rgb(255, 255, 255);
+    font-size: 16px;
+    -unity-text-align: middle-center;
+}
+
+/* --- Collection bar (bottom row of three pill buttons) --- */
+
+.pc-home-collections-bar {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 12px;
+}
+
+.pc-home-collection-btn {
+    flex: 1;
+    margin: 0 6px;
+    padding: 10px 12px;
+    align-items: center;
+}
+
+.pc-home-collection-top-row {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.pc-home-collection-icon {
+    color: rgb(255, 255, 255);
+    font-size: 22px;
+    margin-right: 6px;
+}
+
+.pc-home-collection-count {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 18px;
+}
+
+.pc-home-collection-label {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 14px;
+    -unity-text-align: middle-center;
+}
+
+/* --- Profile chip --- */
+
+.pc-home-profile-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.5);
+    align-items: center;
+    justify-content: center;
+    margin-right: 8px;
+}
+
+.pc-home-profile-avatar-icon {
+    color: rgb(255, 255, 255);
+    font-size: 18px;
+}
+
+.pc-home-profile-name {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 16px;
+}
+
+/* --- Settings button (icon-only square button) --- */
+
+.pc-home-settings-btn {
+    width: 56px;
+    height: 56px;
+    /* Icon-only top-right corner button — opts out of .pc-button
+       88×88 default for compact corner placement. */
+    min-width: auto;
+    min-height: auto;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-home-settings-btn > .pc-highlight {
+    width: 16px;
+    height: 16px;
+}
+
+.pc-home-settings-icon {
+    color: rgb(255, 255, 255);
+    font-size: 26px;
+    -unity-text-align: middle-center;
+}

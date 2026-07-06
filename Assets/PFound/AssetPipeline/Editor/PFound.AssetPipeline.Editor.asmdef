@@ -1,0 +1,21 @@
+{
+    "name": "PFound.AssetPipeline.Editor",
+    "rootNamespace": "PFound.AssetPipeline.Editor",
+    "references": [
+        "PFound.AssetPipeline.Core",
+        "PFound.ContentDelivery.Editor",
+        "PFound.ContentDelivery",
+        "PFound.ContentDelivery.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

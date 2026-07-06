@@ -1,0 +1,202 @@
+/*
+ * typography.uss — M3 Typography Scale USS Classes
+ * UISystem Foundation Layer (006-m3-uisystem-overhaul)
+ *
+ * Full 15-role M3 scale. Apply to any Label or text-bearing VisualElement:
+ *   <Label class="m3-display-large" text="Hero" />
+ *   <Label class="m3-title-medium"  text="Section" />
+ *
+ * NOTE: -unity-font references TTF files directly. The existing .asset files
+ * are TMPro.TMP_FontAsset which is incompatible with UI Toolkit's
+ * -unity-font-definition (requires UnityEngine.TextCore.Text.FontAsset).
+ * TODO: Regenerate font assets via Window > TextMeshPro > Font Asset Creator
+ *       in TextCore mode, then switch back to -unity-font-definition.
+ * Paths are relative to this file: Styles/typography.uss → ../Assets/Typography/Fonts/
+ *
+ * Font definitions follow M3 type scale (weight per separate TTF file):
+ *   Regular = Roboto-Regular.ttf
+ *   Medium  = Roboto-Medium.ttf
+ */
+
+/* ================================================================== */
+/*  Display                                                             */
+/* ================================================================== */
+
+.m3-display-large {
+    font-size: 57px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-display-medium {
+    font-size: 45px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-display-small {
+    font-size: 36px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ================================================================== */
+/*  Headline                                                            */
+/* ================================================================== */
+
+.m3-headline-large {
+    font-size: 32px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-headline-medium {
+    font-size: 28px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-headline-small {
+    font-size: 24px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ================================================================== */
+/*  Title                                                               */
+/* ================================================================== */
+
+.m3-title-large {
+    font-size: 22px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-title-medium {
+    font-size: 16px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Medium.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-title-small {
+    font-size: 14px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Medium.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ================================================================== */
+/*  Body                                                                */
+/* ================================================================== */
+
+.m3-body-large {
+    font-size: 16px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-body-medium {
+    font-size: 14px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-body-small {
+    font-size: 12px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Regular.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ================================================================== */
+/*  Label                                                               */
+/* ================================================================== */
+
+.m3-label-large {
+    font-size: 14px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Medium.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-label-medium {
+    font-size: 12px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Medium.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.m3-label-small {
+    font-size: 11px;
+    -unity-font: url("../Assets/Typography/Fonts/Roboto/Roboto-Medium.ttf");
+    -unity-font-style: normal;
+    white-space: normal;
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+/* ================================================================== */
+/*  Backward-Compatible Aliases                                         */
+/* ================================================================== */
+
+/* Spec 026: -unity-font URLs removed from the shortcut classes — they wrote into
+ * the legacy unityFont property while Unity 6.x text rendering reads from
+ * unityFontDefinition (set globally by ThemeManager.SyncToPanel). When both were
+ * set with mismatched references the renderer produced corrupted glyphs (the
+ * "/_  /_" pattern seen on button labels). The size + colour rules stay so the
+ * M3 type scale still applies; the font itself is inherited from the panel root. */
+.m3-display  { font-size: 57px; -unity-font-style: normal; white-space: normal; color: var(--m3-on-surface, rgb(28, 27, 31)); }
+.m3-headline { font-size: 32px; -unity-font-style: normal; white-space: normal; color: var(--m3-on-surface, rgb(28, 27, 31)); }
+.m3-title    { font-size: 22px; -unity-font-style: normal; white-space: normal; color: var(--m3-on-surface, rgb(28, 27, 31)); }
+.m3-body     { font-size: 16px; -unity-font-style: normal; white-space: normal; color: var(--m3-on-surface, rgb(28, 27, 31)); }
+.m3-label    { font-size: 14px; -unity-font-style: normal; white-space: normal; color: var(--m3-on-surface, rgb(28, 27, 31)); }
+.m3-caption  { font-size: 12px; -unity-font-style: normal; white-space: normal; color: var(--m3-on-surface, rgb(28, 27, 31)); }
+
+/* ================================================================== */
+/*  Icon Fonts                                                          */
+/* ================================================================== */
+
+/* Standard filled Material Symbols icon — 24px, centered */
+/* Usage: <Label class="m3-icon" text="\ue5ca" />  (check icon)        */
+/* Codepoints: Assets/Typography/Fonts/MaterialSymbols/codepoints       */
+.m3-icon {
+    -unity-font: url("../Assets/Typography/Fonts/MaterialSymbols/MaterialSymbols-Filled.ttf");
+    -unity-font-definition: initial;
+    font-size: 24px;
+    -unity-font-style: normal;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}
+
+/* Outlined (unfilled) variant of Material Symbols */
+.m3-icon-outlined {
+    -unity-font: url("../Assets/Typography/Fonts/MaterialSymbols/MaterialSymbols-Standard.ttf");
+    -unity-font-definition: initial;
+    font-size: 24px;
+    -unity-font-style: normal;
+    -unity-text-align: middle-center;
+    white-space: nowrap;
+}

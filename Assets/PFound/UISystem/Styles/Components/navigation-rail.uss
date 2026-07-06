@@ -1,0 +1,82 @@
+/* =========================================================
+   M3 Navigation Rail — navigation-rail.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+.m3-nav-rail {
+    width: 80px;
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--m3-surface-container-low);
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+/* FAB slot */
+.m3-nav-rail__fab-slot {
+    margin-bottom: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Items stack */
+.m3-nav-rail__items {
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+/* ── Individual item ── */
+.m3-nav-rail-item {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+/* Active indicator pill (behind icon) — background-color owned by C# via
+ * M3Surface.FillColorOverride (palette path); USS bg here would corrupt the
+ * SDF tint encoding (same gotcha as fab / chip / nav-bar). */
+.m3-nav-rail-item__indicator {
+    position: absolute;
+    width: 56px;
+    height: 32px;
+    border-radius: 16px;
+    align-self: center;
+}
+
+/* Icon */
+.m3-nav-rail-item__icon {
+    font-size: 24px;
+    color: var(--m3-on-surface-variant);
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    transition-property: color;
+    transition-duration: 150ms;
+    position: relative;
+}
+
+.m3-nav-rail-item--active .m3-nav-rail-item__icon {
+    color: var(--m3-on-secondary-container);
+}
+
+/* Label */
+.m3-nav-rail-item__label {
+    color: var(--m3-on-surface-variant);
+    font-size: 12px;
+    margin-top: 4px;
+    -unity-text-align: middle-center;
+    transition-property: color;
+    transition-duration: 150ms;
+}
+
+.m3-nav-rail-item--active .m3-nav-rail-item__label {
+    color: var(--m3-on-secondary-container);
+    -unity-font-style: bold;
+}

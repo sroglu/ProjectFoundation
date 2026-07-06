@@ -1,0 +1,50 @@
+/*
+ * toggle.uss — M3 Toggle (Switch) Component Styles
+ * WP-7: UISystem Toggle (007-uisystem-toggle)
+ *
+ * All colors via var(--m3-*) tokens. Dimensions set in C# (M3Toggle.cs).
+ * Track shape is set in C# via M3Surface.CornerRadius.
+ *
+ * M3 Switch spec:
+ *   Track: 52x32dp, pill shape (16dp corners)
+ *   Thumb: 16dp (off) -> 24dp (on) -> 28dp (pressed)
+ *   Animation: ~200ms ease-in-out on position + size
+ */
+
+/* ============================================================ */
+/*  Touch target wrapper                                        */
+/* ============================================================ */
+
+.m3-toggle {
+    /* 48dp minimum touch target per M3 */
+    min-width: 52px;
+    min-height: 48px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ============================================================ */
+/*  Track                                                       */
+/* ============================================================ */
+
+.m3-toggle__track {
+    width: 52px;
+    height: 32px;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path) — see chip.uss / fab.uss for the gotcha. */
+}
+
+/* ============================================================ */
+/*  Thumb (handle)                                              */
+/* ============================================================ */
+
+.m3-toggle__thumb {
+    position: absolute;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path). No USS transition — position/size animated via C# schedule. */
+}
+
+/* Checkmark icon inside thumb — display controlled via C# inline style */
+.m3-toggle--checked > .m3-toggle__thumb > .m3-icon {
+    color: var(--m3-primary, rgb(103, 80, 164));
+}

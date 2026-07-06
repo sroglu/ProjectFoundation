@@ -1,0 +1,14 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:PFound="PFound.UISystem.Components">
+    <ui:Style src="../Styles/Components/card.uss" />
+    <ui:Style src="../Styles/state-layer.uss" />
+    <PFound:M3Card variant="Elevated">
+        <ui:VisualElement class="m3-card__header">
+            <ui:Label text="Card Title" class="m3-card__headline m3-title" />
+            <ui:Label text="Subhead" class="m3-card__subhead m3-body" />
+        </ui:VisualElement>
+        <ui:VisualElement class="m3-card__content">
+            <ui:Label text="Supporting text goes here." class="m3-card__supporting-text m3-body" />
+        </ui:VisualElement>
+    </PFound:M3Card>
+</ui:UXML>

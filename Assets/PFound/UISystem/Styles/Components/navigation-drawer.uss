@@ -1,0 +1,119 @@
+/* =========================================================
+   M3 Navigation Drawer — navigation-drawer.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+/* ── Root wrapper (fills parent) ── */
+.m3-nav-drawer {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: none;
+}
+
+.m3-nav-drawer--open {
+    display: flex;
+}
+
+/* ── Scrim overlay (modal mode) ── */
+.m3-nav-drawer__scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--m3-scrim, rgba(0, 0, 0, 0.32));
+}
+
+/* ── Drawer surface ── */
+.m3-nav-drawer__drawer {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 360px;
+    background-color: var(--m3-surface-container-low);
+    flex-direction: column;
+    transition-property: translate;
+    transition-duration: 300ms;
+    transition-timing-function: ease-in-out;
+}
+
+/* Modal: drawer slides in from left */
+.m3-nav-drawer--modal .m3-nav-drawer__drawer {
+    translate: -360px 0;
+}
+
+.m3-nav-drawer--modal.m3-nav-drawer--open .m3-nav-drawer__drawer {
+    translate: 0 0;
+}
+
+/* Standard: always visible, no translate */
+.m3-nav-drawer--standard .m3-nav-drawer__drawer {
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* ── Header ── */
+.m3-nav-drawer__header {
+    padding: 16px;
+    padding-bottom: 8px;
+}
+
+/* ── Navigation list ── */
+.m3-nav-drawer__nav-list {
+    flex: 1;
+    flex-direction: column;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 8px;
+}
+
+/* ── Navigation item ── */
+.m3-nav-drawer-item {
+    flex-direction: row;
+    align-items: center;
+    height: 56px;
+    border-radius: 28px;
+    padding-left: 16px;
+    padding-right: 24px;
+    margin-bottom: 4px;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.m3-nav-drawer-item:hover {
+    background-color: rgba(28, 27, 31, 0.08);
+}
+
+.m3-nav-drawer-item--active {
+    background-color: var(--m3-secondary-container);
+}
+
+/* Default = inactive item style. Active class overrides below.
+   Flattened (no `:not()` chain) — Unity 6 USS parser rejects nested pseudo
+   selectors with class arguments ("Recursive pseudo classes"). */
+.m3-nav-drawer-item__icon {
+    font-size: 24px;
+    color: var(--m3-on-surface-variant);
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.m3-nav-drawer-item__label {
+    color: var(--m3-on-surface-variant);
+    flex: 1;
+}
+
+.m3-nav-drawer-item--active .m3-nav-drawer-item__icon {
+    color: var(--m3-on-secondary-container);
+}
+
+.m3-nav-drawer-item--active .m3-nav-drawer-item__label {
+    color: var(--m3-on-secondary-container);
+}

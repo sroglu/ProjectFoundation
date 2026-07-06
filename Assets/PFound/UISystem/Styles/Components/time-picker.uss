@@ -1,0 +1,57 @@
+/* =========================================================
+   M3 Time Picker — time-picker.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+.m3-time-picker {
+    /* Inherits M3Dialog styling for the surface */
+}
+
+.m3-time-picker__display {
+    -unity-text-align: middle-center;
+    color: var(--m3-on-surface);
+    margin-bottom: 12px;
+    font-size: 57px;
+}
+
+/* AM/PM toggle */
+.m3-time-picker__ampm {
+    flex-direction: row;
+    justify-content: center;
+    margin-bottom: 16px;
+    border-width: 1px;
+    border-color: var(--m3-outline);
+    border-radius: 4px;
+    width: 80px;
+    align-self: center;
+    overflow: hidden;
+}
+
+.m3-time-picker__ampm-btn {
+    flex: 1;
+    height: 40px;
+    -unity-text-align: middle-center;
+    color: var(--m3-on-surface-variant);
+    font-size: 14px;
+    -unity-font-style: bold;
+    transition-property: background-color, color;
+    transition-duration: 150ms;
+}
+
+.m3-time-picker__ampm-btn--active {
+    background-color: var(--m3-tertiary-container);
+    color: var(--m3-on-tertiary-container);
+}
+
+/* Clock face */
+.m3-time-picker__clock {
+    align-self: center;
+    margin-bottom: 8px;
+}
+
+/* Actions */
+.m3-time-picker__actions {
+    flex-direction: row;
+    justify-content: flex-end;
+    margin-top: 16px;
+}

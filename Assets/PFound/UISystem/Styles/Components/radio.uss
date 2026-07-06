@@ -1,0 +1,42 @@
+/*
+ * radio.uss — M3 Radio Button Component Styles
+ *
+ * M3 Radio Button spec:
+ *   Outer: 20×20dp circle (radius=10), 2dp border
+ *   Inner: 10×10dp filled circle when selected
+ *   Touch target: 48dp wrapper
+ */
+
+/* ============================================================ */
+/*  Touch target wrapper                                        */
+/* ============================================================ */
+
+.m3-radio {
+    min-height: 48px;
+    align-items: center;
+    overflow: visible;
+}
+
+/* ============================================================ */
+/*  Outer circle                                                */
+/* ============================================================ */
+
+.m3-radio__outer {
+    width: 20px;
+    height: 20px;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path) — see chip.uss / fab.uss for the gotcha. Keeping bg in USS would
+     * corrupt the SDF tint encoding. */
+}
+
+/* ============================================================ */
+/*  Inner circle (shown when selected)                         */
+/* ============================================================ */
+
+.m3-radio__inner {
+    width: 10px;
+    height: 10px;
+    /* background-color set in C#. Opacity transition kept — it doesn't fight
+     * the tint encoding because it only animates the alpha channel. */
+    transition: opacity var(--m3-motion-duration-float, 150ms) ease-in-out;
+}

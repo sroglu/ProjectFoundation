@@ -1,0 +1,21 @@
+{
+    "name": "PFound.GameDataStore.Storage",
+    "rootNamespace": "",
+    "references": [
+        "PFound.GameDataStore.Entries",
+        "PFound.Utilities.StringTools",
+        "PFound.Utilities.DataTypes",
+        "ZString",
+        "PFound.Utilities.Pooling",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
