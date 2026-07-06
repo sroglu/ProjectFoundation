@@ -45,6 +45,13 @@ namespace PFound.Utilities.EditorHelpers
 
             var asset = ScriptableObject.CreateInstance(registration.AssetType);
             AssetDatabase.CreateAsset(asset, registration.AssetPath);
+
+            // Populate the freshly created asset with its provider's defaults. Without this the
+            // asset is saved semantically empty (e.g. all-zero palette, no type styles) instead of
+            // the provider-supplied defaults.
+            registration.Factory?.Invoke(asset);
+            EditorUtility.SetDirty(asset);
+
             Debug.Log($"[PFound] Created missing GameSpecific asset: {registration.AssetPath}");
             return true;
         }

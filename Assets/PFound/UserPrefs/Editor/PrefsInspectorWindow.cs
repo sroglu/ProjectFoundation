@@ -73,7 +73,7 @@ namespace PFound.UserPrefs.Editor
             {
                 EditorGUILayout.HelpBox(
                     "UserPrefsSettings asset not yet created (check 'Assets/GameSpecific/UserPrefs/'). " +
-                    "GameSpecificAssetGuard creates it automatically every 5 seconds.",
+                    "GameSpecificAssetGuard creates it automatically on the next editor domain reload.",
                     MessageType.Warning);
             }
             else

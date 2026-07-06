@@ -6,7 +6,7 @@ namespace PFound.HubApp.Editor.Providers
 	/// <summary>
 	/// Declares GameSpecific assets that HubApp needs at the project level.
 	/// <see cref="GameSpecificAssetGuard"/> discovers this via reflection and auto-creates
-	/// missing assets every 5 seconds.
+	/// missing assets once per editor domain reload (one-shot InitializeOnLoad + delayCall).
 	/// </summary>
 	/// <remarks>
 	/// <b>AudioMixer</b> is NOT registered here — <c>AudioMixer</c> is not a
