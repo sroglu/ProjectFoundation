@@ -10,7 +10,9 @@
         "PFound.GameDataStore.Entries",
         "PFound.TweenPresetLibrary",
         "PFound.TweenPresetLibrary.Core",
-        "PFound.HubApp"
+        "PFound.HubApp",
+        "PFound.SampleGame",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"
