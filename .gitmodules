@@ -1,0 +1,3 @@
+[submodule "Assets/PFound/DependencyContainer"]
+	path = Assets/PFound/DependencyContainer
+	url = git@github.com:sroglu/DependencyContainer.git
