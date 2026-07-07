@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1bb33a2f6caf49f0bd8f3b063a5d3c6, type: 3}
+  m_Name: ScreenRouterConfig
+  m_EditorClassIdentifier: PFound.ScreenRouter::PFound.ScreenRouter.ScreenRouterConfig
+  _screens: []
+  _frames: []
+  _baseSortingOrder: 100
+  _sortingIncrement: 10
+  _poolIdleTimeoutSeconds: 30
+  _maxFrameQueue: 8
+  _useBackgroundBlur: 0
+  _backgroundBlurPrefab: {fileID: 0}
+  _blurBaseAlpha: 0.5
+  _blurPerFrameAlpha: 0.1
+  _blurMaxAlpha: 0.85
+  _blurFadeDuration: 0.15

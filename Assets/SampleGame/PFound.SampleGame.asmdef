@@ -1,0 +1,23 @@
+{
+    "name": "PFound.SampleGame",
+    "rootNamespace": "PFound.SampleGame",
+    "references": [
+        "PFound.DependencyContainer",
+        "PFound.StartupOrchestration",
+        "PFound.LoopScheduler",
+        "PFound.Signaling",
+        "PFound.EpochClock",
+        "PFound.ScreenRouter",
+        "PFound.UISystem",
+        "PFound.HubApp"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
