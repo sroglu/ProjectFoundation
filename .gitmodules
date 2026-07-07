@@ -31,3 +31,6 @@
 [submodule "Assets/PFound/Compression"]
 	path = Assets/PFound/Compression
 	url = git@github.com:sroglu/Compression.git
+[submodule "Assets/PFound/StartupOrchestration"]
+	path = Assets/PFound/StartupOrchestration
+	url = git@github.com:sroglu/StartupOrchestration.git
