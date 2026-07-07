@@ -25,3 +25,6 @@
 [submodule "Assets/PFound/HubApp"]
 	path = Assets/PFound/HubApp
 	url = git@github.com:sroglu/HubApp.git
+[submodule "Assets/PFound/KunaiDebugTool"]
+	path = Assets/PFound/KunaiDebugTool
+	url = git@github.com:sroglu/KunaiDebugTool.git
