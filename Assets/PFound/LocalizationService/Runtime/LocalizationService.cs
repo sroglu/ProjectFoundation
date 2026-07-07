@@ -63,11 +63,23 @@ namespace PFound.LocalizationService
 
         /// <summary>Raw (unformatted) text for <paramref name="key"/> from active or fallback language.</summary>
         public bool TryGetUnprocessed(LocalizationKey key, out string text)
+            => TryGetUnprocessed(key, out text, out _);
+
+        /// <summary>
+        /// Raw (unformatted) text for <paramref name="key"/>, also reporting whether the value came from
+        /// the fallback language rather than the active one.
+        /// </summary>
+        public bool TryGetUnprocessed(LocalizationKey key, out string text, out bool fromFallback)
         {
+            fromFallback = false;
             if (key.IsValid)
             {
                 if (_activeTable.TryGetValue(key.Value, out text)) return true;
-                if (!ReferenceEquals(_activeTable, _fallbackTable) && _fallbackTable.TryGetValue(key.Value, out text)) return true;
+                if (!ReferenceEquals(_activeTable, _fallbackTable) && _fallbackTable.TryGetValue(key.Value, out text))
+                {
+                    fromFallback = true;
+                    return true;
+                }
             }
             text = null;
             return false;

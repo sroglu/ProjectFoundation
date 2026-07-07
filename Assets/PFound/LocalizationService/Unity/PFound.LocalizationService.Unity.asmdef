@@ -1,0 +1,17 @@
+{
+    "name": "PFound.LocalizationService.Unity",
+    "rootNamespace": "PFound.LocalizationService.Unity",
+    "references": [
+        "PFound.LocalizationService",
+        "PFound.ContentDelivery.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

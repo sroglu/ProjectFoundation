@@ -53,6 +53,9 @@ internal static class LocalizationServiceTests
         try { loc.SwitchLanguage(new LanguageKey("de")); } catch (ArgumentException) { threw = true; }
         Check(threw, "SwitchLanguage throws for unsupported language");
 
+        // Extended v2 featureset coverage (shares this harness via the Check delegate).
+        LocalizationV2Tests.Run(Check);
+
         Console.WriteLine("--------------------------------------------------");
         Console.WriteLine($"PFound.LocalizationService: passed={s_passed} failed={s_failed}");
         return s_failed == 0 ? 0 : 1;

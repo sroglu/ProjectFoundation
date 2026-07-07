@@ -1,0 +1,19 @@
+{
+    "name": "PFound.LocalizationService.Editor",
+    "rootNamespace": "PFound.LocalizationService.EditorTools",
+    "references": [
+        "PFound.LocalizationService",
+        "PFound.ContentDelivery.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
