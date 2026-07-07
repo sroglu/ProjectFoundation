@@ -7,3 +7,6 @@
 [submodule "Assets/PFound/LoopScheduler"]
 	path = Assets/PFound/LoopScheduler
 	url = git@github.com:sroglu/LoopScheduler.git
+[submodule "Assets/PFound/LocalizationService"]
+	path = Assets/PFound/LocalizationService
+	url = git@github.com:sroglu/LocalizationService.git
