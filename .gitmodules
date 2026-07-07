@@ -13,3 +13,6 @@
 [submodule "Assets/PFound/InputRouter"]
 	path = Assets/PFound/InputRouter
 	url = git@github.com:sroglu/InputRouter.git
+[submodule "Assets/PFound/ContentDelivery"]
+	path = Assets/PFound/ContentDelivery
+	url = git@github.com:sroglu/ContentDelivery.git
