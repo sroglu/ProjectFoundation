@@ -4,3 +4,6 @@
 [submodule "Assets/PFound/ScreenRouter"]
 	path = Assets/PFound/ScreenRouter
 	url = git@github.com:sroglu/ScreenRouter.git
+[submodule "Assets/PFound/LoopScheduler"]
+	path = Assets/PFound/LoopScheduler
+	url = git@github.com:sroglu/LoopScheduler.git
