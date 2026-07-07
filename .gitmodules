@@ -22,3 +22,6 @@
 [submodule "Assets/PFound/Utilities"]
 	path = Assets/PFound/Utilities
 	url = git@github.com:sroglu/Utilities.git
+[submodule "Assets/PFound/HubApp"]
+	path = Assets/PFound/HubApp
+	url = git@github.com:sroglu/HubApp.git
