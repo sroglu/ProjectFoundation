@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace PFound.TweenPresetLibrary
 {
@@ -11,8 +12,11 @@ namespace PFound.TweenPresetLibrary
     [CreateAssetMenu(menuName = "PFound/Tween Preset Library/Tween Preset", fileName = "TweenPreset")]
     public sealed class TweenPreset : ScriptableObject, ISerializationCallbackReceiver
     {
+        [FormerlySerializedAs("FadeAnimation")]
         public FadeChannel Fade = new FadeChannel();
+        [FormerlySerializedAs("ScaleAnimation")]
         public ScaleChannel Scale = new ScaleChannel();
+        [FormerlySerializedAs("MoveAnimation")]
         public MoveChannel Move = new MoveChannel();
         public RotateChannel Rotate = new RotateChannel();
 
