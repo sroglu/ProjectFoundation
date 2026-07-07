@@ -1,120 +1,209 @@
 # MVC
 
 ## Purpose
-Lightweight Model-View-Controller framework for Unity. A `ControllerBase` holds a `Model` and a `ViewBase`, can be **page** type (one screen-level singleton) or **instance** type (per-object), and broadcasts named actions to peer controllers via `Redirect`. `ViewManager` tracks registered page views and instantiates instance views from prefabs.
+A lightweight Model-View-Controller framework for Unity. A `Controller<V, M>` owns a typed `Model`
+and a `ViewBase`; it is either **page** type (one screen-level view drawn from a pre-registered
+roster) or **instance** type (a view instantiated per object). Controllers route to each other
+through a scoped `MvcContext` with type-safe `Redirect`/`Broadcast`. The assembly is
+**input-source-agnostic** — it references no input package; pointer enter/exit rides Unity's
+`EventSystem`, and games wire their own input layer to controllers (see *Game-specific input*).
 
-Designed to be **input-source-agnostic**: the assembly does not reference `Unity.InputSystem` or any specific input package. Pointer enter/exit detection uses Unity's `EventSystem` (`IPointerEnterHandler`/`IPointerExitHandler`); games wire their own input layer to controllers (see *Game-specific input* below).
+## Assemblies
 
-## Assembly
+| Assembly | Path | Platforms | `autoReferenced` | Depends on |
+|---|---|---|---|---|
+| `PFound.MVC` | `PFound.MVC.asmdef` | all | `true` | (none) — Unity built-in only |
+| `PFound.MVC.Tests` | `Tests/PFound.MVC.Tests.asmdef` | Editor | `false` | `PFound.MVC`, TestRunner, `nunit` |
+| `PFound.MVC.Samples` | `Samples/PFound.MVC.Samples.asmdef` | all | `false` | `PFound.MVC` |
 
-| Assembly | Path | Depends On |
-|---|---|---|
-| `PFound.MVC` | `PFound.MVC.asmdef` | (none) — Unity built-in only |
+## Dependencies
+- **PFound modules:** none.
+- **Third-party packages:** none. The runtime asmdef has an empty `references` list and pulls
+  only Unity built-ins (`UnityEngine`, `UnityEngine.UI`/`EventSystems`, `UnityEngine.Events`).
+- **Scripting defines:** none.
 
-## Key Classes
+## Key Types
 
-- **`MvcContext`** — Scoped container for controller routing, model registry, and event dispatch. Replaces global static state. Each game section creates its own context; disposing cleans up all references.
-- **`IEventHandler<TEvent>`** — Generic typed event handler interface for type-safe broadcasts.
-- **`ControllerBase`** — Abstract base controller. Takes `MvcContext` at construction; registers/unregisters automatically. Legacy string-based `Redirect()` is marked `[Obsolete]` — use `Context.Redirect<T>` or `Context.Broadcast<T>`.
-- **`Controller<V, M>`** — Typed controller; `View` (V) and `Model` (M) auto-resolved (page view from `ViewManager`'s pre-registered list, or new instance view from prefab list).
-- **`ControllerType`** — `Page` (uses pre-designed page view, hidden by default) or `Instance` (instantiated at runtime).
-- **`IController`** / **`IModel`** — Interfaces.
-- **`ViewBase`** — Abstract `MonoBehaviour` view; exposes `Show`/`Hide`, `IsPointerOn`, `OnCreate`/`OnRemove`/`OnStateChanged` hooks.
-- **`View<M>`** — Generic typed view bound to a model.
-- **`ModelBase`** / **`Model<T>`** — Auto-registered models with cloneable description data; supports single + array models. Takes optional `MvcContext` for scoped registry.
-- **`ViewManager`** — Singleton MonoBehaviour managing the page view roster and the instance prefab list. Tracks page-view history (`ShowPageView` / `ShowLastPageView`).
-- **`EmptyModel`**, **`EmptyView`**, **`EmptyData`** — No-op implementations for controllers that don't need all three pieces.
+**Routing / core (`PFound.MVC.core`):**
+- **`MvcContext`** — a plain, per-scope container (`IDisposable`) for controller routing, the model
+  registry, and event dispatch. Each game section (scene, screen, panel) news up its own; disposing
+  clears every controller and model it holds. Replaces global static state.
+- **`IEventHandler<in TEvent>`** — implement on a controller to receive a strongly-typed event, no
+  string routing or `EventArgs` casting.
+- **`IController`** / **`IModel`** / **`IView`** — the base contracts (all `IDisposable` except `IView`).
+- **`ControllerBase`** — abstract base; takes `MvcContext` + `ControllerType`, registers itself on
+  construction and unregisters on `Dispose`. Carries the `[Obsolete]` string-based `Redirect(...)`.
+- **`Controller<V, M>`** (`V : ViewBase`, `M : IModel`) — typed controller; `View` and `Model`
+  resolve automatically (page view from `ViewManager`'s roster, or a new instance view from prefab).
+- **`ControllerType`** — `Page` (screen-level view, hidden on create) or `Instance` (per-object).
+- **`ModelBase`** / **`Model<T>`** (`T : ICloneable`) — auto-registered models holding cloneable
+  description data + live current data; single or array (`SubModels`) shapes.
+- **`ModelType`** — `Single` or `Array` (the model's internal shape).
+- **`ViewBase`** — abstract `MonoBehaviour` view (`[RequireComponent(typeof(RectTransform))]`);
+  exposes `Show`/`Hide`/`State`/`IsOpen`/`IsPointerOn` and the `StateChanged` event, with
+  `OnCreate`/`OnRemove`/`OnStateChanged` template hooks.
+- **`View<M>`** (`M : ModelBase`) — generic view bound to a typed model; `UpdateView()` abstract,
+  `OnInit()` hook.
 
-## Quick Start
+**View management (`PFound.MVC`):**
+- **`ViewManager`** — scene-scoped singleton `MonoBehaviour`; owns the page-view roster + instance
+  prefab list and a back-stack of previously shown page views.
+
+**Empty pieces (global namespace):**
+- **`EmptyModel`** / **`EmptyView`** / **`EmptyData`** — no-op implementations for controllers that
+  do not need all three pieces.
+
+## Public API
+
+**Routing — `MvcContext` (`PFound.MVC.core`):**
+- `void Redirect<TController>(Action<TController> action)` — invoke the action on the first matching
+  controller in this context.
+- `void Broadcast<TEvent>(TEvent evt)` — deliver to every `IEventHandler<TEvent>` in the context.
+- `TModel GetModel<TModel>()` where `TModel : class, IModel` — first registered model of that type.
+- `IModel GetModelById(uint instanceId)`.
+- `void Dispose()` — clears all controllers + models; further calls throw `ObjectDisposedException`.
+- `void IEventHandler<in TEvent>.Handle(TEvent evt)` — implemented by handler controllers.
+
+**Controllers (`PFound.MVC.core`):**
+- `ControllerBase(MvcContext context, ControllerType controllerType)` — base ctor; auto-registers.
+- `Controller<V, M>(MvcContext context, ControllerType controllerType, M model, V view = null)` —
+  typed; `View`/`Model` resolved automatically when `view` is omitted. Overridable
+  `OnCreate()`/`OnDestroy()`; sealed `Dispose()` tears down model + view + registration; sealed
+  `GetModel()` / `GetView()`.
+- `[Obsolete]` legacy ctors `ControllerBase(ControllerType)` / `Controller<V,M>(ControllerType, M, V)`
+  route through a default shared context (back-compat only).
+
+**Models (`PFound.MVC.core`):**
+- `Model<T>(MvcContext context, T data)` and `Model<T>(MvcContext context, T[] dataArr)`.
+- `void Update(T data)` / `void Update(T[] data)`, `void UpdateCurrentData()`,
+  `void UpdateDescriptionData()`.
+- `T CurrentData`, `T[] CurrentDataArr`, `Model<T>[] SubModels`, `uint InstanceId(int subModelIndex = 0)`.
+
+**Views (`PFound.MVC.core`):**
+- `View<M>` — `abstract void UpdateView()`, `void OnInit()` (hook), `bool IsInitiated`.
+- `ViewBase` — `void Show()`, `void Hide()`, `ViewState State`, `bool IsOpen`, `bool IsPointerOn`,
+  `RectTransform rectTransform`, `void DestroyInstance()`, `UnityAction<ViewState> StateChanged`.
+
+**`ViewManager` (`PFound.MVC`):**
+- `static ViewManager Instance` (assigned in `Awake`).
+- `static T GetPageView<T>()` where `T : ViewBase`.
+- `static void ShowPageView<T>(bool remember = true)` where `T : ViewBase`.
+- `static void ShowPageView(ViewBase view, bool remember = true)`.
+- `static void ShowLastPageView()` — pops and shows the last remembered page view.
+- `T CreateInstanceView<T>()` where `T : ViewBase` (instance method — instantiates from the prefab list).
+
+## Setup / wiring
+
+Two moving parts: a **plain `MvcContext`** you own in code, and a **`ViewManager` MonoBehaviour**
+you place in the scene. There is **no DI registration and no auto-created host** — you `new` the
+context and controllers, and you place the `ViewManager` by hand.
+
+1. **Place one `ViewManager` per scene.** It is a singleton — `Instance` is assigned in `Awake` and
+   is **scene-scoped (no `DontDestroyOnLoad`)**; a second `ViewManager` destroys itself. Its static
+   methods (`GetPageView`/`ShowPageView`) require `Instance` to be live, so a page-type
+   `Controller<V, M>` **must be constructed after** the `ViewManager` exists (or you pass an explicit
+   `view`). If any UI must survive scene loads, that is your decision — mark the `ViewManager`'s
+   GameObject `DontDestroyOnLoad` yourself; nothing here does it for you.
+2. **Populate its two serialized arrays in the inspector:** `pageViews[]` (the pre-designed,
+   screen-level view roots — one per page type) and `instancePrefabs[]` (view prefabs instantiated
+   for `Instance` controllers). Resolution is by type, so each entry's concrete `ViewBase` type must
+   be unique within its list.
+3. **Add an `EventSystem` to the scene.** `ViewBase` pointer enter/exit (`IsPointerOn`) rides Unity's
+   `EventSystem` (`IPointerEnterHandler`/`IPointerExitHandler`). No `EventSystem`, no hover.
+4. **Add a Layer named `View`.** `ViewBase.Awake` sets
+   `gameObject.layer = LayerMask.NameToLayer("View")`; if that layer is not defined in *Tags and
+   Layers*, the lookup returns `-1` and the assignment fails. Define it once per project.
+5. **Own an `MvcContext` per scope.** `new MvcContext()`, construct your controllers/models against
+   it, and `Dispose()` it when the scope ends to release every registered controller and model.
 
 ```csharp
-using PFound.MVC;
-using PFound.MVC.core;
+var ctx  = new MvcContext();
+var data = new CounterData { Label = "Coins", Value = 0 };
+var ctrl = new CounterPageController(ctx, new CounterModel(ctx, data));
 
-public readonly struct ItemSelectedEvent { public readonly int ItemId; public ItemSelectedEvent(int id) => ItemId = id; }
+ViewManager.ShowPageView<CounterView>();   // ViewManager.Instance must already be in the scene
 
-public class InventoryModel : Model<InventoryData> { public InventoryModel(MvcContext ctx, InventoryData d) : base(ctx, d) { } }
-
-public class InventoryView : View<InventoryModel>
-{
-    public override void UpdateView() { /* refresh UI */ }
-}
-
-public class InventoryController : Controller<InventoryView, InventoryModel>, IEventHandler<ItemSelectedEvent>
-{
-    public InventoryController(MvcContext context, InventoryModel model)
-        : base(context, ControllerType.Page, model) { }
-
-    public void OnItemClicked(int id) => Context.Broadcast(new ItemSelectedEvent(id));
-
-    public void Handle(ItemSelectedEvent evt) { View.UpdateView(); }
-}
+// scope teardown:
+ctx.Dispose();
 ```
-
-In your scene, drop a `ViewManager` MonoBehaviour, populate its `pageViews[]` (pre-designed page roots) and `instancePrefabs[]` (instantiable view prefabs). Call `ViewManager.ShowPageView<InventoryView>()` to switch screens.
-
-## Game-specific input
-
-The MVC assembly intentionally has **no input dependency**. To wire input:
-
-- **Pointer hover/enter/exit** — already handled by `EventSystem` (`IsPointerOn` is set by `IPointerEnterHandler`/`IPointerExitHandler` callbacks on `ViewBase`). No setup required beyond an `EventSystem` in the scene.
-- **Custom actions** (click, hold, swipe, etc.) — add an input handler in your game project (e.g. `Assets/GameSpecific/Input/`) that:
-  1. Owns the InputSystem `.inputactions` asset and generated `Inputs.cs`
-  2. On callback, calls into your controller's public method (e.g. `inventoryController.OnHoldGesture()`)
-- This separation lets you swap input backends (InputSystem, Touch, Gamepad-only, mock for tests) without touching MVC.
-
-A previous version of this module embedded an `Inputs.inputactions` asset and a static `ViewBase.ActionPerformed` event coupled to `InputAction.CallbackContext` — those have been removed. Game projects that previously relied on them should keep their own `Inputs.inputactions` under `Assets/GameSpecific/Input/`.
 
 ## File Structure
 ```
 (submodule root)
 PFound.MVC.asmdef
-MODULE.md
-ViewManager.cs
+README.md              (thin landing page)
+MODULE.md              (this file — canonical reference)
+ViewManager.cs         (page-view roster + instance-prefab instantiation + back-stack)
 Core/
   Controller.cs        (ControllerBase, Controller<V,M>, ControllerType, IController)
-  Model.cs             (IModel, ModelBase, Model<T>)
+  Model.cs             (IModel, ModelType, ModelBase, Model<T>)
   View.cs              (IView, ViewBase, View<M>)
+  MvcContext.cs        (MvcContext scoped container)
+  IEventHandler.cs     (IEventHandler<TEvent>)
 EmptyComponent/
-  EmptyData.cs
-  EmptyModel.cs
-  EmptyView.cs
-Tests/                 (EditMode unit tests — PFound.MVC.Tests)
-Samples/               (Counter sample, autoReferenced=false — see Samples/MODULE.md)
+  EmptyData.cs         (EmptyData)
+  EmptyModel.cs        (EmptyModel)
+  EmptyView.cs         (EmptyView)
+Tests/                 (EditMode unit tests — PFound.MVC.Tests, autoReferenced=false)
+Samples/               (Counter page/instance example — PFound.MVC.Samples, autoReferenced=false;
+                        see Samples/MODULE.md)
 ```
+
+## Downstream Dependents
+No assemblies in this project depend on MVC — it is consumed by separate game projects (e.g.
+`StrategyGame`, `TileMatch`) that copy the source locally today; future work is to switch them to
+this submodule reference.
+
+## Limitations / Known Gaps
+- Legacy `Redirect(string)` and the static model dictionary still work within scoped contexts for
+  backward compatibility but are marked `[Obsolete]`. Use `Context.Redirect<T>()` /
+  `Context.Broadcast<T>()` and the scoped registry for type-safe routing.
+- `ViewManager` remains a global scene-scoped `MonoBehaviour` singleton — it is a view factory, not a
+  routing component, so context-scoping is intentionally not applied to it.
+- Page/instance-view resolution is **by type**, so a given concrete `ViewBase` type may appear only
+  once in `pageViews[]` / `instancePrefabs[]`.
+
+## Game-specific input
+
+MVC has **no input dependency by design** — the assembly references no input package.
+
+- **Pointer hover/enter/exit** is already handled for you: `IsPointerOn` is set from `ViewBase`'s
+  `IPointerEnterHandler`/`IPointerExitHandler` callbacks, which ride Unity's `EventSystem`. No setup
+  beyond an `EventSystem` in the scene.
+- **Custom actions** (click, hold, swipe, etc.) — add an input layer in your game project (e.g.
+  `Assets/GameSpecific/Input/`) that:
+  1. owns the input asset (and any generated bindings), and
+  2. on callback, calls into your controller's public method (e.g. `inventoryController.OnHoldGesture()`).
+
+This separation lets you swap input backends (Input System, legacy Input Manager, touch, gamepad, or
+a test mock) without touching MVC. An earlier revision embedded an input-actions asset and a static
+`ViewBase` event coupled to an input-callback type; those were removed. Game projects that relied on
+them should keep their own input asset under `Assets/GameSpecific/Input/`.
 
 ## Migration: Static → Scoped MvcContext
 
 **Old pattern** (still compiles, marked `[Obsolete]`):
 ```csharp
 var model = new MyModel(data);
-var ctrl = new MyController(ControllerType.Page, model);
-ctrl.Redirect("ActionName"); // global broadcast
+var ctrl  = new MyController(ControllerType.Page, model);
+ctrl.Redirect("ActionName"); // global, string-based broadcast
 ```
 
 **New pattern** (recommended):
 ```csharp
 var context = new MvcContext();
-var model = new MyModel(context, data);
-var ctrl = new MyController(context, ControllerType.Page, model);
+var model   = new MyModel(context, data);
+var ctrl    = new MyController(context, ControllerType.Page, model);
 
-// Type-safe redirect to specific controller
+// Type-safe redirect to a specific controller
 context.Redirect<OtherController>(c => c.DoSomething());
 
 // Type-safe broadcast to all IEventHandler<T> implementors
 context.Broadcast(new ScoreChangedEvent { NewScore = 100 });
 
-// Cleanup — disposes all references
+// Cleanup — disposes all controllers + models
 context.Dispose();
 ```
 
-Existing game projects (StrategyGame, TileMatch) using the legacy constructors continue to work without changes. The `[Obsolete]` warnings will guide migration.
-
-## Known Limitations / Future Work
-
-- Legacy `Redirect(string)` still works within scoped contexts for backward compatibility but is marked `[Obsolete]`. Use `Context.Redirect<T>()` or `Context.Broadcast<T>()` for type-safe routing. Samples demonstrate the type-safe pattern.
-- `ViewManager` remains a global MonoBehaviour singleton — it is a view factory, not a routing component, so context-scoping is not needed.
-
-## Downstream Dependents
-
-No assemblies in this project depend on MVC — it is consumed by separate game projects (e.g. `StrategyGame`, `TileMatch`) that copy the source locally today; future work is to switch them to this submodule reference.
+Existing game projects (`StrategyGame`, `TileMatch`) using the legacy constructors continue to work
+without changes; the `[Obsolete]` warnings guide migration.

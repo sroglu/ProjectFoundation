@@ -1,15 +1,19 @@
-# NetworkLayer Module
+# NetworkLayer
 
-## Overview
+## Purpose
 Transport-agnostic request/reply/notify messaging layer for Unity clients and dedicated servers.
 Typed messages are bound to opcodes in a shared catalog, packed into length-prefixed frames, and
 carried over a pluggable link (in-process loopback for tests, Telepathy TCP in production). The
 messaging core only ever sees opaque byte frames — it knows nothing about sockets. All delivery is
 single-threaded and pump-driven via a per-frame `Update()`.
 
-**Assembly:** `PFound.NetworkLayer`
-**Layer:** Foundation (no deps on other PFound.* assemblies)
-**Namespace:** `PFound.NetworkLayer` (Telepathy vendor code under `PFound.NetworkLayer.Telepathy`)
+## Assemblies
+| Assembly | Location | Notes |
+|---|---|---|
+| `PFound.NetworkLayer` | `Runtime/` | Foundation layer — no deps on other `PFound.*` assemblies. |
+| `PFound.NetworkLayer.Tests.EditAndPlayModes` | `Tests/EditAndPlayModes/` | Edit + play mode tests. |
+
+Namespace: `PFound.NetworkLayer` (vendored Telepathy code lives under `PFound.NetworkLayer.Telepathy`).
 
 ## Dependencies
 - MessagePack-CSharp (precompiled `MessagePack.dll` / `MessagePack.Annotations.dll`, vendored in `Runtime/Plugins/`)
@@ -68,13 +72,28 @@ HTTP transport for the ContentDelivery / RemoteResourceCache modules, not for Ne
 Game projects extend `RequestMessage` / `ReplyMessage` / `NotifyMessage` with their own message
 types and enroll them (per type) in the shared `MessageCatalog`.
 
-## Conditional Compilation
-- `#if BACKEND` — Server-only code (`ServerPeer`, `TelepathyServerLink`, server metrics/diagnostics).
-  A client build must NOT define it, so server internals never ship to players.
-- `#if UNITY` — Unity-side logging in `NetLog` (and a `!UNITY` fallback).
-- `#if DEBUGABLES` — Extra diagnostic hooks.
+## Public API
 
-## Usage
+**Client (`ClientPeer`):** `Connect(host, port)` / `ConnectAsync(host, port, timeoutMs)` /
+`Reconnect()` / `ReconnectAsync(timeoutMs)` / `Disconnect()`; `Task<TReply> CallAsync<TReply>(RequestMessage, deadlineMs)`;
+`Post(NotifyMessage)`; `OnNotify<T>(Action<T>)`; `Update(budget)` (call once per frame);
+`IsConnected`, `OutstandingCallCount`, `RemoteHost`/`RemotePort`, `Connected`/`Disconnected` events.
+
+**Server (`ServerPeer`, `#if BACKEND`):** `Listen(port)` / `Halt()` / `Kick(peer)`;
+`Handle<TReq,TReply>(Func<int,TReq,TReply>)` (synchronous reply); `HandleDeferred<TReq>(Action<RequestExchange<TReq>>)`
++ `FulfillDeferred(exchange, reply)` (answer later); `OnNotify<T>(Action<int,T>)`;
+`SendTo(peer, notify)` / `Broadcast(notify)` / `SendToMany(peers, notify)`; `Update(budget)`;
+`IsListening`, `Peers`, `Metrics`, `Diagnostics`, `PeerConnected`/`PeerDisconnected` events.
+
+**Catalog (`MessageCatalog`):** `Enroll<T>(opcode)` (explicit) or `HarvestContracts(assembly)`
+(reads `[MessageContract(opcode)]`); `Take<T>()` / `Recycle(msg)` (pooling);
+`OpcodeFor(type)` / `TypeFor(opcode)`.
+
+## Setup / wiring
+
+Pure library — everything is `new X()`; there is no MonoBehaviour, scene object, or singleton. The
+consumer owns the peer and calls `Update()` every frame from its host loop. Both ends need the same
+catalog registration (same opcode→type mapping) for frames to decode.
 
 ```csharp
 // --- shared: one catalog, one codec, same on both ends ---
@@ -98,26 +117,45 @@ client.Post(new ChatNotify { Text = "hi" });
 void Update() => client.Update();
 ```
 
-Pure library — everything is `new X()`; there is no MonoBehaviour, scene object, or singleton. The
-consumer owns the peer and calls `Update()` every frame from its host loop. Both ends need the same
-catalog registration (same opcode→type mapping) for frames to decode.
+## File Structure
+```
+NetworkLayer/
+  Runtime/                       # assembly PFound.NetworkLayer
+    Messaging/                   # Message hierarchy, MessageCatalog, MessageContractAttribute, IBodyCodec
+    Endpoints/                   # ClientPeer, ServerPeer (#if BACKEND), RequestExchange<T>, EarlyArrivalBuffer
+    Transports/                  # IClientLink/IServerLink, Telepathy links, Loopback links + hub, LatencyShapedLink
+    Serialization/               # MessagePackBodyCodec (prod), ReflectionBodyCodec (test)
+    Config/                      # ClientLinkOptions / ServerLinkOptions
+    Core/                        # FrameCodec, IClock/MonotonicClock, wire enums, PROXY-protocol parsing
+    Diagnostics/                 # NetLog, ServerMetrics, ServerDiagnostics (server-only)
+    Telepathy/                   # vendored MIT TCP library (sockets/threads/framing)
+    Plugins/                     # vendored MessagePack-CSharp
+  Tests/EditAndPlayModes/        # assembly PFound.NetworkLayer.Tests.EditAndPlayModes
+  MODULE.md / README.md / THIRD-PARTY-NOTICES.md
+```
 
-## Public API
+## Downstream Dependents
+None within PFound — no other `PFound.*` module references NetworkLayer. Game projects are the
+consumers; they own the peer, define message types, and drive `Update()`.
 
-**Client (`ClientPeer`):** `Connect(host, port)` / `ConnectAsync(host, port, timeoutMs)` /
-`Reconnect()` / `ReconnectAsync(timeoutMs)` / `Disconnect()`; `Task<TReply> CallAsync<TReply>(RequestMessage, deadlineMs)`;
-`Post(NotifyMessage)`; `OnNotify<T>(Action<T>)`; `Update(budget)` (call once per frame);
-`IsConnected`, `OutstandingCallCount`, `RemoteHost`/`RemotePort`, `Connected`/`Disconnected` events.
+## Limitations / Known Gaps
+- Single-threaded, pump-driven: no delivery happens without a per-frame `Update()` call; a stalled
+  host loop stalls the peer.
+- Both ends must share an identical opcode→type catalog; a mismatch fails to decode frames.
+- The standalone mono/csc test build cannot use `MessagePackBodyCodec` (facade deps) and falls back
+  to `ReflectionBodyCodec`; only Unity/full-runtime builds exercise the production codec.
 
-**Server (`ServerPeer`, `#if BACKEND`):** `Listen(port)` / `Halt()` / `Kick(peer)`;
-`Handle<TReq,TReply>(Func<int,TReq,TReply>)` (synchronous reply); `HandleDeferred<TReq>(Action<RequestExchange<TReq>>)`
-+ `FulfillDeferred(exchange, reply)` (answer later); `OnNotify<T>(Action<int,T>)`;
-`SendTo(peer, notify)` / `Broadcast(notify)` / `SendToMany(peers, notify)`; `Update(budget)`;
-`IsListening`, `Peers`, `Metrics`, `Diagnostics`, `PeerConnected`/`PeerDisconnected` events.
+## Conditional Compilation
+- `#if BACKEND` — Server-only code (`ServerPeer`, `TelepathyServerLink`, server metrics/diagnostics).
+  A client build must NOT define it, so server internals never ship to players. Define it only in the
+  dedicated-server assembly/build.
+- `#if UNITY` — Unity-side logging in `NetLog` (with a `!UNITY` fallback).
+- `#if DEBUGABLES` — Extra diagnostic hooks.
 
-**Catalog (`MessageCatalog`):** `Enroll<T>(opcode)` (explicit) or `HarvestContracts(assembly)`
-(reads `[MessageContract(opcode)]`); `Take<T>()` / `Recycle(msg)` (pooling);
-`OpcodeFor(type)` / `TypeFor(opcode)`.
+The production codec (`MessagePackBodyCodec`) pulls in `netstandard`/`System.Memory` facades that a
+bare `csc`/`mono` build lacks, so the standalone test runner uses `ReflectionBodyCodec` instead;
+Unity references the MessagePack assembly directly and uses `MessagePackBodyCodec`. The framing/
+dispatch core is codec-agnostic, so the swap changes only the payload bytes.
 
 ## Extending for Game Projects
 1. Define message types extending `RequestMessage`, `ReplyMessage`, `NotifyMessage` (override `Clear()` for pooling).
