@@ -28,6 +28,6 @@
 [submodule "Assets/PFound/KunaiDebugTool"]
 	path = Assets/PFound/KunaiDebugTool
 	url = git@github.com:sroglu/KunaiDebugTool.git
-[submodule "Assets/PFound/Lzma"]
-	path = Assets/PFound/Lzma
-	url = git@github.com:sroglu/Lzma.git
+[submodule "Assets/PFound/Compression"]
+	path = Assets/PFound/Compression
+	url = git@github.com:sroglu/Compression.git
