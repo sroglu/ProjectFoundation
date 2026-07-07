@@ -1,7 +1,7 @@
 using System;
 using PFound.GuidedOnboardingFlow.Core;
 using RouterService = PFound.ScreenRouter.ScreenRouter;
-using ScreenBase = PFound.ScreenRouter.ContentBase;
+using ScreenBase = PFound.ScreenRouter.Screen;
 
 namespace PFound.GuidedOnboardingFlow
 {
@@ -34,7 +34,7 @@ namespace PFound.GuidedOnboardingFlow
         {
             return new OpenScreenStep(
                 router,
-                r => r.OpenFrame<TScreen>(),
+                r => r.SwitchScreen<TScreen>(),
                 r => r.IsScreenOpen<TScreen>(),
                 timeout);
         }
