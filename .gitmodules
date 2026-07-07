@@ -1,3 +1,6 @@
 [submodule "Assets/PFound/DependencyContainer"]
 	path = Assets/PFound/DependencyContainer
 	url = git@github.com:sroglu/DependencyContainer.git
+[submodule "Assets/PFound/ScreenRouter"]
+	path = Assets/PFound/ScreenRouter
+	url = git@github.com:sroglu/ScreenRouter.git
