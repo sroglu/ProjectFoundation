@@ -25,11 +25,11 @@ Two-layer data system: **Entries** defines a union-style value type (`Entry`) th
 - **Custom types**: `Entity`, `EntityType`, `EntityLevel`, `WeekDay`
 
 ### DataStore (`PFound.GameDataStore.Storage`)
-- **`DataStoreManager`** — Singleton registry of `IDataStoreDatabase` instances; create/register/get/dispose databases
-- **`IDataStoreDatabase`** — Database interface
-- **`DataStoreDatabase`** — Abstract base database with persistence hooks
-- **`LocalDataStore`** — Concrete implementation for local (in-memory/disk) storage
-- **`DataStoreAttributes`** — Decorator attributes for database configuration
+- **`DataStoreManager`** — Process singleton (`DataStoreManager.Instance`) holding the registered `IDataStoreDatabase` instances. Methods: `CreateDatabase<T>(T type)`, `RegisterDatabase(IDataStoreDatabase)`, `GetDatabase(Type)`, `Destroy(IDataStoreDatabase)`, `Dispose()` (disposes every registered database)
+- **`IDataStoreDatabase`** / **`IDataStoreDatabase<T>`** — Database interfaces (`IDataStoreDatabase : IDisposable`); the generic one carries the static `Instance` / `Initialize()` / `InitializeWithInstance(T)` / `Destroy()` plumbing
+- **`DataStoreClass<T>`** / **`DataStoreRecord<T>`** — Abstract base types for a strongly-typed singleton database. Subclass as `class X : DataStoreClass<X>` (or the `record` variant); exposes static `X.Instance`, `X.Initialize()`, `X.InitializeWithInstance(x)`, `X.IsInitialized`, and instance `Dispose()`
+- **`LocalDataStore`** — Independent keyed `Entry` store (NOT a database subclass, NOT a singleton — you own the instance). Created via `LocalDataStore.Create(bool addConstants)`; `Set(ProcessedKey, Entry, bool markAsReadOnly, ReadOnlyWriteOption, UnityEngine.Object source)`, `TryGetEntry(ProcessedKey, out Entry)`, `Exists(ProcessedKey)`, `GetEntryEnsured(ProcessedKey)`, `DeleteIfExists(...)`, `DeleteAllStartsWith(...)`, `Clone()`
+- **DataStore attributes** (`DataStoreAttributes.cs`) — `[DataStoreConfig]` (class/struct; fields `Alias` and `Initialization` of `DataStoreDatabaseInitializationMethod` = `Default` / `InitializeAtStart` / `ManualRegistration`), plus `[DataStoreSetup]`, `[DataStoreElement]`, `[NotDataStoreElement]`, `[RequestParameter]`, `[ExternallyExecutable]`
 
 ## Public API
 
@@ -39,15 +39,28 @@ Entry intEntry = new Entry(42);
 Entry strEntry = new Entry("hello");
 bool same = intEntry == new Entry(42); // true
 
-// ProcessedKey — lightweight string key
-var key = new ProcessedKey("player/health");
+// ProcessedKey — lightweight string key (implicit from string)
+ProcessedKey key = "player/health";
 
-// DataStore
-DataStoreManager.Instance.RegisterDatabase<PlayerDatabase>();
-var db = DataStoreManager.Instance.GetDatabase<PlayerDatabase>();
-db.Set(key, new Entry(100));
-var health = db.Get(key); // Entry(100)
-DataStoreManager.Instance.Dispose<PlayerDatabase>();
+// DataStore — strongly-typed singleton database
+[DataStoreConfig(Initialization = DataStoreDatabaseInitializationMethod.InitializeAtStart)]
+public class PlayerDatabase : DataStoreClass<PlayerDatabase>
+{
+    public int    Health { get; set; }
+    public string Name   { get; set; }
+}
+
+PlayerDatabase.Initialize();            // registers the singleton with DataStoreManager
+PlayerDatabase.Instance.Health = 100;
+int hp = PlayerDatabase.Instance.Health;
+DataStoreManager.Instance.Dispose();    // disposes every registered database
+
+// LocalDataStore — keyed Entry store (not a singleton; you own the instance)
+var store = LocalDataStore.Create(addConstants: true);
+store.Set(key, new Entry(100), markAsReadOnly: false,
+          ReadOnlyWriteOption.FailIfReadOnly, source: null);
+if (store.TryGetEntry(key, out var e))
+    int health = e.ValueInt; // read the accessor matching the written variant
 ```
 
 ## File Structure
@@ -73,7 +86,8 @@ DataStorage/
   PFound.GameDataStore.Storage.asmdef
   DataStoreAttributes.cs
   DataStoreManager.cs
-  DataStoreDatabase.cs
+  DataStoreDatabase.cs       # IDataStoreDatabase, DataStoreClass<T>, DataStoreRecord<T>
+  LocalDataStore.cs
 Test/
   PFound.GameDataStore.Test.asmdef
   DataStoreTest.cs
@@ -114,7 +128,7 @@ The **extensibility guard tests** (`AllEntryTypes_CoveredBy*`) iterate all `Entr
 
 ## Limitations / Known Gaps
 
-- **No JSON persistence or atomic-write built in.** `LocalDataStore` can hold state in memory and persist via derived-class hooks, but the file I/O semantics (atomic write, fsync, .bak fallback, schema version migration) are NOT part of this module. Build those at the app-save layer.
+- **No JSON persistence or atomic-write built in.** `LocalDataStore` holds keyed `Entry` state in memory, but the file I/O semantics (atomic write, fsync, .bak fallback, schema version migration) are NOT part of this module. To persist a typed database, serialize a snapshot yourself and rehydrate it via `DataStoreClass<T>.InitializeWithInstance(...)`. Build the file I/O at the app-save layer.
 - **`Entry` uses `[FieldOffset]` explicit overlay.** Reference fields (e.g., `string`) overlap value fields (e.g., `int`, `float`). Reading an overlapping slot after writing a different variant yields undefined results. Always read the variant that matches what was last written — `EntryType` tracks this.
 - **`DataStoreManager` is a process singleton.** Initialize once (typically via a SubSystem) before any consumer touches `DataStoreManager.Instance`. There is no built-in per-profile scoping — if you need isolation (e.g., multi-user on one device), wrap the manager per profile yourself or namespace keys in `ProcessedKey`.
 - **`ProcessedKey` is a flat string.** No hierarchical namespace built in — keys are opaque strings. Convention is slash-delimited (`player/health`, `inventory/potion_small`) but no API enforces it.

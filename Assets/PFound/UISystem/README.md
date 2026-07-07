@@ -106,7 +106,26 @@ Use `Assets > Create > UISystem > Theme Data` to create a new theme asset. Set t
 
 ### 2. Set Up ThemeManager
 
-Call `ThemeManager.Initialize(lightTheme, darkTheme, panelSettings)` from your game's bootstrap code (no MonoBehaviour required). ThemeManager syncs ScriptableObject values to USS custom properties, making them available to all UISystem components.
+`ThemeManager` is a **static class — there is no host MonoBehaviour to place and nothing to keep alive across scenes.** It has two initialization paths:
+
+**Automatic (recommended, zero code).** Put the theme assets under a `Resources/UISystem/` folder and `ThemeBootstrapper` self-initializes via `[RuntimeInitializeOnLoadMethod(BeforeSceneLoad)]` before the first scene loads — no bootstrap code, no scene object. Expected asset names:
+
+```
+Resources/UISystem/DefaultLight        (ThemeData)
+Resources/UISystem/DefaultDark         (ThemeData)
+Resources/UISystem/light               (StyleSheet)
+Resources/UISystem/dark                (StyleSheet)
+Resources/UISystem/DefaultTypography   (TypographyConfig, optional)
+Resources/UISystem/Roboto-Regular      (Font, optional)
+```
+
+**Manual.** If you don't use the Resources convention, call it once from your own boot code (guard on `ThemeManager.IsInitialized`):
+
+```csharp
+ThemeManager.Initialize(lightTheme, darkTheme, lightSheet, darkSheet /*, typographyConfig, defaultFont */);
+```
+
+Either way, `ThemeManager` syncs the `ThemeData` values to USS custom properties for every managed panel. Any `UIDocument` **spawned at runtime** must register itself so it receives the theme sync — call `ThemeManager.RegisterPanel(uiDocument)` from its `Start()`. Panels present at init are picked up automatically.
 
 ### 3. Add Components
 

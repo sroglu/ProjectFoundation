@@ -1,90 +1,131 @@
 # NetworkLayer Module
 
 ## Overview
-Reusable networking abstraction providing request/response/notify messaging patterns, TCP transport via Telepathy, in-memory transport for testing, and server-side message tracking.
+Transport-agnostic request/reply/notify messaging layer for Unity clients and dedicated servers.
+Typed messages are bound to opcodes in a shared catalog, packed into length-prefixed frames, and
+carried over a pluggable link (in-process loopback for tests, Telepathy TCP in production). The
+messaging core only ever sees opaque byte frames — it knows nothing about sockets. All delivery is
+single-threaded and pump-driven via a per-frame `Update()`.
 
 **Assembly:** `PFound.NetworkLayer`
 **Layer:** Foundation (no deps on other PFound.* assemblies)
-**Namespace:** `PFound.NetworkLayer`
+**Namespace:** `PFound.NetworkLayer` (Telepathy vendor code under `PFound.NetworkLayer.Telepathy`)
 
 ## Dependencies
-- MessagePack 3.1.3 (embedded in `Runtime/Plugins/`)
-- ZString / com.cysharp.zstring (server-only, for NetworkMessageTracker)
+- MessagePack-CSharp (precompiled `MessagePack.dll` / `MessagePack.Annotations.dll`, vendored in `Runtime/Plugins/`)
+- Telepathy (vendored MIT TCP library, `Runtime/Telepathy/`) — not called directly by consumers
+- ZString (asmdef reference)
+
+This module does **not** use BestHTTP. It is realtime TCP messaging via Telepathy. (BestHTTP is the
+HTTP transport for the ContentDelivery / RemoteResourceCache modules, not for NetworkLayer.)
 
 ## Key Types
 
-### Core
+### Messaging (`Runtime/Messaging/`)
 | Type | Description |
 |---|---|
-| `Broker` | Main coordinator. Generic `SendRequestAsync<TResp>(RequestMessage)`, `SendResponse()`, `Notify()`, `NotifyMany()`. |
-| `NetworkMessageHandler` | Message routing: OpCode → handler dispatch, request/response matching via TaskCompletionSource, message queueing. |
-| `NetworkMessageTracker` | Server-only (`#if BACKEND`). Request timeout tracking, message count metrics. |
+| `Message` | Abstract payload root. Poolable — override `Clear()` to wipe fields. |
+| `RequestMessage` | Abstract base for requests (expects a correlated reply). |
+| `ReplyMessage` | Abstract base for replies. Carries a `ReplyStatus Status`. |
+| `NotifyMessage` | Abstract base for fire-and-forget notifications. |
+| `MessageCatalog` | Binds a `ushort` opcode to each message type; shared by both peers. Also owns the pool and codec. |
+| `MessageContractAttribute` | `[MessageContract(opcode)]` for reflection-based catalog population. |
+| `IBodyCodec` | Payload serialization seam. |
 
-### Message Hierarchy
+### Endpoints (`Runtime/Endpoints/`)
 | Type | Description |
 |---|---|
-| `NetworkMessage` | Abstract base. Has `SenderId`. |
-| `RequestMessage` | Base for requests. Has `RequestId`, pooling support. |
-| `ResponseMessage` | Base for responses. Has `RequestId`, `OpResult`, `ErrorMessage`, implements `INetworkResponse`. |
-| `NotifyMessage` | Base for notifications. Pooling support. |
+| `ClientPeer` | Client messaging engine: RPC correlation, notify routing, deadlines. |
+| `ServerPeer` | Server messaging engine (`#if BACKEND`): handlers, deferred requests, broadcast, watchdog. |
+| `RequestExchange<TRequest>` | Deferred-reply handle (with `RequestExchangeBase`). |
+| `EarlyArrivalBuffer` | Buffers frames that arrive before their handler is ready. |
 
-Game projects extend these with their own routing classes (e.g., `RequestToRealm`, `NotifyPlayer`).
-
-### Data Types
+### Transports (`Runtime/Transports/`)
 | Type | Description |
 |---|---|
-| `OpCode` | `struct` (ushort). Message type identifier. MessagePack serializable. |
-| `OpResult` | `enum`. Generic result codes (Success, Fail, FailedToSendRequest, etc.). Game projects add their own values. |
-| `ConnectionId` | `readonly struct` (int). Client connection identifier. |
-| `TransportMessage` | `struct`. ConnectionId + ArraySegment<byte> data. |
-| `OpCodeTools` | Reflection-based OpCode → Type mapping discovery. |
+| `IClientLink` / `IServerLink` | Transport seam: `Open`/`Close`, `Deliver` (queue a frame), `Pump(budget)` (drain inbound, raise `Received`). |
+| `TelepathyClientLink` | TCP client link via Telepathy. |
+| `TelepathyServerLink` | TCP server link via Telepathy (`#if BACKEND`). |
+| `LoopbackClientLink` / `LoopbackServerLink` / `LoopbackHub` | In-process loopback transport for tests (no sockets). |
+| `LatencyShapedLink` | Wraps a client link to inject delay for timeout/reconnect tests. |
 
-### Transport Layer
+### Serialization (`Runtime/Serialization/`)
 | Type | Description |
 |---|---|
-| `TransportClientBase` | Abstract client. Network delay simulation (constant/variable), ArrayPool-based data queueing. |
-| `TransportServerBase` | Abstract server (`#if BACKEND`). Connection management, broadcast support. |
-| `TelepathyTransportClient` | TCP client via Telepathy. Async connect with timeout. |
-| `TelepathyTransportServer` | TCP server via Telepathy (`#if BACKEND`). Proxy protocol support. |
-| `MemoryTransportClient` | In-memory transport for testing (`#if BACKEND`). |
-| `MemoryTransportServer` | In-memory server for testing (`#if BACKEND`). |
+| `MessagePackBodyCodec` | Production codec (contractless MessagePack). |
+| `ReflectionBodyCodec` | Codec for the standalone mono/csc test build (no MessagePack facades). |
 
-### Telepathy (Internal)
-TCP networking library (12 files). Thread-per-connection model, send/receive pipes with pooling, SSL support.
+### Core / Config / Diagnostics
+| Type | Description |
+|---|---|
+| `FrameCodec` | Static wire framing (length-prefixed envelopes). |
+| `IClock` / `MonotonicClock` | Time source for deadlines. |
+| `ReplyStatus` (`Core/WireEnums.cs`) | Reply status wire enum (`byte`). |
+| `ClientLinkOptions` / `ServerLinkOptions` | Tunables, each with a static `.Default`. |
+| `NetLog` | Logging (Unity-side logging under `#if UNITY`). |
+| `ServerMetrics` / `ServerDiagnostics` | Server-only metrics/diagnostics (`#if BACKEND`). |
+
+Game projects extend `RequestMessage` / `ReplyMessage` / `NotifyMessage` with their own message
+types and enroll them (per type) in the shared `MessageCatalog`.
 
 ## Conditional Compilation
-- `#if BACKEND` — Server-only code (TransportServer*, MemoryTransport*, NetworkMessageTracker, Broker server methods)
-- `#if UNITY` — Unity-specific logging
-- `#if DEBUG || LOCAL` — Network delay simulation
-- `#if DEVELOPMENT` — Extended timeout (60s vs 5s)
+- `#if BACKEND` — Server-only code (`ServerPeer`, `TelepathyServerLink`, server metrics/diagnostics).
+  A client build must NOT define it, so server internals never ship to players.
+- `#if UNITY` — Unity-side logging in `NetLog` (and a `!UNITY` fallback).
+- `#if DEBUGABLES` — Extra diagnostic hooks.
 
 ## Usage
 
 ```csharp
-// Setup
-var broker = new Broker();
-var responseOpCodes = new HashSet<OpCode> { /* your response opcodes */ };
-var handler = new NetworkMessageHandler(broker, responseOpCodes);
+// --- shared: one catalog, one codec, same on both ends ---
+var catalog = new MessageCatalog(new MessagePackBodyCodec());
+catalog.Enroll<MoveRequest>(1042);
+catalog.Enroll<MoveReply>(1043);
+catalog.Enroll<ChatNotify>(2001);
+// or: catalog.HarvestContracts(assembly);   // reads [MessageContract(opcode)]
 
-// Client
-var config = new TransportClientConfig(noDelay: true, maxMessageSize: 16384, ...);
-var client = new TelepathyTransportClient(handler.HandleNetworkData, config);
-broker.Initialize(client, handler);
+// --- client ---
+var options = ClientLinkOptions.Default;
+var link    = new TelepathyClientLink(options);        // TCP transport
+var client  = new ClientPeer(link, catalog, options);
+client.OnNotify<ChatNotify>(n => ShowChat(n));
+await client.ConnectAsync("game.example.com", 7777);
 
-// Register handler
-handler.Register<MyRequest>(myOpCode, (broker, msg) => { /* handle */ });
+MoveReply reply = await client.CallAsync<MoveReply>(new MoveRequest { X = 3 });
+client.Post(new ChatNotify { Text = "hi" });
 
-// Send request (returns Task)
-var response = await broker.SendRequestAsync<MyResponse>(myRequest);
-
-// Tick (call each frame)
-client.Tick();
+// per frame:
+void Update() => client.Update();
 ```
 
-## Extending for Game Projects
+Pure library — everything is `new X()`; there is no MonoBehaviour, scene object, or singleton. The
+consumer owns the peer and calls `Update()` every frame from its host loop. Both ends need the same
+catalog registration (same opcode→type mapping) for frames to decode.
 
-Game projects should:
-1. Define message types extending `RequestMessage`, `ResponseMessage`, `NotifyMessage`
-2. Define OpCode constants per message type
-3. Define game-specific `OpResult` values (use ranges above 1000)
-4. Add convenience extension methods on `Broker` for routing (e.g., `SendToRealm<T>()`)
+## Public API
+
+**Client (`ClientPeer`):** `Connect(host, port)` / `ConnectAsync(host, port, timeoutMs)` /
+`Reconnect()` / `ReconnectAsync(timeoutMs)` / `Disconnect()`; `Task<TReply> CallAsync<TReply>(RequestMessage, deadlineMs)`;
+`Post(NotifyMessage)`; `OnNotify<T>(Action<T>)`; `Update(budget)` (call once per frame);
+`IsConnected`, `OutstandingCallCount`, `RemoteHost`/`RemotePort`, `Connected`/`Disconnected` events.
+
+**Server (`ServerPeer`, `#if BACKEND`):** `Listen(port)` / `Halt()` / `Kick(peer)`;
+`Handle<TReq,TReply>(Func<int,TReq,TReply>)` (synchronous reply); `HandleDeferred<TReq>(Action<RequestExchange<TReq>>)`
++ `FulfillDeferred(exchange, reply)` (answer later); `OnNotify<T>(Action<int,T>)`;
+`SendTo(peer, notify)` / `Broadcast(notify)` / `SendToMany(peers, notify)`; `Update(budget)`;
+`IsListening`, `Peers`, `Metrics`, `Diagnostics`, `PeerConnected`/`PeerDisconnected` events.
+
+**Catalog (`MessageCatalog`):** `Enroll<T>(opcode)` (explicit) or `HarvestContracts(assembly)`
+(reads `[MessageContract(opcode)]`); `Take<T>()` / `Recycle(msg)` (pooling);
+`OpcodeFor(type)` / `TypeFor(opcode)`.
+
+## Extending for Game Projects
+1. Define message types extending `RequestMessage`, `ReplyMessage`, `NotifyMessage` (override `Clear()` for pooling).
+2. Assign an opcode per message type and enroll it in the shared `MessageCatalog` (or use `[MessageContract(opcode)]` + `HarvestContracts`).
+3. Register handlers on the server (`Handle` / `HandleDeferred` / `OnNotify`) and notify subscriptions on the client (`OnNotify`).
+
+## Testing
+Use the loopback transport for deterministic, socket-free tests: one `LoopbackHub`, a
+`LoopbackClientLink(hub)` on a `ClientPeer` and a `LoopbackServerLink(hub)` on a `ServerPeer`, driven
+by `Update()`. `LatencyShapedLink` wraps a link to inject delay for timeout/reconnect tests.
+Tests live in `Tests/EditAndPlayModes/` (assembly `PFound.NetworkLayer.Tests.EditAndPlayModes`).
