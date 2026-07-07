@@ -19,3 +19,6 @@
 [submodule "Assets/PFound/Signaling"]
 	path = Assets/PFound/Signaling
 	url = git@github.com:sroglu/Signaling.git
+[submodule "Assets/PFound/Utilities"]
+	path = Assets/PFound/Utilities
+	url = git@github.com:sroglu/Utilities.git
