@@ -126,8 +126,8 @@ This makes `Instance` safe to call at any time without depending on lifecycle or
 
 ## 6. Demo Controllers: Register Panels Defensively
 
-**Problem:** `ThemeManager._managedPanels` is a serialized list that requires manual Inspector
-setup. Easy to forget when creating new demo scenes. Without registration, `ToggleLightDark()`
+**Problem:** `ThemeManager._managedPanels` is a runtime list that only receives panels through
+`RegisterPanel`. Easy to forget when creating new demo scenes. Without registration, `ToggleLightDark()`
 succeeds silently but nothing changes visually.
 
 **Rule:** Every demo `MonoBehaviour` that uses theming must call `RegisterPanel` in `Start()`.
@@ -136,7 +136,7 @@ succeeds silently but nothing changes visually.
 private void Start()
 {
     var doc = GetComponent<UIDocument>();
-    ThemeManager.Instance?.RegisterPanel(doc); // defensive — idempotent
+    ThemeManager.RegisterPanel(doc); // defensive — idempotent
 
     // ... rest of setup
 }
