@@ -17,7 +17,7 @@ Runtime debug tool for game developers and QA. Two-layer architecture:
 - `Unity.Burst` — compile hot-path jobs to native SIMD
 - `Unity.Collections` — NativeArray, NativeList, NativeHashMap for zero-GC data
 - `Unity.Mathematics` — float2, float4, math.* for Burst-compatible math
-- `mehmetsrl.GameLoop` — `BeforeRender` callback to fill the cmd buffer before the camera renders it
+- `PFound.LoopScheduler` — `BeforeRender` callback to fill the cmd buffer before the camera renders it
 
 ## Project Setup Requirements
 

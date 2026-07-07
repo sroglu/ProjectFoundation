@@ -8,12 +8,12 @@ Currently scaffolded for **Playnest** (Toddler Games Hub App). See [`MODULE.md`]
 
 ## Dependencies
 
-- `mehmetsrl.ServiceRegistry`
-- `mehmetsrl.Signaling`
-- `mehmetsrl.Navigation`
-- `mehmetsrl.Localization`
-- `mehmetsrl.Utilities` + `mehmetsrl.Utilities.FileSystemTools`
-- `mehmetsrl.GameTime`
+- `PFound.DependencyContainer`
+- `PFound.Signaling`
+- `PFound.ScreenRouter`
+- `PFound.LocalizationService`
+- `PFound.Utilities` + `PFound.Utilities.FileSystemTools`
+- `PFound.EpochClock`
 
 ## License
 

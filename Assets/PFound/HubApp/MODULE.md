@@ -10,13 +10,13 @@ Designed for **Playnest** (Toddler Games Hub App) but structured so any kid-safe
 
 **Integration** — depends on multiple framework submodules:
 
-- `mehmetsrl.ServiceRegistry` (DI)
-- `mehmetsrl.Signaling` (event bus)
-- `mehmetsrl.Navigation` (in-scene UI navigation)
-- `mehmetsrl.Localization` (strings, EN + TR baseline)
-- `mehmetsrl.Utilities` + `mehmetsrl.Utilities.FileSystemTools` (atomic write for save)
-- `mehmetsrl.GameTime` (daily reset timestamps)
-- `mehmetsrl.Utilities.EditorHelpers` (editor-side — `IGameSpecificAssetProvider`)
+- `PFound.DependencyContainer` (DI)
+- `PFound.Signaling` (event bus)
+- `PFound.ScreenRouter` (in-scene UI navigation)
+- `PFound.LocalizationService` (strings, EN + TR baseline)
+- `PFound.Utilities` + `PFound.Utilities.FileSystemTools` (atomic write for save)
+- `PFound.EpochClock` (daily reset timestamps)
+- `PFound.Utilities.EditorHelpers` (editor-side — `IGameSpecificAssetProvider`)
 
 ## Assemblies
 
