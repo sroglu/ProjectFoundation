@@ -16,3 +16,6 @@
 [submodule "Assets/PFound/ContentDelivery"]
 	path = Assets/PFound/ContentDelivery
 	url = git@github.com:sroglu/ContentDelivery.git
+[submodule "Assets/PFound/Signaling"]
+	path = Assets/PFound/Signaling
+	url = git@github.com:sroglu/Signaling.git
