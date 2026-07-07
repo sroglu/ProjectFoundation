@@ -10,3 +10,6 @@
 [submodule "Assets/PFound/LocalizationService"]
 	path = Assets/PFound/LocalizationService
 	url = git@github.com:sroglu/LocalizationService.git
+[submodule "Assets/PFound/InputRouter"]
+	path = Assets/PFound/InputRouter
+	url = git@github.com:sroglu/InputRouter.git
