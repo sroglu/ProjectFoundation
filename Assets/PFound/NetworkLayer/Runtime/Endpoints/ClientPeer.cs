@@ -22,6 +22,16 @@ namespace PFound.NetworkLayer
         readonly ClientLinkOptions _options;
         readonly Dictionary<ushort, Action<Message>> _notifyRoutes = new Dictionary<ushort, Action<Message>>();
 
+        // Per-call round-trip timing state, keyed by call token: the opcode that was
+        // sent and the time it left, so we can measure how long the caller waited when
+        // the call finally leaves the outstanding table (any outcome).
+        struct CallTiming
+        {
+            public ushort Opcode;
+            public long SentMs;
+        }
+        readonly Dictionary<uint, CallTiming> _timings = new Dictionary<uint, CallTiming>();
+
         // Stored so a reconnect can re-dial the same endpoint without the caller
         // having to remember it (O2).
         string _dialHost;
@@ -37,6 +47,12 @@ namespace PFound.NetworkLayer
         public bool IsConnected => _link.IsOpen;
         public int OutstandingCallCount => _outstanding.Count;
 
+        /// <summary>Per-opcode round-trip latency (count / min / max / average) plus a
+        /// slow-call event when a call outlives its threshold. Round-trip is measured
+        /// here on the client, reusing the request-reply token correlation, so it is
+        /// the time the caller actually waited (network hop + server service time).</summary>
+        public CallLatencyStats Latency { get; }
+
         /// <summary>The endpoint most recently dialed; what a reconnect re-uses.</summary>
         public string RemoteHost => _dialHost;
         public int RemotePort => _dialPort;
@@ -47,10 +63,22 @@ namespace PFound.NetworkLayer
             _catalog = catalog;
             _options = options;
             _clock = clock ?? new MonotonicClock();
+            Latency = new CallLatencyStats(options.SlowCallThresholdMs);
 
+            _outstanding.Closed += OnCallClosed;
             _link.Opened += OnLinkOpened;
             _link.Closed += OnLinkClosed;
             _link.Received += OnFrame;
+        }
+
+        // A call left the outstanding table (settled, faulted, expired, or dropped):
+        // close its round-trip measurement and fold it into the per-opcode latency.
+        void OnCallClosed(uint token)
+        {
+            if (!_timings.TryGetValue(token, out var timing))
+                return;
+            _timings.Remove(token);
+            Latency.RecordRoundTrip(timing.Opcode, _clock.NowMs - timing.SentMs);
         }
 
         public void Connect(string host, int port)
@@ -100,8 +128,10 @@ namespace PFound.NetworkLayer
             byte[] frame = FrameCodec.WriteRequest(opcode, token, _catalog.PackBody(request));
 
             var promise = new TaskCompletionSource<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
-            long deadline = _clock.NowMs + (deadlineMs < 0 ? _options.CallDeadlineMs : deadlineMs);
+            long now = _clock.NowMs;
+            long deadline = now + (deadlineMs < 0 ? _options.CallDeadlineMs : deadlineMs);
             _outstanding.Open(token, promise, deadline);
+            _timings[token] = new CallTiming { Opcode = opcode, SentMs = now };
 
             _catalog.Recycle(request);
             _link.Deliver(new ArraySegment<byte>(frame));

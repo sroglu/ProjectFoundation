@@ -41,6 +41,13 @@ namespace PFound.NetworkLayer
         /// sheds the connection. Same bounded-queue rationale as the send side.</summary>
         public int ReceiveQueueLimit;
 
+        /// <summary>A completed call whose round-trip reaches this many milliseconds
+        /// raises <see cref="ClientPeer.Latency"/>'s slow-call event, so a host can log
+        /// or alert on slow requests without polling. Round-trip is wall time from send
+        /// to reply/fault. Zero or below turns the event off (latency is still tallied).
+        /// ~5000 ms mirrors the legacy request-time-exceeded ceiling.</summary>
+        public int SlowCallThresholdMs;
+
         public static ClientLinkOptions Default => new ClientLinkOptions
         {
             PumpBudget    = 96,
@@ -53,6 +60,7 @@ namespace PFound.NetworkLayer
             // low-hundreds-of-MB worst case, well before it can threaten the process.
             SendQueueLimit    = 3000,
             ReceiveQueueLimit = 3000,
+            SlowCallThresholdMs = 5000,
         };
     }
 }

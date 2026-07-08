@@ -39,7 +39,7 @@ HTTP transport for the ContentDelivery / RemoteResourceCache modules, not for Ne
 ### Endpoints (`Runtime/Endpoints/`)
 | Type | Description |
 |---|---|
-| `ClientPeer` | Client messaging engine: RPC correlation, notify routing, deadlines. |
+| `ClientPeer` | Client messaging engine: RPC correlation, notify routing, deadlines, per-opcode round-trip latency (`Latency`). |
 | `ServerPeer` | Server messaging engine (`#if BACKEND`): handlers, deferred requests, broadcast, watchdog. |
 | `RequestExchange<TRequest>` | Deferred-reply handle (with `RequestExchangeBase`). |
 | `EarlyArrivalBuffer` | Buffers frames that arrive before their handler is ready. |
@@ -67,7 +67,8 @@ HTTP transport for the ContentDelivery / RemoteResourceCache modules, not for Ne
 | `ReplyStatus` (`Core/WireEnums.cs`) | Reply status wire enum (`byte`). |
 | `ClientLinkOptions` / `ServerLinkOptions` | Tunables, each with a static `.Default`. |
 | `NetLog` | Logging (Unity-side logging under `#if UNITY`). |
-| `ServerMetrics` / `ServerDiagnostics` | Server-only metrics/diagnostics (`#if BACKEND`). |
+| `CallLatencyStats` | Client-side per-opcode round-trip latency (count / min / max / average) + a slow-call event. Engine-free; on `ClientPeer.Latency`. |
+| `ServerMetrics` / `ServerDiagnostics` | Server-only metrics/diagnostics (`#if BACKEND`). Server *service-time* per opcode (a narrower view than the client's full round-trip). |
 
 Game projects extend `RequestMessage` / `ReplyMessage` / `NotifyMessage` with their own message
 types and enroll them (per type) in the shared `MessageCatalog`.
@@ -77,7 +78,18 @@ types and enroll them (per type) in the shared `MessageCatalog`.
 **Client (`ClientPeer`):** `Connect(host, port)` / `ConnectAsync(host, port, timeoutMs)` /
 `Reconnect()` / `ReconnectAsync(timeoutMs)` / `Disconnect()`; `Task<TReply> CallAsync<TReply>(RequestMessage, deadlineMs)`;
 `Post(NotifyMessage)`; `OnNotify<T>(Action<T>)`; `Update(budget)` (call once per frame);
-`IsConnected`, `OutstandingCallCount`, `RemoteHost`/`RemotePort`, `Connected`/`Disconnected` events.
+`IsConnected`, `OutstandingCallCount`, `RemoteHost`/`RemotePort`, `Connected`/`Disconnected` events;
+`Latency` (per-opcode round-trip stats + slow-call event, see below).
+
+**Client latency telemetry (`ClientPeer.Latency` → `CallLatencyStats`):** every request/reply
+round-trip is timed per opcode, reusing the call-token correlation. `PerOpcode` /
+`TryGet(opcode, out OpcodeLatency)` expose `Completed` (count), `MinMs`, `MaxMs`, `SumMs`, and the
+derived `AverageMs`. Set `ClientLinkOptions.SlowCallThresholdMs` (or `Latency.SlowCallThresholdMs`
+at runtime) to raise `Latency.SlowCall` (a `SlowCallReport` of opcode + actual round-trip +
+threshold) the instant a completed call crosses that ceiling — the legacy request-time-exceeded
+callback, now per opcode with the real round-trip. `SlowCallCount` tallies the crossings; `Reset()`
+clears the table. The measurement covers the network hop *and* the server's service time, so it is a
+strictly wider view than the server-only `ServerDiagnostics` service-time record.
 
 **Server (`ServerPeer`, `#if BACKEND`):** `Listen(port)` / `Halt()` / `Kick(peer)`;
 `Handle<TReq,TReply>(Func<int,TReq,TReply>)` (synchronous reply); `HandleDeferred<TReq>(Action<RequestExchange<TReq>>)`
@@ -127,10 +139,11 @@ NetworkLayer/
     Serialization/               # MessagePackBodyCodec (prod), ReflectionBodyCodec (test)
     Config/                      # ClientLinkOptions / ServerLinkOptions
     Core/                        # FrameCodec, IClock/MonotonicClock, wire enums, PROXY-protocol parsing
-    Diagnostics/                 # NetLog, ServerMetrics, ServerDiagnostics (server-only)
+    Diagnostics/                 # NetLog, CallLatencyStats (client), ServerMetrics/ServerDiagnostics (server-only)
     Telepathy/                   # vendored MIT TCP library (sockets/threads/framing)
     Plugins/                     # vendored MessagePack-CSharp
   Tests/EditAndPlayModes/        # assembly PFound.NetworkLayer.Tests.EditAndPlayModes
+  Tests/Standalone/              # csc/mono runner for engine-free metrics (guarded by PF_STANDALONE_TESTS)
   MODULE.md / README.md / THIRD-PARTY-NOTICES.md
 ```
 
@@ -167,3 +180,17 @@ Use the loopback transport for deterministic, socket-free tests: one `LoopbackHu
 `LoopbackClientLink(hub)` on a `ClientPeer` and a `LoopbackServerLink(hub)` on a `ServerPeer`, driven
 by `Update()`. `LatencyShapedLink` wraps a link to inject delay for timeout/reconnect tests.
 Tests live in `Tests/EditAndPlayModes/` (assembly `PFound.NetworkLayer.Tests.EditAndPlayModes`).
+
+The engine-free client latency telemetry (`CallLatencyStats` + the `OutstandingCalls.Closed`
+fan-out) is also covered by a standalone csc/mono runner in `Tests/Standalone/`, guarded by the
+`PF_STANDALONE_TESTS` define so Unity skips it:
+```
+csc -nologo -warn:0 -define:PF_STANDALONE_TESTS -out:/tmp/pf_net.exe \
+    Assets/PFound/NetworkLayer/Runtime/Diagnostics/CallLatencyStats.cs \
+    Assets/PFound/NetworkLayer/Runtime/Messaging/OutstandingCalls.cs \
+    Assets/PFound/NetworkLayer/Runtime/Messaging/Message.cs \
+    Assets/PFound/NetworkLayer/Runtime/Core/WireEnums.cs \
+    Assets/PFound/NetworkLayer/Runtime/Core/NetworkExceptions.cs \
+    Assets/PFound/NetworkLayer/Tests/Standalone/CallLatencyStandaloneTests.cs \
+&& mono /tmp/pf_net.exe
+```

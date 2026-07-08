@@ -19,6 +19,11 @@ await client.ConnectAsync("game.example.com", 7777);
 MoveReply reply = await client.CallAsync<MoveReply>(new MoveRequest { X = 3 });
 
 void Update() => client.Update();   // pump once per frame
+
+// per-opcode round-trip latency + a slow-call alert (reuses the reply correlation)
+client.Latency.SlowCall += r =>
+    Debug.Log($"opcode {r.Opcode} took {r.RoundTripMs} ms (>= {r.ThresholdMs} ms)");
+client.Latency.TryGet(1042, out var move);   // move.Completed / MinMs / MaxMs / AverageMs
 ```
 
 ## Dependencies
