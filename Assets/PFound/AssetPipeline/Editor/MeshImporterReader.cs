@@ -18,6 +18,7 @@ namespace PFound.AssetPipeline.Editor
             return new MeshImporterFacts
             {
                 AssetPath = assetPath,
+                Source = MeshSource.ModelImporter,
                 ReadWriteEnabled = importer.isReadable,
                 MeshCompression = MapCompression(importer.meshCompression),
                 OptimizeMesh = importer.meshOptimizationFlags != (MeshOptimizationFlags)0,

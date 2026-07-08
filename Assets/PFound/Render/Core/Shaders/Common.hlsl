@@ -1,5 +1,5 @@
-#ifndef MEHMETSRL_RENDER_COMMON_INCLUDED
-#define MEHMETSRL_RENDER_COMMON_INCLUDED
+#ifndef PFOUND_RENDER_COMMON_INCLUDED
+#define PFOUND_RENDER_COMMON_INCLUDED
 
 // -----------------------------------------------------------------------------
 // PFound.Render.Core — Common.hlsl
@@ -26,4 +26,4 @@ float MRender_RemapClamped(float v, float fromLo, float fromHi, float toLo, floa
     return lerp(toLo, toHi, t);
 }
 
-#endif // MEHMETSRL_RENDER_COMMON_INCLUDED
+#endif // PFOUND_RENDER_COMMON_INCLUDED

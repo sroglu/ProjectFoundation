@@ -11,11 +11,13 @@ namespace PFound.GuidedOnboardingFlow
         where TSignal : SignalBase
     {
         private readonly SignalTracker _signals;
+        private readonly TutorialRuntimeServices _services;
         private bool _received;
 
-        public WaitForSignalStep(SignalTracker signals, float? timeout = null)
+        public WaitForSignalStep(SignalTracker signals, TutorialRuntimeServices services = null, float? timeout = null)
         {
             _signals = signals;
+            _services = services;
             Timeout = timeout;
         }
 
@@ -27,6 +29,10 @@ namespace PFound.GuidedOnboardingFlow
 
         protected override StepStatus OnAdvance(float deltaSeconds)
         {
+            // Under a scripted fast-forward we can't emit the game's signal for it, so self-complete once
+            // the auto-advance delay has passed rather than stalling the whole run.
+            if (_services != null && _services.AutoAdvance && Elapsed >= _services.AutoAdvanceDelaySeconds)
+                return StepStatus.Finished;
             return _received ? StepStatus.Finished : StepStatus.Running;
         }
 

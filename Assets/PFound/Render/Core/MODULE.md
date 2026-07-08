@@ -40,9 +40,9 @@ Foundation primitives for every later Render phase: a base-class pair for URP 17
 | `GlobalShaderParameterManager` (`ShaderParameters/`) | Per-frame priority-ordered publisher. `Register(provider, priority = 0)`, `Unregister(provider)`, `PublishAll()`, `GetSnapshot(IList<ProviderInfo>)`, `Dispose()`. Lazy static `Instance` (Constitution II exception — see Singleton Justification below). Same-instance double-registration throws `InvalidOperationException` + emits `Debug.LogError`. |
 | `IGlobalShaderParameterProvider` (`ShaderParameters/`) | Interface: `string DebugName { get; }` + `void Publish()`. Implementations call `Shader.SetGlobal*` directly inside `Publish`. |
 | `ProviderInfo` (`ShaderParameters/`) | Editor-debug struct returned by `GetSnapshot`: `DebugName`, `Priority`, `LastPublishedFrame`. |
-| `Common.hlsl` (`Shaders/`) | Universal constants (`M_RENDER_PI`, `M_RENDER_INV_PI`, `M_RENDER_TWO_PI`, `M_RENDER_HALF_PI`, `M_RENDER_EPSILON`) + `MRender_Saturate` + `MRender_RemapClamped`. Include guard `MEHMETSRL_RENDER_COMMON_INCLUDED`. |
-| `Math.hlsl` (`Shaders/`) | `MRender_Pow2/3/4`, `MRender_LinearToGamma`, `MRender_GammaToLinear` (2.2 approximation — use URP's `Color.hlsl` for the real sRGB curve). Include guard `MEHMETSRL_RENDER_MATH_INCLUDED`. |
-| `Sampling.hlsl` (`Shaders/`) | `MRender_BoxFilter4Tap`, `MRender_GaussianFilter5Tap` — 5-tap separable Gaussian with weights `{0.227027, 0.1945946×2, 0.1216216×2}`. Used by Phase 3 Blur + Phase 4 Outline shaders. Include guard `MEHMETSRL_RENDER_SAMPLING_INCLUDED`. |
+| `Common.hlsl` (`Shaders/`) | Universal constants (`M_RENDER_PI`, `M_RENDER_INV_PI`, `M_RENDER_TWO_PI`, `M_RENDER_HALF_PI`, `M_RENDER_EPSILON`) + `MRender_Saturate` + `MRender_RemapClamped`. Include guard `PFOUND_RENDER_COMMON_INCLUDED`. |
+| `Math.hlsl` (`Shaders/`) | `MRender_Pow2/3/4`, `MRender_LinearToGamma`, `MRender_GammaToLinear` (2.2 approximation — use URP's `Color.hlsl` for the real sRGB curve). Include guard `PFOUND_RENDER_MATH_INCLUDED`. |
+| `Sampling.hlsl` (`Shaders/`) | `MRender_BoxFilter4Tap`, `MRender_GaussianFilter5Tap` — 5-tap separable Gaussian with weights `{0.227027, 0.1945946×2, 0.1216216×2}`. Used by Phase 3 Blur + Phase 4 Outline shaders. Include guard `PFOUND_RENDER_SAMPLING_INCLUDED`. |
 
 Internal (not in the public surface):
 
@@ -108,7 +108,7 @@ All Phase 2+ shader includes follow the prefix discipline established by Phase 1
 
 - **Macros**: `M_RENDER_<SCREAMING_SNAKE>` (e.g., `M_RENDER_PI`, `M_RENDER_EPSILON`).
 - **Functions**: `MRender_<PascalCase>` (e.g., `MRender_Saturate`, `MRender_GaussianFilter5Tap`).
-- **Include guards**: `MEHMETSRL_RENDER_<MODULE>_INCLUDED`.
+- **Include guards**: `PFOUND_RENDER_<MODULE>_INCLUDED`.
 - Includes safe to compose alongside URP Core HLSL (`UNITY_*` macros) without symbol collision.
 
 ---

@@ -9,6 +9,7 @@ namespace PFound.GuidedOnboardingFlow.Core.Tests
             AchievabilityTests.Run();
             TimeoutCancelTests.Run();
             ManagerTests.Run();
+            ManagerCapabilitiesTests.Run();
             PersistenceTests.Run();
             BuiltInStepTests.Run();
             return TestKit.Summary("PFound.GuidedOnboardingFlow.Core");

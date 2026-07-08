@@ -47,13 +47,14 @@ namespace PFound.GuidedOnboardingFlow
                     anchor.Bind(anchors);
             }
 
+            var log = new UnityTutorialLog();
             var services = new TutorialRuntimeServices(
                 _inputBlocker,
                 _hand,
                 _highlight,
                 _dialog,
                 anchors,
-                new UnityTutorialLog(),
+                log,
                 router,
                 signals);
 
@@ -62,8 +63,13 @@ namespace PFound.GuidedOnboardingFlow
                 ? _catalog.BuildBlueprints(services)
                 : new List<TutorialBlueprint>();
 
-            var manager = new TutorialManager(blueprints, store);
+            Core.LogVerbosity verbosity = _catalog != null ? _catalog.LogVerbosity : Core.LogVerbosity.Errors;
+            var manager = new TutorialManager(blueprints, store, log, verbosity);
             services.Attach(manager);
+
+            // Apply the catalog's serialized run-whitelist (empty = all eligible).
+            if (_catalog != null && _catalog.RunWhitelist.Count > 0)
+                manager.SetRunSpecific(_catalog.RunWhitelist);
 
             if (_host != null)
                 _host.Bind(manager);

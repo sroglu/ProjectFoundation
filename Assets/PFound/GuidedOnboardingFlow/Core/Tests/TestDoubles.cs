@@ -11,14 +11,22 @@ namespace PFound.GuidedOnboardingFlow.Core.Tests
         public bool CancelCalled;
         public StepCancelReason LastCancel;
 
+        public int ReadinessChecks;
+
         private bool _finishNow;
         private StepReadiness _readiness = StepReadiness.Ready;
+        private StepReadiness? _readinessOnce;
         private readonly bool _throwOnBegin;
         private readonly bool _throwOnAdvance;
 
-        public ProbeStep(float? timeout = null, bool throwOnBegin = false, bool throwOnAdvance = false)
+        public ProbeStep(
+            float? timeout = null,
+            bool throwOnBegin = false,
+            bool throwOnAdvance = false,
+            StepTimeoutOutcome? timeoutOutcome = null)
         {
             Timeout = timeout;
+            TimeoutOutcome = timeoutOutcome;
             _throwOnBegin = throwOnBegin;
             _throwOnAdvance = throwOnAdvance;
         }
@@ -27,7 +35,20 @@ namespace PFound.GuidedOnboardingFlow.Core.Tests
 
         public void SetReadiness(StepReadiness readiness) => _readiness = readiness;
 
-        protected override StepReadiness OnCheckReadiness() => _readiness;
+        /// <summary>Return <paramref name="readiness"/> on the next check only, then revert to the steady value.</summary>
+        public void SetReadinessOnce(StepReadiness readiness) => _readinessOnce = readiness;
+
+        protected override StepReadiness OnCheckReadiness()
+        {
+            ReadinessChecks++;
+            if (_readinessOnce.HasValue)
+            {
+                StepReadiness once = _readinessOnce.Value;
+                _readinessOnce = null;
+                return once;
+            }
+            return _readiness;
+        }
 
         protected override void OnBegin()
         {
@@ -55,8 +76,28 @@ namespace PFound.GuidedOnboardingFlow.Core.Tests
     internal sealed class RecordingLog : ITutorialLog
     {
         public readonly List<string> Lines = new List<string>();
+        public readonly List<LogSeverity> Severities = new List<LogSeverity>();
 
-        public void Write(string message) => Lines.Add(message);
+        public void Write(LogSeverity severity, string message)
+        {
+            Severities.Add(severity);
+            Lines.Add(message);
+        }
+    }
+
+    /// <summary>A trigger the test flips on/off, tracking whether it was re-armed.</summary>
+    internal sealed class ManualTrigger : TutorialTriggerBase
+    {
+        public bool Armed = true;
+        public int Resets;
+
+        public override bool ShouldFire(in TriggerContext context) => Armed;
+
+        public override void Reset()
+        {
+            Resets++;
+            Armed = true;
+        }
     }
 
     internal static class Steps

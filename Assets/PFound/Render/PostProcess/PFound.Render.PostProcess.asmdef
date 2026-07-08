@@ -1,0 +1,22 @@
+{
+    "name": "PFound.Render.PostProcess",
+    "rootNamespace": "PFound.Render.PostProcess",
+    "references": [
+        "PFound.Render.Core",
+        "PFound.Render.Effects.Blur",
+        "PFound.Render.Effects.Outline",
+        "PFound.DependencyContainer",
+        "PFound.LoopScheduler",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

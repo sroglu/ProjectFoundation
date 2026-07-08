@@ -49,7 +49,7 @@ namespace PFound.SampleGame.Editor
 
             // Definitions serialize INLINE inside the single config asset (no per-screen sub-asset):
             // build the ScreenDefinition and assign it into the config's `_screens` list directly.
-            var definition = ScreenDefinition.CreateRuntime(typeof(SampleScreen), prefab, PoolingType.Ephemeral);
+            var definition = ScreenDefinition.CreateRuntime(typeof(SampleScreen), prefab, PoolingType.DestroyOnClose);
             SampleAssetSetup.SetField(config, "_screens", new List<ScreenDefinition> { definition });
             config.InvalidateCaches();
             EditorUtility.SetDirty(config);

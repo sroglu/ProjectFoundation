@@ -48,5 +48,8 @@ namespace PFound.GuidedOnboardingFlow
 
         /// <summary>Steps read this to honour the manager's auto-advance / auto-click mode.</summary>
         public bool AutoAdvance => Manager != null && Manager.AutoAdvance;
+
+        /// <summary>Per-step delay a step waits before self-completing under auto-advance.</summary>
+        public float AutoAdvanceDelaySeconds => Manager != null ? Manager.AutoAdvanceDelaySeconds : 0f;
     }
 }

@@ -11,11 +11,21 @@ namespace PFound.GuidedOnboardingFlow.Core
         /// <summary>Optional wall-clock budget in seconds; null means "no limit".</summary>
         float? Timeout { get; }
 
+        /// <summary>
+        /// What the run should do if this step's <see cref="Timeout"/> elapses. Null means "use the
+        /// tutorial's default" (<see cref="TutorialInstance.DefaultTimeoutOutcome"/>), so a step opts in
+        /// to abort-on-timeout only when it is genuinely load-bearing.
+        /// </summary>
+        StepTimeoutOutcome? TimeoutOutcome { get; }
+
         /// <summary>Set once a step threw; signals the runner to end the run as faulted.</summary>
         bool Faulted { get; }
 
         /// <summary>Set once the step was cancelled (timeout / external) rather than finishing normally.</summary>
         bool Cancelled { get; }
+
+        /// <summary>Why the step was cancelled, or null if it has not been cancelled.</summary>
+        StepCancelReason? CancellationReason { get; }
 
         /// <summary>Pre-run gate letting a step defer or abort when its target is not present yet.</summary>
         StepReadiness CheckReadiness();

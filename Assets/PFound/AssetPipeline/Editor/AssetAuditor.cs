@@ -12,19 +12,41 @@ namespace PFound.AssetPipeline.Editor
     /// </summary>
     public static class AssetAuditor
     {
-        /// <summary>Audits every asset reachable from <paramref name="groups"/> against <paramref name="policy"/>.</summary>
+        /// <summary>
+        /// Audits every asset reachable from <paramref name="groups"/> against <paramref name="policy"/>, gated by a
+        /// reference graph: atlas members skip the per-texture format rules and truly-orphan assets are skipped (the
+        /// group's own entries are seeded as roots, so they are never mistaken for orphans).
+        /// </summary>
         public static AssetAuditReport Audit(IReadOnlyList<AssetGroup> groups, AssetPolicy policy)
-            => AuditPaths(CollectAssetPaths(groups), policy);
+        {
+            var paths = CollectAssetPaths(groups);
+            return AuditPaths(paths, policy, AssetReferenceGraph.Build(paths));
+        }
 
         /// <summary>
-        /// The full audit: the per-asset policy report plus the cross-bundle duplicate-dependency findings, the
-        /// latter delegated to ContentDelivery's <see cref="BundleDuplicateAnalyzer"/> (reused, not reimplemented).
+        /// The full audit: the per-asset policy report, the cross-bundle duplicate-DEPENDENCY findings (delegated to
+        /// ContentDelivery's <see cref="BundleDuplicateAnalyzer"/>, reused), and the content-identical duplicate-
+        /// TEXTURE findings over the audited textures.
         /// </summary>
         public static AssetAuditResult AuditAll(IReadOnlyList<AssetGroup> groups, AssetPolicy policy)
-            => new AssetAuditResult(Audit(groups, policy), BundleDuplicateAnalyzer.Analyze(groups));
+        {
+            var paths = CollectAssetPaths(groups);
+            var report = AuditPaths(paths, policy, AssetReferenceGraph.Build(paths));
+            var duplicateDeps = BundleDuplicateAnalyzer.Analyze(groups);
+            var duplicateTextures = TextureContentDuplicateAnalyzer.Analyze(paths);
+            return new AssetAuditResult(report, duplicateDeps, duplicateTextures);
+        }
 
-        /// <summary>Audits a specific set of asset paths — the testable seam (no AssetGroup plumbing required).</summary>
+        /// <summary>Audits a specific set of asset paths — the testable seam (no AssetGroup plumbing, no gating).</summary>
         public static AssetAuditReport AuditPaths(IEnumerable<string> assetPaths, AssetPolicy policy)
+            => AuditPaths(assetPaths, policy, null);
+
+        /// <summary>
+        /// Audits a set of asset paths, optionally gated by a reference <paramref name="graph"/>. Each path is read
+        /// as a texture, a model mesh, OR a raw Mesh asset — so the mesh Read/Write rule reaches ALL mesh sources,
+        /// not only <c>ModelImporter</c>-backed ones.
+        /// </summary>
+        public static AssetAuditReport AuditPaths(IEnumerable<string> assetPaths, AssetPolicy policy, IAssetReferenceGraph graph)
         {
             var textures = new List<TextureImporterFacts>();
             var meshes = new List<MeshImporterFacts>();
@@ -36,15 +58,15 @@ namespace PFound.AssetPipeline.Editor
                 if (string.IsNullOrEmpty(path) || !seen.Add(path)) continue;
                 scanned++;
 
-                // An asset is backed by exactly one importer, so at most one of these is non-null.
                 var texture = TextureImporterReader.Read(path);
                 if (texture != null) { textures.Add(texture); continue; }
 
-                var mesh = MeshImporterReader.Read(path);
+                // A model-backed mesh, or (failing that) a raw Mesh asset carrying its own readable flag.
+                var mesh = MeshImporterReader.Read(path) ?? MeshAssetReader.Read(path);
                 if (mesh != null) meshes.Add(mesh);
             }
 
-            var violations = AssetPolicyEvaluator.Evaluate(textures, meshes, policy);
+            var violations = AssetPolicyEvaluator.Evaluate(textures, meshes, policy, graph);
             return new AssetAuditReport(policy.Describe(), scanned, violations);
         }
 

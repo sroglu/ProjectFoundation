@@ -41,6 +41,22 @@ namespace PFound.AssetPipeline.Core.Tests
             Run("AtlasInputHasher changes when a member's content changes", Atlas_ContentChange);
             Run("AtlasInputHasher empty set is stable + non-empty", Atlas_EmptyStable);
 
+            Run("Overridden platform uncompressed flagged with platform tag", Platform_OverrideUncompressed);
+            Run("Overridden platform oversize flagged with platform tag", Platform_OverrideOversize);
+            Run("Non-overridden platform is ignored", Platform_NotOverriddenIgnored);
+            Run("Default + platform violations coexist without merging", Platform_DefaultAndOverrideCoexist);
+            Run("Graph skips an unreferenced texture entirely", Graph_UnreferencedSkipped);
+            Run("Graph checks only Read/Write on an atlas member", Graph_AtlasMemberOnlyReadWrite);
+            Run("Graph skips an unreferenced mesh", Graph_UnreferencedMeshSkipped);
+            Run("Null graph evaluates everything (parity)", Graph_NullEvaluatesAll);
+            Run("Atlas size covers summed area", AtlasSize_CoversArea);
+            Run("Atlas size holds the largest single dimension", AtlasSize_HoldsLargestDimension);
+            Run("Atlas size clamps to 4096 and flags it", AtlasSize_Clamps);
+            Run("Atlas size floors at the minimum", AtlasSize_MinFloor);
+            Run("Duplicate textures grouped by identical content hash", Dup_GroupsIdentical);
+            Run("Distinct content hashes yield no duplicate group", Dup_DistinctNoGroup);
+            Run("Duplicate finder ignores empty path/hash entries", Dup_IgnoresEmpty);
+
             Console.WriteLine();
             Console.WriteLine(s_failed == 0
                 ? "ALL PASSED (" + s_passed + ")"
@@ -268,6 +284,193 @@ namespace PFound.AssetPipeline.Core.Tests
             string b = AtlasInputHasher.Compute(new string[0]);
             AssertEqual(a, b, "empty set is stable");
             AssertEqual(32, a.Length, "hash is 32 hex chars");
+        }
+
+        // ---- per-platform tests ------------------------------------------------------------------
+
+        private static void Platform_OverrideUncompressed()
+        {
+            var f = NormalTexture();
+            f.PlatformOverrides = new List<PlatformTextureFacts>
+            {
+                new PlatformTextureFacts
+                {
+                    Platform = "iOS", Overridden = true, Compression = TextureCompressionLevel.Uncompressed,
+                    FormatName = "RGBA32", MaxTextureSize = 2048,
+                },
+            };
+            var v = Eval(f);
+            AssertEqual(1, v.Count, "one platform violation");
+            AssertEqual(ViolationCode.TextureUncompressed, v[0].Code, "uncompressed on the override");
+            AssertEqual("iOS", v[0].Platform, "tagged with the platform");
+        }
+
+        private static void Platform_OverrideOversize()
+        {
+            var f = NormalTexture();
+            f.PlatformOverrides = new List<PlatformTextureFacts>
+            {
+                new PlatformTextureFacts
+                {
+                    Platform = "Android", Overridden = true, Compression = TextureCompressionLevel.Normal,
+                    FormatName = "ETC2_RGBA8", MaxTextureSize = 4096,
+                },
+            };
+            var v = Eval(f);
+            AssertSingle(v, ViolationCode.TextureExceedsMaxSize);
+            AssertEqual("Android", v[0].Platform, "tagged with the platform");
+        }
+
+        private static void Platform_NotOverriddenIgnored()
+        {
+            var f = NormalTexture();
+            f.PlatformOverrides = new List<PlatformTextureFacts>
+            {
+                new PlatformTextureFacts
+                {
+                    Platform = "iOS", Overridden = false, Compression = TextureCompressionLevel.Uncompressed,
+                    FormatName = "RGBA32", MaxTextureSize = 8192,
+                },
+            };
+            AssertNoViolations(Eval(f)); // an inherited (non-overridden) platform mirrors the clean default
+        }
+
+        private static void Platform_DefaultAndOverrideCoexist()
+        {
+            var f = NormalTexture();
+            f.Crunched = true; // default-platform crunch violation
+            f.PlatformOverrides = new List<PlatformTextureFacts>
+            {
+                new PlatformTextureFacts
+                {
+                    Platform = "iOS", Overridden = true, Compression = TextureCompressionLevel.Uncompressed,
+                    FormatName = "RGBA32", MaxTextureSize = 2048,
+                },
+            };
+            var v = Eval(f);
+            AssertEqual(2, v.Count, "default crunch + iOS uncompressed");
+        }
+
+        // ---- reference-graph gating tests --------------------------------------------------------
+
+        private static void Graph_UnreferencedSkipped()
+        {
+            var f = NormalTexture();
+            f.Crunched = true;
+            var graph = new FakeGraph(); // nothing referenced
+            var into = new List<PolicyViolation>();
+            AssetPolicyEvaluator.EvaluateTexture(f, AssetPolicy.MobileDefaults(), into, graph);
+            AssertEqual(0, into.Count, "unreferenced asset is skipped");
+        }
+
+        private static void Graph_AtlasMemberOnlyReadWrite()
+        {
+            var f = NormalTexture();
+            f.Crunched = true;            // a format rule that must be suppressed for atlas members
+            f.ReadWriteEnabled = true;    // the one rule that still applies
+            var graph = new FakeGraph();
+            graph.Referenced.Add(f.AssetPath);
+            graph.AtlasPacked.Add(f.AssetPath);
+            var into = new List<PolicyViolation>();
+            AssetPolicyEvaluator.EvaluateTexture(f, AssetPolicy.MobileDefaults(), into, graph);
+            AssertEqual(1, into.Count, "only the Read/Write rule applies to an atlas member");
+            AssertEqual(ViolationCode.TextureReadWriteEnabled, into[0].Code, "and it is the Read/Write one");
+        }
+
+        private static void Graph_UnreferencedMeshSkipped()
+        {
+            var m = NormalMesh();
+            m.ReadWriteEnabled = true;
+            var graph = new FakeGraph();
+            var into = new List<PolicyViolation>();
+            AssetPolicyEvaluator.EvaluateMesh(m, AssetPolicy.MobileDefaults(), into, graph);
+            AssertEqual(0, into.Count, "unreferenced mesh is skipped");
+        }
+
+        private static void Graph_NullEvaluatesAll()
+        {
+            var f = NormalTexture();
+            f.Crunched = true;
+            var into = new List<PolicyViolation>();
+            AssetPolicyEvaluator.EvaluateTexture(f, AssetPolicy.MobileDefaults(), into, null);
+            AssertEqual(1, into.Count, "null graph = no gating, everything evaluated");
+        }
+
+        // ---- atlas-size tests --------------------------------------------------------------------
+
+        private static void AtlasSize_CoversArea()
+        {
+            // 4 sprites of 64x64 = 16384 px area; smallest POT square covering it is 128 (128*128=16384).
+            int size = AtlasSizeCalculator.ComputeMaxTextureSize(4 * 64 * 64, 64, out bool clamped);
+            AssertEqual(128, size, "smallest POT square covering the summed area");
+            Assert(!clamped, "well within the cap");
+        }
+
+        private static void AtlasSize_HoldsLargestDimension()
+        {
+            // Tiny total area but one 512-wide member forces the page up to 512.
+            int size = AtlasSizeCalculator.ComputeMaxTextureSize(1024, 512, out _);
+            AssertEqual(512, size, "page side must hold the largest single member");
+        }
+
+        private static void AtlasSize_Clamps()
+        {
+            int size = AtlasSizeCalculator.ComputeMaxTextureSize(1e12, 100000, out bool clamped);
+            AssertEqual(AtlasSizeCalculator.MaxAtlasSize, size, "clamped to 4096");
+            Assert(clamped, "clamp flag set");
+        }
+
+        private static void AtlasSize_MinFloor()
+        {
+            int size = AtlasSizeCalculator.ComputeMaxTextureSize(0, 0, out bool clamped);
+            AssertEqual(AtlasSizeCalculator.MinAtlasSize, size, "empty set floors at the minimum page");
+            Assert(!clamped, "not clamped");
+        }
+
+        // ---- duplicate-texture tests -------------------------------------------------------------
+
+        private static void Dup_GroupsIdentical()
+        {
+            var groups = DuplicateTextureFinder.Find(new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("a.png", "H1"),
+                new KeyValuePair<string, string>("b.png", "H1"),
+                new KeyValuePair<string, string>("c.png", "H2"),
+                new KeyValuePair<string, string>("d.png", "H1"),
+            });
+            AssertEqual(1, groups.Count, "one duplicate group (H1)");
+            AssertEqual("H1", groups[0].ContentHash, "grouped on the shared hash");
+            AssertEqual(3, groups[0].Paths.Length, "all three identical paths");
+            AssertEqual("a.png", groups[0].Paths[0], "paths sorted");
+        }
+
+        private static void Dup_DistinctNoGroup()
+        {
+            var groups = DuplicateTextureFinder.Find(new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("a.png", "H1"),
+                new KeyValuePair<string, string>("b.png", "H2"),
+            });
+            AssertEqual(0, groups.Count, "distinct content, no duplicate group");
+        }
+
+        private static void Dup_IgnoresEmpty()
+        {
+            var groups = DuplicateTextureFinder.Find(new List<KeyValuePair<string, string>>
+            {
+                new KeyValuePair<string, string>("", "H1"),
+                new KeyValuePair<string, string>("b.png", ""),
+                new KeyValuePair<string, string>("c.png", "H3"),
+            });
+            AssertEqual(0, groups.Count, "empty path/hash entries are ignored");
+        }
+
+        private sealed class FakeGraph : IAssetReferenceGraph
+        {
+            public readonly HashSet<string> Referenced = new HashSet<string>();
+            public readonly HashSet<string> AtlasPacked = new HashSet<string>();
+            public bool IsReferenced(string assetPath) => Referenced.Contains(assetPath);
+            public bool IsAtlasPacked(string assetPath) => AtlasPacked.Contains(assetPath);
         }
 
         // ---- helpers -----------------------------------------------------------------------------

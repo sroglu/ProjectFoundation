@@ -14,4 +14,13 @@ namespace PFound.GuidedOnboardingFlow.Authoring
     {
         public override ITutorialTrigger CreateTrigger() => new StartupTrigger();
     }
+
+    [CreateAssetMenu(menuName = "PFound/Guided Onboarding/Triggers/Delayed Startup", fileName = "DelayedStartupTrigger")]
+    public sealed class DelayedStartupTriggerAuthoring : TutorialTriggerAuthoring
+    {
+        [Tooltip("Fire once the manager has been running for at least this many seconds.")]
+        [SerializeField] private float _afterSeconds = 3f;
+
+        public override ITutorialTrigger CreateTrigger() => new DelayedStartupTrigger(_afterSeconds);
+    }
 }

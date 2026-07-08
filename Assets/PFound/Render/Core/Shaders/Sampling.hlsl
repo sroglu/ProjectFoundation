@@ -1,5 +1,5 @@
-#ifndef MEHMETSRL_RENDER_SAMPLING_INCLUDED
-#define MEHMETSRL_RENDER_SAMPLING_INCLUDED
+#ifndef PFOUND_RENDER_SAMPLING_INCLUDED
+#define PFOUND_RENDER_SAMPLING_INCLUDED
 
 // -----------------------------------------------------------------------------
 // PFound.Render.Core — Sampling.hlsl
@@ -30,4 +30,4 @@ float4 MRender_GaussianFilter5Tap(Texture2D tex, SamplerState s, float2 uv, floa
     return sum;
 }
 
-#endif // MEHMETSRL_RENDER_SAMPLING_INCLUDED
+#endif // PFOUND_RENDER_SAMPLING_INCLUDED

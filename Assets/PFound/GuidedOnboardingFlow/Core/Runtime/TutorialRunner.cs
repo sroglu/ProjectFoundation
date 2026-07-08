@@ -80,7 +80,10 @@ namespace PFound.GuidedOnboardingFlow.Core
                 return;
             }
 
-            int guard = _tutorial.Steps.Count + 1;
+            // The guard bounds a single tick against pathological readiness verdicts (a step that keeps
+            // asking to skip/rewind) and instant-finishing steps chaining forward. Two visits per step
+            // are enough headroom for a readiness re-route followed by a real entry.
+            int guard = (_tutorial.Steps.Count + 1) * 2;
             while (Phase == RunnerPhase.Active && guard-- > 0)
             {
                 ITutorialStep step = _tutorial.Steps[_index];
@@ -88,12 +91,29 @@ namespace PFound.GuidedOnboardingFlow.Core
                 if (!_stepEntered)
                 {
                     StepReadiness readiness = step.CheckReadiness();
-                    if (readiness == StepReadiness.Deferred)
-                        return;
-                    if (readiness == StepReadiness.Unreachable)
+                    switch (readiness)
                     {
-                        Stop(TutorialOutcome.Invalidated);
-                        return;
+                        case StepReadiness.Deferred:
+                            return;
+
+                        case StepReadiness.Unreachable:
+                            Stop(TutorialOutcome.Invalidated);
+                            return;
+
+                        case StepReadiness.SkipAndAdvance:
+                            if (AdvanceIndex())
+                                return; // reached the end → completed
+                            continue;   // re-evaluate the now-current step this same tick
+
+                        case StepReadiness.GoBackOne:
+                            if (_index > 0)
+                                _index--;
+                            _stepEntered = false;
+                            continue;   // re-evaluate the earlier step
+
+                        case StepReadiness.Ready:
+                        default:
+                            break;
                     }
 
                     step.Begin();
@@ -117,7 +137,22 @@ namespace PFound.GuidedOnboardingFlow.Core
                     return;
                 }
 
-                if (!step.Cancelled)
+                if (step.Cancelled)
+                {
+                    // A step that cancelled itself on timeout gets to decide the run's fate: its own
+                    // TimeoutOutcome wins, falling back to the tutorial's default. AbortRun ends the run
+                    // as Invalidated; Advance (the default) just moves on to the next step.
+                    if (step.CancellationReason == StepCancelReason.TimedOut)
+                    {
+                        StepTimeoutOutcome outcome = step.TimeoutOutcome ?? _tutorial.DefaultTimeoutOutcome;
+                        if (outcome == StepTimeoutOutcome.AbortRun)
+                        {
+                            Stop(TutorialOutcome.Invalidated);
+                            return;
+                        }
+                    }
+                }
+                else
                 {
                     step.Complete();
                     if (step.Faulted)
@@ -127,14 +162,8 @@ namespace PFound.GuidedOnboardingFlow.Core
                     }
                 }
 
-                _index++;
-                _stepEntered = false;
-
-                if (_index >= _tutorial.Steps.Count)
-                {
-                    Stop(TutorialOutcome.Completed);
+                if (AdvanceIndex())
                     return;
-                }
             }
         }
 
@@ -154,6 +183,19 @@ namespace PFound.GuidedOnboardingFlow.Core
                 return;
             CancelCurrent(StepCancelReason.Shutdown);
             Stop(TutorialOutcome.Shutdown);
+        }
+
+        /// <summary>Move to the next step; returns true (and ends the run as Completed) if there is none.</summary>
+        private bool AdvanceIndex()
+        {
+            _index++;
+            _stepEntered = false;
+            if (_index >= _tutorial.Steps.Count)
+            {
+                Stop(TutorialOutcome.Completed);
+                return true;
+            }
+            return false;
         }
 
         private bool PreconditionsHold() => _preconditionsHold == null || _preconditionsHold();

@@ -1,5 +1,5 @@
-#ifndef MEHMETSRL_RENDER_MATH_INCLUDED
-#define MEHMETSRL_RENDER_MATH_INCLUDED
+#ifndef PFOUND_RENDER_MATH_INCLUDED
+#define PFOUND_RENDER_MATH_INCLUDED
 
 // -----------------------------------------------------------------------------
 // PFound.Render.Core — Math.hlsl
@@ -17,4 +17,4 @@ float MRender_Pow4(float x) { float x2 = x * x; return x2 * x2; }
 float MRender_LinearToGamma(float linearValue) { return pow(max(linearValue, 0.0), 1.0 / 2.2); }
 float MRender_GammaToLinear(float gammaValue)  { return pow(max(gammaValue,  0.0), 2.2);       }
 
-#endif // MEHMETSRL_RENDER_MATH_INCLUDED
+#endif // PFOUND_RENDER_MATH_INCLUDED

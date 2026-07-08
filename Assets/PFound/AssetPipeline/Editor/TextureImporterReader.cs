@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using PFound.AssetPipeline.Core;
 using UnityEditor;
 
@@ -10,18 +11,36 @@ namespace PFound.AssetPipeline.Editor
     /// </summary>
     public static class TextureImporterReader
     {
+        /// <summary>The build targets whose per-platform texture overrides the audit inspects.</summary>
+        public static readonly string[] InspectedPlatforms = { "iOS", "Android" };
+
         /// <summary>
         /// Reads <paramref name="assetPath"/> as a texture, or returns null when the asset has no
-        /// <see cref="TextureImporter"/> (i.e. it is not a texture). Compression/crunch/size/NPOT are read from the
-        /// importer's top-level (default-platform) properties; the effective format name comes from the default
-        /// platform settings. Per-platform overrides (iOS/Android) are reliable but not yet inspected here — a
-        /// deferred capability (see STATUS).
+        /// <see cref="TextureImporter"/> (i.e. it is not a texture). The default-platform (top-level) settings feed
+        /// the default rules; each of <see cref="InspectedPlatforms"/> is read via <c>GetPlatformTextureSettings</c>
+        /// so an overridden iOS/Android target is audited on its own settings.
         /// </summary>
         public static TextureImporterFacts Read(string assetPath)
         {
             if (!(AssetImporter.GetAtPath(assetPath) is TextureImporter importer)) return null;
 
             importer.GetSourceTextureWidthAndHeight(out int width, out int height);
+
+            var overrides = new List<PlatformTextureFacts>(InspectedPlatforms.Length);
+            foreach (string platform in InspectedPlatforms)
+            {
+                var ps = importer.GetPlatformTextureSettings(platform);
+                overrides.Add(new PlatformTextureFacts
+                {
+                    Platform = platform,
+                    Overridden = ps.overridden,
+                    Compression = MapCompression(ps.textureCompression),
+                    Crunched = ps.crunchedCompression,
+                    MaxTextureSize = ps.maxTextureSize,
+                    FormatName = ps.format.ToString(),
+                    CompressionQuality = ps.compressionQuality,
+                });
+            }
 
             return new TextureImporterFacts
             {
@@ -38,6 +57,7 @@ namespace PFound.AssetPipeline.Editor
                 // No per-entry "requires Read/Write" opt-out is wired yet; default to flagging Read/Write (mirrors mesh).
                 ReadWriteRequired = false,
                 FormatName = importer.GetDefaultPlatformTextureSettings().format.ToString(),
+                PlatformOverrides = overrides,
             };
         }
 

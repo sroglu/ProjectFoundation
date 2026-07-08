@@ -25,26 +25,63 @@ namespace PFound.GuidedOnboardingFlow.Tests
     internal sealed class FakeHand : ITutorialHand
     {
         public RectTransform Pointed;
+        public string Hint;
+        public Vector2 Offset;
         public bool Hidden;
-        public void PointAt(RectTransform target) { Pointed = target; Hidden = false; }
+
+        public void PointAt(RectTransform target) => PointAt(target, null, Vector2.zero);
+
+        public void PointAt(RectTransform target, string hint, Vector2 offset)
+        {
+            Pointed = target;
+            Hint = hint;
+            Offset = offset;
+            Hidden = false;
+        }
+
         public void Hide() { Hidden = true; Pointed = null; }
     }
 
     internal sealed class FakeHighlight : IHighlightMask
     {
         public RectTransform Target;
+        public string MaskSpriteName;
+        public Vector2 Padding;
         public bool Cleared;
-        public void Highlight(RectTransform target) { Target = target; Cleared = false; }
+
+        public void Highlight(RectTransform target) => Highlight(target, null, Vector2.zero);
+
+        public void Highlight(RectTransform target, string maskSpriteName, Vector2 padding)
+        {
+            Target = target;
+            MaskSpriteName = maskSpriteName;
+            Padding = padding;
+            Cleared = false;
+        }
+
         public void Clear() { Cleared = true; Target = null; }
     }
 
     internal sealed class FakeDialog : IDialogPanel
     {
         public string Message;
+        public float TypingSpeedCps;
+        public DialogDismissMode DismissMode;
+        public float? AutoDismissSeconds;
         public bool Visible;
         public bool PendingContinue;
 
-        public void Show(string message) { Message = message; Visible = true; }
+        public void Show(string message) => Show(message, 0f, DialogDismissMode.Tap, null);
+
+        public void Show(string message, float typingSpeedCps, DialogDismissMode dismissMode, float? autoDismissSeconds)
+        {
+            Message = message;
+            TypingSpeedCps = typingSpeedCps;
+            DismissMode = dismissMode;
+            AutoDismissSeconds = autoDismissSeconds;
+            Visible = true;
+        }
+
         public void Hide() => Visible = false;
 
         public bool ConsumeContinue()
@@ -60,15 +97,24 @@ namespace PFound.GuidedOnboardingFlow.Tests
         public TutorialRunner Active => null;
         public bool IsRunning => false;
         public bool AutoAdvance { get; set; }
+        public float AutoAdvanceDelaySeconds { get; private set; }
 
         public event System.Action<TutorialId> TutorialStarted { add { } remove { } }
         public event System.Action<TutorialId, TutorialOutcome> TutorialEnded { add { } remove { } }
         public event System.Action<ITutorialStep> StepStarted { add { } remove { } }
+        public event System.Action<TutorialId, int> StepChanged { add { } remove { } }
 
         public bool TryStart(TutorialId id) => false;
         public void ForceStart(TutorialId id) { }
         public void Skip() { }
         public void SetRunSpecific(System.Collections.Generic.IEnumerable<TutorialId> ids) { }
+
+        public void SetAutoAdvance(bool enabled, float perStepDelaySeconds)
+        {
+            AutoAdvance = enabled;
+            AutoAdvanceDelaySeconds = perStepDelaySeconds;
+        }
+
         public void Tick(float deltaSeconds) { }
     }
 
@@ -97,6 +143,6 @@ namespace PFound.GuidedOnboardingFlow.Tests
 
     internal sealed class NullLog : ITutorialLog
     {
-        public void Write(string message) { }
+        public void Write(LogSeverity severity, string message) { }
     }
 }

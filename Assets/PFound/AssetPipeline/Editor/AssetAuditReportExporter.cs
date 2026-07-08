@@ -18,13 +18,16 @@ namespace PFound.AssetPipeline.Editor
         public const string ReportFileName = "asset-audit.json";
 
         [Serializable]
-        private struct ViolationDto { public string asset; public string code; public string detail; }
+        private struct ViolationDto { public string asset; public string code; public string platform; public string detail; }
 
         [Serializable]
         private struct CountDto { public string code; public int count; }
 
         [Serializable]
         private struct DuplicateDto { public string asset; public string[] bundles; }
+
+        [Serializable]
+        private struct DuplicateTextureDto { public string contentHash; public string[] paths; }
 
         [Serializable]
         private struct ReportDto
@@ -36,11 +39,16 @@ namespace PFound.AssetPipeline.Editor
             public ViolationDto[] violations;
             public int duplicateCount;
             public DuplicateDto[] duplicateDependencies;
+            public int duplicateTextureCount;
+            public DuplicateTextureDto[] duplicateTextures;
         }
 
-        /// <summary>Serializes the policy report and the (optional) duplicate-dependency findings to JSON.</summary>
+        /// <summary>Serializes the policy report and the (optional) duplicate-dependency + duplicate-texture findings to JSON.</summary>
         public static string ToJson(
-            AssetAuditReport report, IReadOnlyList<DuplicateDependency> duplicates = null, bool prettyPrint = true)
+            AssetAuditReport report,
+            IReadOnlyList<DuplicateDependency> duplicates = null,
+            IReadOnlyList<DuplicateTextureGroup> duplicateTextures = null,
+            bool prettyPrint = true)
         {
             if (report == null) throw new ArgumentNullException(nameof(report));
 
@@ -50,7 +58,7 @@ namespace PFound.AssetPipeline.Editor
             for (int i = 0; i < violations.Count; i++)
             {
                 var v = violations[i];
-                dtos[i] = new ViolationDto { asset = v.AssetPath, code = v.Code.ToString(), detail = v.Detail };
+                dtos[i] = new ViolationDto { asset = v.AssetPath, code = v.Code.ToString(), platform = v.Platform, detail = v.Detail };
                 perCode.TryGetValue(v.Code, out int n);
                 perCode[v.Code] = n + 1;
             }
@@ -67,6 +75,18 @@ namespace PFound.AssetPipeline.Editor
                     dupDtos[i] = new DuplicateDto { asset = duplicates[i].Asset, bundles = duplicates[i].Bundles };
             }
 
+            var dupTexDtos = Array.Empty<DuplicateTextureDto>();
+            if (duplicateTextures != null && duplicateTextures.Count > 0)
+            {
+                dupTexDtos = new DuplicateTextureDto[duplicateTextures.Count];
+                for (int i = 0; i < duplicateTextures.Count; i++)
+                    dupTexDtos[i] = new DuplicateTextureDto
+                    {
+                        contentHash = duplicateTextures[i].ContentHash,
+                        paths = duplicateTextures[i].Paths,
+                    };
+            }
+
             var dto = new ReportDto
             {
                 policy = report.PolicyDescription,
@@ -76,18 +96,23 @@ namespace PFound.AssetPipeline.Editor
                 violations = dtos,
                 duplicateCount = dupDtos.Length,
                 duplicateDependencies = dupDtos,
+                duplicateTextureCount = dupTexDtos.Length,
+                duplicateTextures = dupTexDtos,
             };
             return JsonUtility.ToJson(dto, prettyPrint);
         }
 
         /// <summary>Writes the audit JSON into <paramref name="directory"/> as <see cref="ReportFileName"/>; returns its path.</summary>
         public static string Write(
-            AssetAuditReport report, IReadOnlyList<DuplicateDependency> duplicates, string directory)
+            AssetAuditReport report,
+            IReadOnlyList<DuplicateDependency> duplicates,
+            string directory,
+            IReadOnlyList<DuplicateTextureGroup> duplicateTextures = null)
         {
             if (string.IsNullOrEmpty(directory)) throw new ArgumentException("Report directory required.", nameof(directory));
             Directory.CreateDirectory(directory);
             string path = Path.Combine(directory, ReportFileName);
-            File.WriteAllText(path, ToJson(report, duplicates));
+            File.WriteAllText(path, ToJson(report, duplicates, duplicateTextures));
             return path;
         }
     }

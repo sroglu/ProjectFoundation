@@ -14,13 +14,25 @@ namespace PFound.GuidedOnboardingFlow.Core
         public string DisplayName { get; }
         public IReadOnlyList<ITutorialStep> Steps { get; }
 
-        public TutorialInstance(TutorialId id, string displayName, IReadOnlyList<ITutorialStep> steps)
+        /// <summary>
+        /// What a step timeout does when the step itself doesn't specify (its
+        /// <see cref="ITutorialStep.TimeoutOutcome"/> is null). Authoring sets this per tutorial so a
+        /// whole flow can default to "abort on any timeout" without annotating every step.
+        /// </summary>
+        public StepTimeoutOutcome DefaultTimeoutOutcome { get; }
+
+        public TutorialInstance(
+            TutorialId id,
+            string displayName,
+            IReadOnlyList<ITutorialStep> steps,
+            StepTimeoutOutcome defaultTimeoutOutcome = StepTimeoutOutcome.Advance)
         {
             if (steps == null)
                 throw new ArgumentNullException(nameof(steps));
             Id = id;
             DisplayName = displayName;
             Steps = steps;
+            DefaultTimeoutOutcome = defaultTimeoutOutcome;
         }
     }
 }

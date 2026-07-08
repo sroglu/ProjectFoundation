@@ -32,9 +32,10 @@ namespace PFound.AssetPipeline.Core
     }
 
     /// <summary>
-    /// One policy breach found by the evaluator: the offending asset, which rule, and a human-readable detail
-    /// (actual-vs-expected). Pure value type — the audit pass collects these; the apply pass fixes them. A
-    /// violation is a finding, never a mutation.
+    /// One policy breach found by the evaluator: the offending asset, which rule, an optional build target the
+    /// breach is scoped to (empty = the default platform), and a human-readable detail (actual-vs-expected). Pure
+    /// value type — the audit pass collects these; the apply pass fixes them. A violation is a finding, never a
+    /// mutation.
     /// </summary>
     public readonly struct PolicyViolation
     {
@@ -42,13 +43,26 @@ namespace PFound.AssetPipeline.Core
         public readonly ViolationCode Code;
         public readonly string Detail;
 
+        /// <summary>
+        /// The build target this breach is scoped to (e.g. "iOS", "Android"); empty for the default-platform
+        /// settings. Lets the same rule report once per overridden platform and the apply pass fix the right target.
+        /// </summary>
+        public readonly string Platform;
+
         public PolicyViolation(string assetPath, ViolationCode code, string detail)
+            : this(assetPath, code, detail, null) { }
+
+        public PolicyViolation(string assetPath, ViolationCode code, string detail, string platform)
         {
             AssetPath = assetPath;
             Code = code;
             Detail = detail;
+            Platform = string.IsNullOrEmpty(platform) ? "" : platform;
         }
 
-        public override string ToString() => $"{Code} [{AssetPath}] — {Detail}";
+        public override string ToString() =>
+            string.IsNullOrEmpty(Platform)
+                ? $"{Code} [{AssetPath}] — {Detail}"
+                : $"{Code} [{AssetPath}] ({Platform}) — {Detail}";
     }
 }

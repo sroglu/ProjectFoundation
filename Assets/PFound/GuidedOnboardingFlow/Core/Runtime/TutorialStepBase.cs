@@ -14,8 +14,10 @@ namespace PFound.GuidedOnboardingFlow.Core
         private bool _live;
 
         public float? Timeout { get; protected set; }
+        public StepTimeoutOutcome? TimeoutOutcome { get; protected set; }
         public bool Faulted { get; private set; }
         public bool Cancelled { get; private set; }
+        public StepCancelReason? CancellationReason { get; private set; }
         public Exception Fault { get; private set; }
 
         public StepReadiness CheckReadiness()
@@ -89,6 +91,7 @@ namespace PFound.GuidedOnboardingFlow.Core
                 return;
             _live = false;
             Cancelled = true;
+            CancellationReason = reason;
             try
             {
                 OnCancel(reason);

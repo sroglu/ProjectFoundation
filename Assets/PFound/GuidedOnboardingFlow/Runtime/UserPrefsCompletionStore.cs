@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using PFound.GuidedOnboardingFlow.Core;
 using PFound.UserPrefs;
@@ -9,7 +10,8 @@ namespace PFound.GuidedOnboardingFlow
     /// Persists tutorial completion to PFound UserPrefs. Because UserPrefs is schema-keyed (one typed
     /// <see cref="PrefKey{T}"/> per value) and tutorial ids are open-ended, the whole completed set is
     /// stored under a single string key as a comma-separated list of handles, hydrated into an in-memory
-    /// set on startup and written back on each change.
+    /// set on startup and written back on each change. This is the persistent (once-account) tier — wrap
+    /// it in a <see cref="CompositeCompletionStore"/> to also get in-memory once-session behavior.
     /// </summary>
     public sealed class UserPrefsCompletionStore : ITutorialCompletionStore
     {
@@ -30,7 +32,7 @@ namespace PFound.GuidedOnboardingFlow
         {
         }
 
-        public Task HydrateAsync()
+        public Task HydrateAsync(CancellationToken ct = default)
         {
             _done.Clear();
             string packed = _store.Get(_key) ?? string.Empty;
@@ -44,8 +46,12 @@ namespace PFound.GuidedOnboardingFlow
 
         public bool IsCompleted(TutorialId id) => _done.Contains(id.handle);
 
-        public void MarkCompleted(TutorialId id)
+        public void MarkCompleted(TutorialId id, ReplayPolicy mode)
         {
+            // Only account-scoped completions belong in persistent storage; session/repeatable are handled
+            // by the composite's in-memory tier, so this leaf never persists them.
+            if (mode != ReplayPolicy.OnceAccount)
+                return;
             if (_done.Add(id.handle))
                 Persist();
         }
@@ -54,6 +60,14 @@ namespace PFound.GuidedOnboardingFlow
         {
             if (_done.Remove(id.handle))
                 Persist();
+        }
+
+        public IReadOnlyCollection<TutorialId> GetAllCompleted()
+        {
+            var result = new List<TutorialId>(_done.Count);
+            foreach (int handle in _done)
+                result.Add(new TutorialId(handle));
+            return result;
         }
 
         private void Persist()

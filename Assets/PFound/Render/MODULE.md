@@ -2,8 +2,10 @@
 
 Rendering building blocks for Unity URP: a pooled render-texture / global-shader-parameter core, a
 Burst-culled GPU instancing service, an off-screen render-to-texture "context" for portraits and
-previews, and a set of pure texture utilities. Four independent sub-modules, each its own assembly —
-take only what you need.
+previews, a set of pure texture utilities, volume-driven full-screen effects (blur, outline, an
+overdraw debug view), a typed post-process stack, a boot shader pre-warm controller, and an SDF UI
+shape shader + tooling. Ten independent sub-modules, each its own assembly — take only what you
+need.
 
 This is the **parent index** for the Render subsystem. Each sub-module has its own deep doc; this
 file covers subsystem scope, the sub-module map, the assembly dependency model, the GameSpecific hook,
@@ -14,8 +16,9 @@ and cross-cutting setup/wiring. Depth for any single sub-module lives in that su
 ## Purpose
 
 Render is the low-level rendering toolbox that game code and higher PFound modules compose against.
-It deliberately splits into four assemblies so a consumer pulls only the surface it needs — a project
-that only wants a texture downscaler does not drag in URP, Burst, or a DI container.
+It deliberately splits into per-feature assemblies so a consumer pulls only the surface it needs — a
+project that only wants a texture downscaler does not drag in URP, Burst, or a DI container, and a
+project using the blur effect need not pull in the batch renderer.
 
 **In scope:** URP 17 RenderGraph feature/pass base classes, a keyed transient `RenderTexture` pool,
 per-frame global shader parameter publishing, Burst-compiled GPU-instanced batch rendering, off-screen
@@ -40,8 +43,15 @@ Each sub-module is its own assembly (all `autoReferenced: true`); take only what
 | `PFound.Render.RenderContext` | runtime | `RenderContext/PFound.Render.RenderContext.asmdef` |
 | `PFound.Render.RenderContext.Editor` | editor | `RenderContext/Editor/PFound.Render.RenderContext.Editor.asmdef` |
 | `PFound.Render.Utilities` | runtime | `Utilities/PFound.Render.Utilities.asmdef` |
+| `PFound.Render.Effects.Blur` | runtime | `Effects.Blur/PFound.Render.Effects.Blur.asmdef` |
+| `PFound.Render.Effects.Outline` | runtime | `Effects.Outline/PFound.Render.Effects.Outline.asmdef` |
+| `PFound.Render.Effects.Overdraw` | runtime | `Effects.Overdraw/PFound.Render.Effects.Overdraw.asmdef` |
+| `PFound.Render.PostProcess` | runtime | `PostProcess/PFound.Render.PostProcess.asmdef` |
+| `PFound.Render.ShaderWarmup` | runtime | `ShaderWarmup/PFound.Render.ShaderWarmup.asmdef` |
+| `PFound.Render.UIShapes` | runtime | `UIShapes/PFound.Render.UIShapes.asmdef` |
+| `PFound.Render.UIShapes.Editor` | editor | `UIShapes/Editor/PFound.Render.UIShapes.Editor.asmdef` |
 
-Each sub-module also ships test assemblies: `PFound.Render.Core.Tests` / `.Core.Tests.PlayMode`,
+Each foundation sub-module also ships test assemblies: `PFound.Render.Core.Tests` / `.Core.Tests.PlayMode`,
 `PFound.Render.BatchRendering.Tests` / `.Tests.PlayMode`, `PFound.Render.RenderContext.Tests` /
 `.Tests.PlayMode`, `PFound.Render.Utilities.Tests` / `.Tests.PlayMode`.
 
@@ -60,6 +70,13 @@ Render; no scripting-define gates are used.
 | `PFound.Render.RenderContext` | `PFound.Render.Core`, `PFound.DependencyContainer`, `PFound.LoopScheduler` | URP Universal.Runtime, URP Core.Runtime |
 | `PFound.Render.RenderContext.Editor` | `PFound.Render.RenderContext` | — (Editor-only) |
 | `PFound.Render.Utilities` | none | Mathematics only |
+| `PFound.Render.Effects.Blur` | `PFound.Render.Core`, `PFound.Collections` | URP Universal.Runtime, URP Core.Runtime |
+| `PFound.Render.Effects.Outline` | `PFound.Render.Core`, `PFound.Collections` | URP Universal.Runtime, URP Core.Runtime |
+| `PFound.Render.Effects.Overdraw` | `PFound.Render.Core` | URP Universal.Runtime, URP Core.Runtime |
+| `PFound.Render.PostProcess` | `PFound.Render.Core`, `PFound.Render.Effects.Blur`, `PFound.Render.Effects.Outline`, `PFound.DependencyContainer`, `PFound.LoopScheduler` | URP Universal.Runtime, URP Core.Runtime |
+| `PFound.Render.ShaderWarmup` | `PFound.Render.Core`, `PFound.DependencyContainer`, `PFound.LoopScheduler` | — |
+| `PFound.Render.UIShapes` | `PFound.Render.Core` | — |
+| `PFound.Render.UIShapes.Editor` | `PFound.Render.UIShapes`, `PFound.Render.Core` | — (Editor-only) |
 
 > `PFound.DependencyContainer` is referenced by RenderContext for the host bootstrap helper only —
 > the service itself does not require a container (see the asmdef dependency model below).
@@ -74,6 +91,12 @@ Render; no scripting-define gates are used.
 | **BatchRendering** | `PFound.Render.BatchRendering` | Burst frustum/distance-culled GPU instancing service (classic / indirect / procedural backends). | [BatchRendering/MODULE.md](BatchRendering/MODULE.md) | `new` the service; it self-drives via `PFound.LoopScheduler`. Optional URP feature for the RenderGraph path. |
 | **RenderContext** | `PFound.Render.RenderContext` | Off-screen camera → `RenderTexture` bound to a `RawImage` / `MeshRenderer` / UI Toolkit element. | [RenderContext/MODULE.md](RenderContext/MODULE.md) | MonoBehaviour sink component + a one-time resolver config at boot. |
 | **Utilities** | `PFound.Render.Utilities` | Texture creation, GPU resize/blit, readback, strip-gated render debug helpers. | [Utilities/MODULE.md](Utilities/MODULE.md) | Pure static helpers / disposable handles — no setup. |
+| **Effects.Blur** | `PFound.Render.Effects.Blur` | Volume-driven full-screen Gaussian blur + priority-queue request service. | [Effects.Blur/MODULE.md](Effects.Blur/MODULE.md) | RendererFeature on the URP Renderer asset; `new` the request service (optional). |
+| **Effects.Outline** | `PFound.Render.Effects.Outline` | Volume-driven full-screen depth-edge outline + priority-queue request service. | [Effects.Outline/MODULE.md](Effects.Outline/MODULE.md) | RendererFeature on the URP Renderer asset; `new` the request service (optional). |
+| **Effects.Overdraw** | `PFound.Render.Effects.Overdraw` | Developer-only overdraw heatmap debug view (strips from release builds). | [Effects.Overdraw/MODULE.md](Effects.Overdraw/MODULE.md) | RendererFeature on the URP Renderer asset; inspector toggle. |
+| **PostProcess** | `PFound.Render.PostProcess` | Typed post-process request/adapter stack (built-in Blur + Outline adapters). | [PostProcess/MODULE.md](PostProcess/MODULE.md) | `Register(container)` once; self-ticks via `PFound.LoopScheduler`. |
+| **ShaderWarmup** | `PFound.Render.ShaderWarmup` | Time-sliced boot shader variant pre-warm controller. | [ShaderWarmup/MODULE.md](ShaderWarmup/MODULE.md) | `Register(container)` + `BeginSession(...)`; self-ticks via `PFound.LoopScheduler`. |
+| **UIShapes** | `PFound.Render.UIShapes` | SDF UI shape shader + size-sync component + editor bake tooling. | [UIShapes/MODULE.md](UIShapes/MODULE.md) | Assign the `Render/UI/Shape` material to a UI Graphic; add `UIShapeSizeSync`. |
 
 ---
 
@@ -242,6 +265,28 @@ Render/
 │   ├── Runtime/              #   TextureFactory, TextureResizer(+Handle), RenderingTools, RenderDebugTools, AutoSizedRenderTexture
 │   ├── Tests/                #   EditMode/ + PlayMode/
 │   └── MODULE.md
+├── Effects.Blur/             # PFound.Render.Effects.Blur — volume-driven full-screen blur + request service
+│   ├── Runtime/              #   BlurRenderFeature/Pass, BlurStrengthVolumeComponent, BlurSpec, BlurRequestService(+Ticket)
+│   ├── Shaders/              #   Blur.shader + Blur.hlsl
+│   └── MODULE.md
+├── Effects.Outline/          # PFound.Render.Effects.Outline — volume-driven depth-edge outline + request service
+│   ├── Runtime/              #   OutlineRenderFeature/Pass, OutlineVolumeComponent, OutlineSpec, OutlineRequestService(+Ticket)
+│   ├── Shaders/              #   Outline.shader + Outline.hlsl
+│   └── MODULE.md
+├── Effects.Overdraw/         # PFound.Render.Effects.Overdraw — overdraw heatmap debug view (strips in release)
+│   ├── Runtime/              #   OverdrawRenderFeature/Pass, OverdrawThresholdEntry
+│   ├── Shaders/              #   Overdraw.shader + Overdraw.hlsl
+│   └── MODULE.md
+├── PostProcess/              # PFound.Render.PostProcess — typed request/adapter post-process stack
+│   ├── Runtime/              #   Core/ (service, options, registration, ticket), Adapters/ (Blur, Outline), Requests/
+│   └── MODULE.md
+├── ShaderWarmup/             # PFound.Render.ShaderWarmup — time-sliced boot shader pre-warm controller
+│   ├── Runtime/              #   ShaderWarmupController, WarmupSession/Batch, RenderShaderWarmupRegistration
+│   └── MODULE.md
+├── UIShapes/                 # PFound.Render.UIShapes — SDF UI shape shader + tooling
+│   ├── Runtime/              #   UIShapeSizeSync, material-property/keyword helpers, Shaders/ (UIShape.shader + SDF/Noise/Effects HLSL), UIShape.mat
+│   ├── Editor/               # PFound.Render.UIShapes.Editor — inspector + bake window/service/validator
+│   └── MODULE.md
 ├── Shaders/                  # shared authored shaders (SoftToony URP shader set)
 ├── MODULE.md                 # this file
 └── README.md                 # thin landing page
@@ -252,8 +297,9 @@ Render/
 ## Downstream Dependents
 
 None within PFound — no other PFound module references `PFound.Render.*` (verified by asmdef grep).
-BatchRendering and RenderContext consume `PFound.Render.Core`; consumers are game projects that select
-the sub-module assemblies they need.
+Internally, most sub-modules consume `PFound.Render.Core`, and `PFound.Render.PostProcess` consumes
+`PFound.Render.Effects.Blur` + `PFound.Render.Effects.Outline` (its built-in adapters drive their
+volume components). Consumers are game projects that select the sub-module assemblies they need.
 
 ---
 
