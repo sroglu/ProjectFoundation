@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
@@ -45,15 +46,12 @@ namespace PFound.SampleGame.Editor
         private static void RegisterInConfig(GameObject prefab)
         {
             var config = AssetDatabase.LoadAssetAtPath<ScreenRouterConfig>(ConfigPath);
-            var definition = ScreenDefinition.CreateRuntime(typeof(SampleScreen), prefab, PoolingType.Ephemeral);
-            definition.name = "SampleScreen (ScreenDefinition)";
-            AssetDatabase.AddObjectToAsset(definition, config);
 
-            var serialized = new SerializedObject(config);
-            var screens = serialized.FindProperty("_screens");
-            screens.arraySize = 1;
-            screens.GetArrayElementAtIndex(0).objectReferenceValue = definition;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
+            // Definitions serialize INLINE inside the single config asset (no per-screen sub-asset):
+            // build the ScreenDefinition and assign it into the config's `_screens` list directly.
+            var definition = ScreenDefinition.CreateRuntime(typeof(SampleScreen), prefab, PoolingType.Ephemeral);
+            SampleAssetSetup.SetField(config, "_screens", new List<ScreenDefinition> { definition });
+            config.InvalidateCaches();
             EditorUtility.SetDirty(config);
         }
 

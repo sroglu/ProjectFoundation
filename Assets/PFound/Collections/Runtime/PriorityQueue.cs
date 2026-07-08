@@ -24,11 +24,44 @@ namespace PFound.Collections
         }
 
         public int Count => _count;
+        public bool IsEmpty => _count == 0;
 
         public void Clear()
         {
             Array.Clear(_nodes, 0, _count);
             _count = 0;
+        }
+
+        /// <summary>
+        /// Removes the first entry whose value equals <paramref name="value"/> (by
+        /// <see cref="EqualityComparer{TValue}.Default"/>) and re-establishes the heap. O(n).
+        /// Returns <c>true</c> if an entry was found and removed.
+        /// </summary>
+        public bool Remove(TValue value)
+        {
+            var comparer = EqualityComparer<TValue>.Default;
+            for (int i = 0; i < _count; i++)
+            {
+                if (comparer.Equals(_nodes[i].Value, value))
+                {
+                    _count--;
+                    if (i != _count) _nodes[i] = _nodes[_count];
+                    _nodes[_count] = default;
+                    Heapify();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /// <summary>Allocation-free enumerator over the contained values, in unspecified (heap) order.</summary>
+        public Enumerator GetEnumerator() => new Enumerator(this);
+
+        // Floyd build-heap: trickle every internal node down, last-parent → root. O(n), used to
+        // repair the heap after an arbitrary interior removal.
+        private void Heapify()
+        {
+            for (int i = _count / 2 - 1; i >= 0; i--) TrickleDown(i);
         }
 
         public void Add(TKey key, TValue value)
@@ -210,6 +243,18 @@ namespace PFound.Collections
             int capacity = _nodes.Length * 2;
             if (capacity < min) capacity = min;
             Array.Resize(ref _nodes, capacity);
+        }
+
+        /// <summary>Forward struct enumerator over the contained values (heap order, not priority order).</summary>
+        public struct Enumerator
+        {
+            private readonly PriorityQueue<TKey, TValue> _queue;
+            private int _index;
+
+            internal Enumerator(PriorityQueue<TKey, TValue> queue) { _queue = queue; _index = -1; }
+
+            public bool MoveNext() => ++_index < _queue._count;
+            public TValue Current => _queue._nodes[_index].Value;
         }
     }
 }

@@ -13,7 +13,30 @@ MonoBehaviour:
   m_Name: ScreenRouterConfig
   m_EditorClassIdentifier: PFound.ScreenRouter::PFound.ScreenRouter.ScreenRouterConfig
   _screens:
-  - {fileID: 1012308189615659423}
+  - _contentType:
+      _qualifiedName: PFound.SampleGame.SampleScreen, PFound.SampleGame, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    _prefab: {fileID: 8102792722223117845, guid: 26c54542bad7d4979938095ccd830b62, type: 3}
+    _pooling: 0
+    _transitionAnimation:
+      Enabled: 0
+      Duration: 0
+      ScaleFrom: {x: 0, y: 0, z: 0}
+      ScaleTo: {x: 0, y: 0, z: 0}
+      ScaleCurve:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+      AlphaFrom: 0
+      AlphaTo: 0
+      FadeCurve:
+        serializedVersion: 2
+        m_Curve: []
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
   _frames: []
   _baseSortingOrder: 100
   _sortingIncrement: 10
@@ -25,39 +48,3 @@ MonoBehaviour:
   _blurPerFrameAlpha: 0.1
   _blurMaxAlpha: 0.85
   _blurFadeDuration: 0.15
---- !u!114 &1012308189615659423
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e512e8c77c7fc438daa8c8f4e0348c30, type: 3}
-  m_Name: SampleScreen (ScreenDefinition)
-  m_EditorClassIdentifier: PFound.ScreenRouter::PFound.ScreenRouter.ScreenDefinition
-  _contentType:
-    _qualifiedName: PFound.SampleGame.SampleScreen, PFound.SampleGame, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-  _prefab: {fileID: 8102792722223117845, guid: 26c54542bad7d4979938095ccd830b62, type: 3}
-  _pooling: 0
-  _transitionAnimation:
-    Enabled: 0
-    Duration: 0
-    ScaleFrom: {x: 0, y: 0, z: 0}
-    ScaleTo: {x: 0, y: 0, z: 0}
-    ScaleCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    AlphaFrom: 0
-    AlphaTo: 0
-    FadeCurve:
-      serializedVersion: 2
-      m_Curve: []
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
