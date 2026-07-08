@@ -106,6 +106,7 @@ internal static class SystemRegistryTests
         PFound.ECS.Tests.Registry.ExampleMovementSystem.Ran = 0;
 
         var w = new World();
+        w.DeltaTime = 0.016f; // scaled systems only run while time advances
         PFound.ECS.Generated.SystemRegistry.Register(w);
         w.Update();
 

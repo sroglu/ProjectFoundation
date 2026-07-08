@@ -1,8 +1,11 @@
 # PFound.RemoteResourceCache
 
-A three-tier cache for remote binary resources — **memory → disk → remote** — with single-flight
-loads, ref-count pinning, retry-with-backoff, disk TTL, and pluggable eviction. The cache core is
-engine-free pure C# (`ResourceCache<T>`); a thin Unity adapter wires it to `Texture2D`.
+A tiered cache for remote binary resources — by default **memory → disk → remote** — with
+single-flight loads, ref-count pinning, retry-with-backoff, TTL on both the memory and disk tiers,
+disk content-versioning + partitions, optional loading-feedback hooks, and pluggable eviction. The
+fixed trio is the convenience default; `ResourceCacheBuilder<T>` composes arbitrary N-source
+topologies (memory-only, extra disk levels, custom stores) with write-back to earlier layers. The
+cache core is engine-free pure C# (`ResourceCache<T>`); a thin Unity adapter wires it to `Texture2D`.
 
 ## Quick reference
 
@@ -20,6 +23,12 @@ if (result.Success) icon.texture = result.Value;   // result.Tier says which tie
 
 // Textures with the settled BestHTTP transport auto-wired (PFOUND_BESTHTTP):
 var textures = RemoteTextureCache.Create();
+
+// Arbitrary topology (memory-only, extra disk levels, custom stores) with write-back to earlier layers:
+var custom = ResourceCacheBuilder<byte[]>.Create(decode)
+    .Policy(policy).Observer(spinnerObserver)      // OnLoadStarted/Completed/Failed
+    .AddDisk(fastDisk).AddDisk(bulkDisk).AddRemote(myTransport)
+    .Build();
 ```
 
 ## Dependencies

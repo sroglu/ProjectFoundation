@@ -47,9 +47,11 @@ namespace PFound.ECS
     {
         public ComponentMask Include;
         public ComponentMask Exclude;
+        public InteractionFilter Interaction;      // optional interaction-role predicate
         public Entity[] Cache = new Entity[8];
         public int Count;
-        public int Version = -1; // structure version the cache was built at
+        public int Version = -1;                   // structure version the cache was built at
+        public int InteractionVersion = -1;        // interaction-store version the cache was built at
     }
 
     public readonly struct QueryBuilder<T1> where T1 : struct
@@ -57,21 +59,28 @@ namespace PFound.ECS
         private readonly World _world;
         private readonly ComponentMask _include;
         private readonly ComponentMask _exclude;
+        private readonly InteractionFilter _interaction;
 
-        internal QueryBuilder(World world, in ComponentMask include, in ComponentMask exclude)
+        internal QueryBuilder(World world, in ComponentMask include, in ComponentMask exclude, in InteractionFilter interaction)
         {
-            _world = world; _include = include; _exclude = exclude;
+            _world = world; _include = include; _exclude = exclude; _interaction = interaction;
         }
 
         public QueryBuilder<T1> Without<TX>() where TX : struct
         {
             var ex = _exclude; ex.Set(ComponentType<TX>.Id);
-            return new QueryBuilder<T1>(_world, _include, ex);
+            return new QueryBuilder<T1>(_world, _include, ex, _interaction);
         }
 
-        public QueryId Build() => _world.RegisterQuery(_include, _exclude);
+        /// <summary>Restrict to entities that play <paramref name="role"/> in an interaction of <paramref name="type"/>.</summary>
+        public QueryBuilder<T1> WithInteraction(int type, InteractionRole role = InteractionRole.Interactor)
+            => new QueryBuilder<T1>(_world, _include, _exclude, new InteractionFilter(type, role));
+        public QueryBuilder<T1> AsInteractor() => new QueryBuilder<T1>(_world, _include, _exclude, new InteractionFilter(_interaction.Type, InteractionRole.Interactor));
+        public QueryBuilder<T1> AsInteractee() => new QueryBuilder<T1>(_world, _include, _exclude, new InteractionFilter(_interaction.Type, InteractionRole.Interactee));
 
-        public void ForEach(RefAction<T1> action) => _world.ForEach(_include, _exclude, action);
+        public QueryId Build() => _world.RegisterQuery(_include, _exclude, _interaction);
+
+        public void ForEach(RefAction<T1> action) => _world.ForEach(_include, _exclude, _interaction, action);
     }
 
     public readonly struct QueryBuilder<T1, T2> where T1 : struct where T2 : struct
@@ -79,21 +88,27 @@ namespace PFound.ECS
         private readonly World _world;
         private readonly ComponentMask _include;
         private readonly ComponentMask _exclude;
+        private readonly InteractionFilter _interaction;
 
-        internal QueryBuilder(World world, in ComponentMask include, in ComponentMask exclude)
+        internal QueryBuilder(World world, in ComponentMask include, in ComponentMask exclude, in InteractionFilter interaction)
         {
-            _world = world; _include = include; _exclude = exclude;
+            _world = world; _include = include; _exclude = exclude; _interaction = interaction;
         }
 
         public QueryBuilder<T1, T2> Without<TX>() where TX : struct
         {
             var ex = _exclude; ex.Set(ComponentType<TX>.Id);
-            return new QueryBuilder<T1, T2>(_world, _include, ex);
+            return new QueryBuilder<T1, T2>(_world, _include, ex, _interaction);
         }
 
-        public QueryId Build() => _world.RegisterQuery(_include, _exclude);
+        public QueryBuilder<T1, T2> WithInteraction(int type, InteractionRole role = InteractionRole.Interactor)
+            => new QueryBuilder<T1, T2>(_world, _include, _exclude, new InteractionFilter(type, role));
+        public QueryBuilder<T1, T2> AsInteractor() => new QueryBuilder<T1, T2>(_world, _include, _exclude, new InteractionFilter(_interaction.Type, InteractionRole.Interactor));
+        public QueryBuilder<T1, T2> AsInteractee() => new QueryBuilder<T1, T2>(_world, _include, _exclude, new InteractionFilter(_interaction.Type, InteractionRole.Interactee));
 
-        public void ForEach(RefAction<T1, T2> action) => _world.ForEach(_include, _exclude, action);
+        public QueryId Build() => _world.RegisterQuery(_include, _exclude, _interaction);
+
+        public void ForEach(RefAction<T1, T2> action) => _world.ForEach(_include, _exclude, _interaction, action);
     }
 
     public readonly struct QueryBuilder<T1, T2, T3>
@@ -102,20 +117,26 @@ namespace PFound.ECS
         private readonly World _world;
         private readonly ComponentMask _include;
         private readonly ComponentMask _exclude;
+        private readonly InteractionFilter _interaction;
 
-        internal QueryBuilder(World world, in ComponentMask include, in ComponentMask exclude)
+        internal QueryBuilder(World world, in ComponentMask include, in ComponentMask exclude, in InteractionFilter interaction)
         {
-            _world = world; _include = include; _exclude = exclude;
+            _world = world; _include = include; _exclude = exclude; _interaction = interaction;
         }
 
         public QueryBuilder<T1, T2, T3> Without<TX>() where TX : struct
         {
             var ex = _exclude; ex.Set(ComponentType<TX>.Id);
-            return new QueryBuilder<T1, T2, T3>(_world, _include, ex);
+            return new QueryBuilder<T1, T2, T3>(_world, _include, ex, _interaction);
         }
 
-        public QueryId Build() => _world.RegisterQuery(_include, _exclude);
+        public QueryBuilder<T1, T2, T3> WithInteraction(int type, InteractionRole role = InteractionRole.Interactor)
+            => new QueryBuilder<T1, T2, T3>(_world, _include, _exclude, new InteractionFilter(type, role));
+        public QueryBuilder<T1, T2, T3> AsInteractor() => new QueryBuilder<T1, T2, T3>(_world, _include, _exclude, new InteractionFilter(_interaction.Type, InteractionRole.Interactor));
+        public QueryBuilder<T1, T2, T3> AsInteractee() => new QueryBuilder<T1, T2, T3>(_world, _include, _exclude, new InteractionFilter(_interaction.Type, InteractionRole.Interactee));
 
-        public void ForEach(RefAction<T1, T2, T3> action) => _world.ForEach(_include, _exclude, action);
+        public QueryId Build() => _world.RegisterQuery(_include, _exclude, _interaction);
+
+        public void ForEach(RefAction<T1, T2, T3> action) => _world.ForEach(_include, _exclude, _interaction, action);
     }
 }

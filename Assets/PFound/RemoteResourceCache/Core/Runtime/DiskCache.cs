@@ -12,7 +12,9 @@ namespace PFound.RemoteResourceCache.Core
     /// periodically and on shutdown) so a hot read/write path never rewrites the whole store, yet LFU/TimeBased
     /// ordering survives a restart. Blob presence is sourced from the filesystem, so an offline read of a
     /// pre-warmed cache works even if the sidecar was never flushed (the entry is adopted from the file's mtime).
-    /// TTL expiry is enforced on read. Engine-free / mono-testable.
+    /// TTL expiry is enforced on read. A <b>content version</b> stamps the generation of the cached bytes: when
+    /// the configured version differs from the one persisted in the sidecar, the whole prior generation is purged
+    /// on open, so stale bytes never leak across a format/schema change. Engine-free / mono-testable.
     /// </summary>
     public sealed class DiskCache
     {
@@ -27,7 +29,7 @@ namespace PFound.RemoteResourceCache.Core
         }
 
         private const uint Magic = 0x58435252; // "RRCX"
-        private const int FormatVersion = 1;
+        private const int FormatVersion = 2;    // v2 adds the content-version stamp to the sidecar header
 
         private readonly IBlobStore _store;
         private readonly string _metadataPath;
@@ -36,6 +38,7 @@ namespace PFound.RemoteResourceCache.Core
         private readonly long _maxBytes;
         private readonly TimeSpan _ttl;
         private readonly TimeSpan _flushInterval;
+        private readonly int _contentVersion;
         private readonly Func<DateTime> _clock;
 
         private readonly Dictionary<string, DiskEntry> _index = new Dictionary<string, DiskEntry>(StringComparer.Ordinal);
@@ -52,7 +55,8 @@ namespace PFound.RemoteResourceCache.Core
             long maxBytes = 0,
             TimeSpan ttl = default,
             TimeSpan flushInterval = default,
-            Func<DateTime> clock = null)
+            Func<DateTime> clock = null,
+            int contentVersion = 0)
         {
             _store = store;
             _metadataPath = metadataPath;
@@ -61,18 +65,24 @@ namespace PFound.RemoteResourceCache.Core
             _maxBytes = maxBytes;
             _ttl = ttl;
             _flushInterval = flushInterval;
+            _contentVersion = contentVersion;
             _clock = clock ?? (() => DateTime.UtcNow);
             _lastFlush = _clock();
-            LoadIndex();
+            int storedVersion = LoadIndex();
+            if (storedVersion != _contentVersion)
+                PurgeGeneration();
         }
 
         /// <summary>Builds a disk tier from the disk-related knobs of a <see cref="CachePolicy"/>.</summary>
         public static DiskCache FromPolicy(IBlobStore store, string metadataPath, CachePolicy policy, Func<DateTime> clock = null) =>
             new DiskCache(store, metadataPath, policy.DiskEviction, policy.MaxDiskEntries, policy.MaxDiskBytes,
-                policy.Ttl, policy.DiskFlushInterval, clock);
+                policy.Ttl, policy.DiskFlushInterval, clock, policy.DiskContentVersion);
 
         public int Count => _index.Count;
         public long Bytes => _bytes;
+
+        /// <summary>The content generation this tier is stamped with (see <see cref="CachePolicy.DiskContentVersion"/>).</summary>
+        public int ContentVersion => _contentVersion;
 
         public bool TryGetMetadata(string key, out long size, out DateTime createdUtc, out DateTime lastAccessedUtc, out long accessCount)
         {
@@ -151,16 +161,30 @@ namespace PFound.RemoteResourceCache.Core
             _dirty = true;
         }
 
-        /// <summary>Drops every blob and the metadata sidecar.</summary>
+        /// <summary>Drops every blob (the store's whole scope, orphans included) and the metadata sidecar.</summary>
         public void Clear()
         {
-            foreach (var key in new List<string>(_index.Keys))
-                _store.Delete(key);
+            _store.Clear();
             _index.Clear();
             _bytes = 0;
             _dirty = false;
             if (File.Exists(_metadataPath)) File.Delete(_metadataPath);
             _lastFlush = _clock();
+        }
+
+        /// <summary>
+        /// Wipes the store and re-stamps the sidecar with the current content version. Runs on open when the
+        /// persisted version does not match the configured one, so a prior generation's bytes are never served.
+        /// </summary>
+        private void PurgeGeneration()
+        {
+            _store.Clear();
+            _index.Clear();
+            _bytes = 0;
+            // Persist the new generation stamp immediately so a crash before the debounced flush doesn't leave
+            // an ambiguous (or old) version on disk. Purging an empty index is cheap.
+            _dirty = true;
+            Flush();
         }
 
         /// <summary>Persists the metadata index now (called on shutdown, or when the debounce interval elapses).</summary>
@@ -172,6 +196,7 @@ namespace PFound.RemoteResourceCache.Core
                 {
                     w.Write(Magic);
                     w.Write(FormatVersion);
+                    w.Write(_contentVersion);
                     w.Write(_index.Count);
                     foreach (var e in _index.Values)
                     {
@@ -255,14 +280,19 @@ namespace PFound.RemoteResourceCache.Core
             }
         }
 
-        private void LoadIndex()
+        /// <summary>Loads the sidecar and returns the content version it was stamped with (matching the configured
+        /// version when there is nothing prior to reconcile, so a fresh or unreadable sidecar never triggers a purge).</summary>
+        private int LoadIndex()
         {
-            if (!File.Exists(_metadataPath)) return;
+            if (!File.Exists(_metadataPath)) return _contentVersion;
             byte[] raw = File.ReadAllBytes(_metadataPath);
             using (var ms = new MemoryStream(raw))
             using (var r = new BinaryReader(ms, System.Text.Encoding.UTF8))
             {
-                if (ms.Length < 12 || r.ReadUInt32() != Magic || r.ReadInt32() != FormatVersion) return;
+                if (ms.Length < 16 || r.ReadUInt32() != Magic) return _contentVersion;
+                int format = r.ReadInt32();
+                if (format != FormatVersion) return _contentVersion;
+                int storedVersion = r.ReadInt32();
                 int count = r.ReadInt32();
                 for (int i = 0; i < count; i++)
                 {
@@ -282,6 +312,7 @@ namespace PFound.RemoteResourceCache.Core
                         _bytes += e.Size;
                     }
                 }
+                return storedVersion;
             }
         }
     }

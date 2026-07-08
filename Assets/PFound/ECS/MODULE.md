@@ -37,8 +37,9 @@ All PFound.ECS assemblies are `autoReferenced: false`, so a consumer asmdef must
   type registry (max 256 component types).
 - `QueryBuilder<T1..T10>`, `QueryId`, `QueryResult`, `RefAction<...>` — the query surface.
 - `CommandBuffer` — deferred structural changes.
-- `EventManager` (`World.Events`), `InteractionManager` (`World.Interactions`), `Interaction`,
-  `InteractionView`.
+- `EventManager` (`World.Events`) + `SpanAction<T>` (batch handler), `InteractionManager`
+  (`World.Interactions`), `Interaction`, `InteractionView`, `InteractionType` /
+  `InteractionTypeRegistry` / `InteractionRole` (named, typed interaction keys).
 - `SystemBase` + attributes `ECSSystemAttribute` / `DependsOnAttribute` / `ActiveInSceneAttribute`,
   enums `ECSPhase` / `UpdateTime`. `SystemDiscovery`, `SystemRegistryEmitter` (reflection + codegen).
 
@@ -59,6 +60,10 @@ before ticking: `float DeltaTime`, `float UnscaledDeltaTime`; scene name via
 `bool Has<T>(Entity)`, `void Remove<T>(Entity)`, `bool RemoveIfExists<T>(Entity)`. Components are
 plain `struct`s, auto-registered on first use.
 
+- `Span<T> GetAllComponents<T>()` — bulk single-array access to the packed dense store of every
+  `T`. Zero-copy over live storage (writes through the span mutate in place); dense order, not
+  entity order; invalidated by the next structural change to that pool.
+
 **Queries** — `QueryBuilder<T1..T10> Query<...>()`. Refine with `.Without<TX>()`, then either:
 
 - `void ForEach(RefAction<...>)` — zero-alloc iteration over the dense arrays:
@@ -74,29 +79,74 @@ plain `struct`s, auto-registered on first use.
 iteration: `Entity Create()`, `void Destroy(Entity)`, `void Add<T>(Entity, in T)`,
 `void Remove<T>(Entity)`, `int Count`; apply with `void Playback()`.
 
-**Events (`World.Events`)** — `IDisposable Subscribe<T>(Action<T>)`, `void Publish<T>(in T)` (queues),
-`void Dispatch()` (delivers in publish order, re-entrancy safe), `int PendingCount`. `T : struct`.
+**Events (`World.Events`)** — `IDisposable Subscribe<T>(Action<T>)` (per-event),
+`IDisposable SubscribeBatch<T>(SpanAction<T>)` (all queued events of a type delivered in one
+`Span<T>` call), `void Publish<T>(in T)` (queues), `void Dispatch()` (delivers per-event handlers
+then batch handlers, in publish order, re-entrancy safe), `int PendingCount`. `T : struct`.
 
-**Interactions (`World.Interactions`)** — `void Start(int interactionType, Entity interactor, Entity
-interactee)`, `InteractionView Get(int interactionType)`, `InteractionView OfInteractor(int
-interactionType, Entity)`, `void ForEachInteractee(int interactionType, Entity, Action<Entity>)`,
-`void Clear()` / `void Clear(int interactionType)` (typically reset each frame).
+**Interactions (`World.Interactions`)** — directed entity↔entity relationships keyed by an
+interaction-type id (a raw `int`, or a named `InteractionType` that implicitly converts to `int`).
+
+- Record / reset: `void Start(int, Entity interactor, Entity interactee)` (de-dupes an identical
+  active interaction; reactivates a completed one), `void Clear()` / `void Clear(int)`.
+- Forward reads: `InteractionView Get(int)`, `InteractionView OfInteractor(int, Entity)`,
+  `void ForEachInteractee(int, Entity, Action<Entity>)`.
+- Reverse (interactee→interactor) reads: `InteractionView OfInteractee(int, Entity)`,
+  `void ForEachInteractor(int, Entity, Action<Entity>)`.
+- Completion state: `void CompleteInteraction(in Interaction)`, `bool IsComplete(in Interaction)`,
+  `void CompleteAllOfInteractor(int, Entity)`, `void CompleteAllOfType(int)`.
+- Existence / role: `bool Exists(int, Entity interactor, Entity interactee)`,
+  `bool HasInteractionOfType(int, Entity)` (either role),
+  `bool HasRole(int, Entity, InteractionRole)`.
+- Dirty tracking: `bool IsDirty(int)`, `IReadOnlyCollection<int> DirtyTypes`, `void ClearDirtyMask()`,
+  and a monotonic `int Version` (drives interaction-query cache invalidation).
+- Typed keys: `InteractionType` (`Create(name)` / `Named(value, name)` / `Invalid` / `Reverse`) with
+  an id↔name `InteractionTypeRegistry` (registers a `name + "_reverse"` for the reverse id).
+- `Interaction` carries `Id`, `Type`, `Interactor`, `Interactee`.
 
 **Systems** — subclass `SystemBase`, override `protected abstract void Execute()`, optionally
-`protected virtual void OnInitialize()` / `protected virtual void CreateQueries()`. `protected float
-DeltaTime` resolves to the scaled or unscaled clock per the attribute. Class-level attributes:
+`protected virtual void OnInitialize()` / `protected virtual void CreateQueries()` /
+`protected virtual void OnDispose()`. `protected float DeltaTime` resolves to the scaled or unscaled
+clock per the attribute. Each system also gets:
+
+- `protected CommandBuffer CommandBuffer` — a per-system deferred buffer that the world **plays
+  back automatically** right after `Execute()`. Record structural changes during iteration; no
+  manual `Playback()` needed.
+- `protected void Subscribe<T>(Action<T>)` / `protected void SubscribeBatch<T>(SpanAction<T>)` —
+  lifecycle-managed event subscriptions that are **auto-unsubscribed** when the system is torn down.
+- `public void Dispose()` — teardown (drops managed subscriptions, then `OnDispose()`); called
+  automatically by `World.Dispose()` / `World.ReloadScene(...)`.
+
+Class-level attributes:
 
 - `[ECSSystem(ECSPhase phase = OnUpdate, UpdateTime time = Scaled)]`.
-- `[DependsOn(typeof(OtherSystem), ...)]` — orders within a phase (topo-sorted).
+- `[DependsOn(typeof(OtherSystem), ...)]` — orders within a phase (topo-sorted; a dependency cycle
+  is reported as an `InvalidOperationException`, not silently broken).
 - `[ActiveInScene("Level1", ...)]` — scene-scoped (matched against `CurrentScene`).
 
 Phases run in declaration order: `PreUpdate`, `OnUpdate`, `PostUpdate`, `PreRender`, `OnRender`,
 `PostRender`, `PostFrame`.
 
+**Pause gate.** `Scaled` systems run only while time advances (`DeltaTime > 0`); `Unscaled` systems
+always run. Setting `DeltaTime = 0` (e.g. a paused game) therefore skips scaled systems while
+unscaled ones keep ticking. Feed a positive `DeltaTime` before `Update()` to run scaled systems.
+
 **System registration & tick** — `void RegisterSystem(SystemBase)` for one instance, or
 `void DiscoverSystems(IEnumerable<Type>)` to reflect-and-register many (`SystemDiscovery
-.FromLoadedAssemblies()` supplies the type list). `void Update()` runs every active system in phase
-then dependency order; `void RunPhase(ECSPhase)` runs a single phase.
+.FromLoadedAssemblies()` supplies the type list). `T GetSystem<T>()` / `bool TryGetSystem<T>(out T)`
+look up a registered system by type. `void Update()` runs every active system in phase then
+dependency order; `void RunPhase(ECSPhase)` runs a single phase.
+
+**Scene lifecycle.** `void SceneChanged(string)` is the light, SPEC default: systems persist and are
+merely re-filtered by `[ActiveInScene]`. `void ReloadScene(string)` is the destructive legacy
+lifecycle: it disposes every system, clears all entities / components / events / interactions,
+switches scene, then re-initializes the systems.
+
+**Interaction-scoped queries.** A query can additionally require an interaction role:
+`world.Query<Combatant>().WithInteraction(Attack).AsInteractor()` (or `.AsInteractee()`, or
+`.WithInteraction(type, InteractionRole.Interactee)`) matches only entities that play that role in
+an interaction of the given type. Works on both `.ForEach(...)` and the cached `.Build()` path
+(cache refreshes when the interaction store changes).
 
 ## Setup / wiring
 
@@ -157,13 +207,13 @@ ECS/
     World.cs, World.HighArity.cs, World.Systems.cs
     Entity.cs, ComponentPool.cs, ComponentMask.cs, ComponentType.cs
     Query.cs, QueryBuilders.HighArity.cs
-    CommandBuffer.cs, EventManager.cs, InteractionManager.cs
+    CommandBuffer.cs, EventManager.cs, InteractionManager.cs, InteractionType.cs
     SystemBase.cs, SystemAttributes.cs, SystemDiscovery.cs, SystemRegistryEmitter.cs
   Editor/     SystemRegistryGenerator.cs                     # PFound.ECS.Editor
   Unity/      NativeEcsAdapters.cs                           # PFound.ECS.Unity
   Samples/    TransformModule, CameraModule, RenderModule, ParticleModule,
               SampleBootstrap, SystemRegistry.g.cs           # PFound.ECS.Samples
-  Tests/      Program.cs + Core/Query/CommandBuffer/Event/Interaction/System characterization tests
+  Tests/      Program.cs + Core/Query/CommandBuffer/Event/Interaction/Data/System characterization tests
 ```
 
 ## Downstream Dependents
@@ -185,6 +235,10 @@ None within PFound. The four `Samples/` modules are the reference consumers; gam
 
 - Main-thread only; no internal locking. The optional `NativeArray` adapters enable jobs interop but
   the World itself is single-threaded.
+- `Scaled` systems are paused when `DeltaTime == 0` (the pause gate) — feed a positive `DeltaTime`
+  before `Update()` or they will not run; `Unscaled` systems are exempt.
+- Interactions are transient and owner-managed: nothing auto-clears them — call `Interactions.Clear()`
+  (and typically `ClearDirtyMask()`) each frame if you use them as per-frame relationships.
 - Max 256 component types per process (mask width).
 - Queries support up to 10 component type parameters (`T1..T10`) plus `.Without<TX>()` exclusions.
 - `QueryResult` / `InteractionView` are borrowed views — invalidated by the next structural change;

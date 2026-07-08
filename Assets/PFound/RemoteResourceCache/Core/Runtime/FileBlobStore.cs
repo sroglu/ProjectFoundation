@@ -8,15 +8,19 @@ namespace PFound.RemoteResourceCache.Core
     /// (fast non-crypto — filename derivation, not integrity), so arbitrary keys/URLs become collision-resistant,
     /// filesystem-safe names. Writes publish atomically (unique temp file + rename) so a crash or cancelled fetch
     /// never leaves a partial blob at the final path — a present file is therefore always complete, which is what
-    /// makes the offline-first read safe.
+    /// makes the offline-first read safe. An optional <c>partition</c> scopes the store to a sub-directory of the
+    /// root, so several independent caches can share one root without their blobs (or their <see cref="Clear"/>s)
+    /// colliding.
     /// </summary>
     public sealed class FileBlobStore : IBlobStore
     {
         private readonly string _root;
 
-        public FileBlobStore(string rootDirectory)
+        /// <param name="rootDirectory">Directory the blobs live in.</param>
+        /// <param name="partition">Optional sub-scope under the root; null/empty = the root itself.</param>
+        public FileBlobStore(string rootDirectory, string partition = null)
         {
-            _root = rootDirectory;
+            _root = string.IsNullOrEmpty(partition) ? rootDirectory : Path.Combine(rootDirectory, partition);
             Directory.CreateDirectory(_root);
         }
 
@@ -55,6 +59,33 @@ namespace PFound.RemoteResourceCache.Core
         }
 
         public DateTime GetTimestampUtc(string key) => File.GetLastWriteTimeUtc(PathFor(key));
+
+        /// <summary>
+        /// Deletes every blob (and any leftover temp write) in this store's directory, leaving foreign files
+        /// (e.g. a higher tier's metadata sidecar) alone by only removing files whose name matches the blob
+        /// naming shape — the 16-char hex xxHash3 digest — plus its atomic-write temps.
+        /// </summary>
+        public void Clear()
+        {
+            foreach (string path in Directory.GetFiles(_root))
+            {
+                string name = Path.GetFileName(path);
+                if (IsBlobName(name) || name.Contains(".tmp-"))
+                    File.Delete(path);
+            }
+        }
+
+        private static bool IsBlobName(string name)
+        {
+            if (name.Length != 16) return false;
+            for (int i = 0; i < name.Length; i++)
+            {
+                char c = name[i];
+                bool isHex = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
+                if (!isHex) return false;
+            }
+            return true;
+        }
 
         private string PathFor(string key) => Path.Combine(_root, FileNameFor(key));
     }

@@ -20,6 +20,13 @@ namespace PFound.RemoteResourceCache.Core
 
         void Delete(string key);
 
+        /// <summary>
+        /// Removes every blob this store owns (its whole scope/partition), including any that are not tracked by
+        /// a caller's index. Used to purge a prior content generation wholesale; the store's own metadata (e.g. a
+        /// sidecar owned by a higher tier) is left untouched.
+        /// </summary>
+        void Clear();
+
         /// <summary>UTC write time of the stored blob, used by the cache to enforce a TTL.</summary>
         DateTime GetTimestampUtc(string key);
     }

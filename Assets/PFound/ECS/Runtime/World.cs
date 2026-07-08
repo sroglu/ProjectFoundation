@@ -169,19 +169,27 @@ namespace PFound.ECS
             return true;
         }
 
+        /// <summary>
+        /// Bulk read: the packed dense array of every <typeparamref name="T"/> component as a
+        /// <see cref="Span{T}"/>. Zero-copy over live storage — writes through the span mutate the
+        /// components in place. The span is entity-agnostic (dense order, not entity-id order) and
+        /// is invalidated by the next structural change to the <typeparamref name="T"/> pool.
+        /// </summary>
+        public Span<T> GetAllComponents<T>() where T : struct => Pool<T>().Values();
+
         // ---- queries ----
 
         public QueryBuilder<T1> Query<T1>() where T1 : struct
         {
             var inc = default(ComponentMask); inc.Set(ComponentType<T1>.Id);
-            return new QueryBuilder<T1>(this, inc, default);
+            return new QueryBuilder<T1>(this, inc, default, default);
         }
 
         public QueryBuilder<T1, T2> Query<T1, T2>() where T1 : struct where T2 : struct
         {
             var inc = default(ComponentMask);
             inc.Set(ComponentType<T1>.Id); inc.Set(ComponentType<T2>.Id);
-            return new QueryBuilder<T1, T2>(this, inc, default);
+            return new QueryBuilder<T1, T2>(this, inc, default, default);
         }
 
         public QueryBuilder<T1, T2, T3> Query<T1, T2, T3>()
@@ -189,36 +197,48 @@ namespace PFound.ECS
         {
             var inc = default(ComponentMask);
             inc.Set(ComponentType<T1>.Id); inc.Set(ComponentType<T2>.Id); inc.Set(ComponentType<T3>.Id);
-            return new QueryBuilder<T1, T2, T3>(this, inc, default);
+            return new QueryBuilder<T1, T2, T3>(this, inc, default, default);
         }
 
-        internal QueryId RegisterQuery(in ComponentMask include, in ComponentMask exclude)
+        internal QueryId RegisterQuery(in ComponentMask include, in ComponentMask exclude, in InteractionFilter interaction)
         {
             // Dedupe identical signatures so repeated Build() calls don't leak queries.
             for (int i = 0; i < _queries.Count; i++)
             {
-                if (_queries[i].Include.Equals(include) && _queries[i].Exclude.Equals(exclude))
+                if (_queries[i].Include.Equals(include) && _queries[i].Exclude.Equals(exclude)
+                    && _queries[i].Interaction.Equals(interaction))
                     return new QueryId(i);
             }
-            _queries.Add(new QueryData { Include = include, Exclude = exclude });
+            _queries.Add(new QueryData { Include = include, Exclude = exclude, Interaction = interaction });
             return new QueryId(_queries.Count - 1);
         }
 
         private void RebuildIfStale(QueryData q)
         {
-            if (q.Version == _structureVersion) return;
+            // Interaction-scoped queries also invalidate when the interaction store mutates.
+            int iv = q.Interaction.Active && _interactions != null ? _interactions.Version : 0;
+            if (q.Version == _structureVersion && q.InteractionVersion == iv) return;
             q.Count = 0;
             for (int id = 0; id < _nextId; id++)
             {
                 if (!_alive[id]) continue;
                 ref var m = ref _masks[id];
-                if (m.ContainsAll(q.Include) && !m.ContainsAny(q.Exclude))
+                if (m.ContainsAll(q.Include) && !m.ContainsAny(q.Exclude)
+                    && MatchesInteraction(q.Interaction, id))
                 {
                     if (q.Count == q.Cache.Length) Array.Resize(ref q.Cache, q.Cache.Length * 2);
                     q.Cache[q.Count++] = new Entity(id, _versions[id]);
                 }
             }
             q.Version = _structureVersion;
+            q.InteractionVersion = iv;
+        }
+
+        // True if the entity satisfies an (optional) interaction-role filter.
+        private bool MatchesInteraction(in InteractionFilter filter, int entityId)
+        {
+            if (!filter.Active) return true;
+            return Interactions.HasRole(filter.Type, new Entity(entityId, _versions[entityId]), filter.Role);
         }
 
         public QueryResult Entities(QueryId id)
@@ -231,14 +251,14 @@ namespace PFound.ECS
         /// <summary>Forces query caches to rebuild on next access. For tests.</summary>
         public void FlushQueries() => _structureVersion++;
 
-        private int MatchInto(in ComponentMask inc, in ComponentMask exc, ref Entity[] buffer)
+        internal int MatchInto(in ComponentMask inc, in ComponentMask exc, in InteractionFilter filter, ref Entity[] buffer)
         {
             int c = 0;
             for (int id = 0; id < _nextId; id++)
             {
                 if (!_alive[id]) continue;
                 ref var m = ref _masks[id];
-                if (m.ContainsAll(inc) && !m.ContainsAny(exc))
+                if (m.ContainsAll(inc) && !m.ContainsAny(exc) && MatchesInteraction(filter, id))
                 {
                     if (c == buffer.Length) Array.Resize(ref buffer, buffer.Length * 2);
                     buffer[c++] = new Entity(id, _versions[id]);
@@ -247,11 +267,11 @@ namespace PFound.ECS
             return c;
         }
 
-        internal void ForEach<T1>(in ComponentMask inc, in ComponentMask exc, RefAction<T1> action)
+        internal void ForEach<T1>(in ComponentMask inc, in ComponentMask exc, in InteractionFilter filter, RefAction<T1> action)
             where T1 : struct
         {
             var p1 = Pool<T1>();
-            int c = MatchInto(inc, exc, ref _scratch);
+            int c = MatchInto(inc, exc, filter, ref _scratch);
             for (int i = 0; i < c; i++)
             {
                 var e = _scratch[i];
@@ -259,11 +279,11 @@ namespace PFound.ECS
             }
         }
 
-        internal void ForEach<T1, T2>(in ComponentMask inc, in ComponentMask exc, RefAction<T1, T2> action)
+        internal void ForEach<T1, T2>(in ComponentMask inc, in ComponentMask exc, in InteractionFilter filter, RefAction<T1, T2> action)
             where T1 : struct where T2 : struct
         {
             var p1 = Pool<T1>(); var p2 = Pool<T2>();
-            int c = MatchInto(inc, exc, ref _scratch);
+            int c = MatchInto(inc, exc, filter, ref _scratch);
             for (int i = 0; i < c; i++)
             {
                 var e = _scratch[i];
@@ -271,11 +291,11 @@ namespace PFound.ECS
             }
         }
 
-        internal void ForEach<T1, T2, T3>(in ComponentMask inc, in ComponentMask exc, RefAction<T1, T2, T3> action)
+        internal void ForEach<T1, T2, T3>(in ComponentMask inc, in ComponentMask exc, in InteractionFilter filter, RefAction<T1, T2, T3> action)
             where T1 : struct where T2 : struct where T3 : struct
         {
             var p1 = Pool<T1>(); var p2 = Pool<T2>(); var p3 = Pool<T3>();
-            int c = MatchInto(inc, exc, ref _scratch);
+            int c = MatchInto(inc, exc, filter, ref _scratch);
             for (int i = 0; i < c; i++)
             {
                 var e = _scratch[i];
@@ -285,6 +305,7 @@ namespace PFound.ECS
 
         public void Dispose()
         {
+            DisposeSystems();
             Array.Clear(_pools, 0, _pools.Length);
             _queries.Clear();
             _free.Clear();
@@ -292,6 +313,7 @@ namespace PFound.ECS
             _events?.Clear();
             _interactions?.Clear();
             _systems.Clear();
+            _byType.Clear();
             _ordered = Array.Empty<SystemBase>();
             _systemsDirty = false;
         }

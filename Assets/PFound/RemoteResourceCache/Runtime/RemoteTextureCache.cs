@@ -23,8 +23,12 @@ namespace PFound.RemoteResourceCache
             // Fail-fast: no transport injected and none registered → a genuine misconfiguration.
             IResourceTransport t = transport ?? RemoteResourceCacheDefaults.Transport;
 
+            CachePolicy effective = policy ?? CachePolicy.Default;
             string root = Path.Combine(Application.persistentDataPath, diskSubdirectory);
-            var disk = DiskCache.FromPolicy(new FileBlobStore(root), Path.Combine(root, "index.bin"), policy ?? CachePolicy.Default);
+            // The optional partition scopes blobs to a sub-folder; the metadata sidecar stays at the root so a
+            // content-version purge (which wipes the partition) never touches it.
+            var store = new FileBlobStore(root, effective.DiskPartition);
+            var disk = DiskCache.FromPolicy(store, Path.Combine(root, "index.bin"), effective);
 
             return new ResourceCache<Texture2D>(
                 t,

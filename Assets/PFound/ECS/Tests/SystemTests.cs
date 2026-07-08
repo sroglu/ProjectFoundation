@@ -14,8 +14,15 @@ internal static class SystemTests
         DependsOnOrdering();
         ActiveInSceneFiltering();
         ScaledVsUnscaledDelta();
+        ScaledSystemsPauseAtZeroDelta();
         RunPhaseRunsOnlyThatPhase();
         ReflectionDiscovery();
+        GetSystemAndTryGetSystem();
+        DependencyCycleThrows();
+        PerSystemCommandBufferAutoPlayback();
+        LifecycleManagedSubscriptionAutoUnsubscribes();
+        OnDisposeCalledOnWorldDispose();
+        ReloadSceneClearsWorldAndReinits();
     }
 
     // ---- system fixtures ----
@@ -64,11 +71,55 @@ internal static class SystemTests
     [ECSSystem(ECSPhase.OnUpdate)]
     private sealed class Discovered : Logger { protected override void Execute() => Note("discovered"); }
 
+    [ECSSystem(ECSPhase.OnUpdate)] private sealed class CountScaled : SystemBase { public int N; protected override void Execute() => N++; }
+    [ECSSystem(ECSPhase.OnUpdate, UpdateTime.Unscaled)] private sealed class CountUnscaled : SystemBase { public int N; protected override void Execute() => N++; }
+
+    // Mutual [DependsOn] within a phase ⇒ a dependency cycle.
+    [ECSSystem(ECSPhase.OnUpdate)] [DependsOn(typeof(CycleB))] private sealed class CycleA : SystemBase { protected override void Execute() { } }
+    [ECSSystem(ECSPhase.OnUpdate)] [DependsOn(typeof(CycleA))] private sealed class CycleB : SystemBase { protected override void Execute() { } }
+
+    private struct Spawned { public int V; }
+    [ECSSystem(ECSPhase.OnUpdate)]
+    private sealed class Spawner : SystemBase
+    {
+        public int Runs;
+        protected override void Execute()
+        {
+            if (Runs++ != 0) return;
+            var e = CommandBuffer.Create();
+            CommandBuffer.Add(e, new Spawned { V = 42 });
+        }
+    }
+
+    private struct Ping { public int N; }
+    private sealed class Listener : SystemBase
+    {
+        public int Sum;
+        protected override void OnInitialize() => Subscribe<Ping>(p => Sum += p.N);
+        protected override void Execute() { }
+    }
+
+    private sealed class DisposeTracker : SystemBase
+    {
+        public int Disposed;
+        protected override void OnDispose() => Disposed++;
+        protected override void Execute() { }
+    }
+
+    private sealed class ReloadTracker : SystemBase
+    {
+        public int Inits, Disposes;
+        protected override void OnInitialize() => Inits++;
+        protected override void OnDispose() => Disposes++;
+        protected override void Execute() { }
+    }
+
     // ---- tests ----
 
     private static void LifecycleCalledOnce()
     {
         var w = new World();
+        w.DeltaTime = 0.016f; // scaled systems only run while time advances (pause gate)
         var s = new Basic();
         w.RegisterSystem(s);
         TestKit.Check(s.Init == 1, "OnInitialize called once on register");
@@ -84,6 +135,7 @@ internal static class SystemTests
     {
         Log.Clear();
         var w = new World();
+        w.DeltaTime = 0.016f;
         // Register out of phase order; scheduler must still run Pre -> On -> Post.
         w.RegisterSystem(new Post());
         w.RegisterSystem(new Pre());
@@ -97,6 +149,7 @@ internal static class SystemTests
     {
         Log.Clear();
         var w = new World();
+        w.DeltaTime = 0.016f;
         // Register dependent first; [DependsOn] must still run Movement before Collision.
         w.RegisterSystem(new Collision());
         w.RegisterSystem(new Movement());
@@ -109,6 +162,7 @@ internal static class SystemTests
     {
         Log.Clear();
         var w = new World();
+        w.DeltaTime = 0.016f;
         w.RegisterSystem(new BattleOnly());
         w.RegisterSystem(new Always());
 
@@ -145,6 +199,7 @@ internal static class SystemTests
     {
         Log.Clear();
         var w = new World();
+        w.DeltaTime = 0.016f;
         w.RegisterSystem(new Pre());
         w.RegisterSystem(new On());
         w.RunPhase(ECSPhase.PreUpdate);
@@ -155,10 +210,105 @@ internal static class SystemTests
     {
         Log.Clear();
         var w = new World();
+        w.DeltaTime = 0.016f;
         // The generated/reflection registry hands the scheduler a list of system types to
         // instantiate. Pass an explicit type list so the test is deterministic.
         w.DiscoverSystems(new[] { typeof(Discovered) });
         w.Update();
         TestKit.Check(Log.Contains("discovered"), "DiscoverSystems instantiates and registers systems by type");
+    }
+
+    private static void ScaledSystemsPauseAtZeroDelta()
+    {
+        var w = new World();
+        var cs = new CountScaled();
+        var cu = new CountUnscaled();
+        w.RegisterSystem(cs);
+        w.RegisterSystem(cu);
+
+        w.DeltaTime = 0f; w.UnscaledDeltaTime = 0.016f;
+        w.Update();
+        TestKit.Check(cs.N == 0, "Scaled system is paused when DeltaTime is 0");
+        TestKit.Check(cu.N == 1, "Unscaled system runs even when DeltaTime is 0");
+
+        w.DeltaTime = 0.016f;
+        w.Update();
+        TestKit.Check(cs.N == 1, "Scaled system resumes when time advances");
+    }
+
+    private static void GetSystemAndTryGetSystem()
+    {
+        var w = new World();
+        var s = new CountScaled();
+        w.RegisterSystem(s);
+
+        TestKit.Check(ReferenceEquals(w.GetSystem<CountScaled>(), s), "GetSystem returns the registered instance");
+        TestKit.Check(w.TryGetSystem<CountScaled>(out var got) && ReferenceEquals(got, s), "TryGetSystem returns the registered instance");
+        TestKit.Check(!w.TryGetSystem<CountUnscaled>(out _), "TryGetSystem is false for an unregistered type");
+        TestKit.Throws<System.InvalidOperationException>(() => w.GetSystem<CountUnscaled>(), "GetSystem throws for an unregistered type");
+    }
+
+    private static void DependencyCycleThrows()
+    {
+        var w = new World();
+        w.DeltaTime = 0.016f;
+        w.RegisterSystem(new CycleA());
+        w.RegisterSystem(new CycleB());
+        TestKit.Throws<System.InvalidOperationException>(() => w.Update(),
+            "dependency cycle is reported as an error, not silently broken");
+    }
+
+    private static void PerSystemCommandBufferAutoPlayback()
+    {
+        var w = new World();
+        w.DeltaTime = 0.016f;
+        w.RegisterSystem(new Spawner());
+        w.Update(); // Spawner records a deferred create+add; the world auto-plays it back
+
+        int count = 0, value = 0;
+        w.Query<Spawned>().ForEach((World _, Entity __, ref Spawned s) => { count++; value = s.V; });
+        TestKit.Check(count == 1 && value == 42, "per-system command buffer is auto-played back after Execute");
+    }
+
+    private static void LifecycleManagedSubscriptionAutoUnsubscribes()
+    {
+        var w = new World();
+        var l = new Listener();
+        w.RegisterSystem(l);
+
+        w.Events.Publish(new Ping { N = 5 });
+        w.Events.Dispatch();
+        TestKit.Check(l.Sum == 5, "SystemBase.Subscribe receives events");
+
+        l.Dispose(); // teardown drops the managed subscription
+        w.Events.Publish(new Ping { N = 7 });
+        w.Events.Dispatch();
+        TestKit.Check(l.Sum == 5, "disposed system's subscription no longer fires (auto-unsubscribed)");
+    }
+
+    private static void OnDisposeCalledOnWorldDispose()
+    {
+        var w = new World();
+        var d = new DisposeTracker();
+        w.RegisterSystem(d);
+        w.Dispose();
+        TestKit.Check(d.Disposed == 1, "OnDispose runs for each system on World.Dispose");
+    }
+
+    private static void ReloadSceneClearsWorldAndReinits()
+    {
+        var w = new World();
+        w.DeltaTime = 0.016f;
+        var e = w.Create();
+        w.Add(e, new Spawned { V = 1 });
+
+        var rt = new ReloadTracker();
+        w.RegisterSystem(rt);
+        TestKit.Check(rt.Inits == 1, "system initialized on register");
+
+        w.ReloadScene("Level2");
+        TestKit.Check(!w.IsAlive(e), "ReloadScene clears world entities");
+        TestKit.Check(rt.Disposes == 1 && rt.Inits == 2, "ReloadScene disposes then re-initializes systems");
+        TestKit.Check(w.CurrentScene == "Level2", "ReloadScene switches the active scene");
     }
 }

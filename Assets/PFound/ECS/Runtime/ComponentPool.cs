@@ -63,6 +63,9 @@ namespace PFound.ECS
 
         public ref T Get(int entityId) => ref _denseValue[_sparse[entityId]];
 
+        /// <summary>The packed dense value array as a span [0, Count) — bulk component access.</summary>
+        public Span<T> Values() => new Span<T>(_denseValue, 0, _count);
+
         public void Remove(int entityId)
         {
             if (entityId >= _sparse.Length) return;

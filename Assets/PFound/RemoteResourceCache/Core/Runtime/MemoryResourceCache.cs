@@ -12,6 +12,10 @@ namespace PFound.RemoteResourceCache.Core
     /// removed, replaced, or cleared) an optional disposer fires so the adapter can release the underlying native
     /// object (e.g. destroy a Texture2D). Reaching ref-count zero re-checks the caps, so a resource that was only
     /// held past its cap by a pin is disposed the moment its last lease is released.
+    ///
+    /// A <b>time-to-live</b> is enforced on READ (symmetrically with the disk tier): if a positive TTL is set,
+    /// an entry whose wall-clock age exceeds it is a miss — it is evicted (and disposed) at read time and the
+    /// caller falls through to a slower tier, so a stale-in-RAM resource is never handed back.
     /// </summary>
     internal sealed class MemoryResourceCache<T>
     {
@@ -24,6 +28,7 @@ namespace PFound.RemoteResourceCache.Core
             public long CreationSeq;
             public long LastAccessSeq;
             public long AccessCount;
+            public DateTime CreatedUtc; // wall-clock stamp for TTL expiry (distinct from the monotonic CreationSeq)
         }
 
         private readonly Dictionary<string, Entry> _entries = new Dictionary<string, Entry>(StringComparer.Ordinal);
@@ -31,17 +36,22 @@ namespace PFound.RemoteResourceCache.Core
         private readonly long _maxBytes;  // 0 = unbounded
         private readonly EvictionStrategy _strategy;
         private readonly Action<T> _dispose;
+        private readonly TimeSpan _ttl;   // Zero = entries never expire
+        private readonly Func<DateTime> _clock;
 
         private long _bytes;
         private long _seq;
         private long _creationSeq;
 
-        public MemoryResourceCache(int maxCount, long maxBytes, EvictionStrategy strategy, Action<T> dispose)
+        public MemoryResourceCache(int maxCount, long maxBytes, EvictionStrategy strategy, Action<T> dispose,
+            TimeSpan ttl, Func<DateTime> clock)
         {
             _maxCount = maxCount;
             _maxBytes = maxBytes;
             _strategy = strategy;
             _dispose = dispose;
+            _ttl = ttl;
+            _clock = clock;
         }
 
         public int Count => _entries.Count;
@@ -54,6 +64,14 @@ namespace PFound.RemoteResourceCache.Core
         {
             if (_entries.TryGetValue(key, out var e))
             {
+                if (IsExpired(e))
+                {
+                    // Stale in RAM: drop + dispose it and report a miss so the caller falls through to a
+                    // slower tier (which re-validates its own TTL and re-fetches if needed).
+                    Remove(key);
+                    value = default;
+                    return false;
+                }
                 Touch(e);
                 value = e.Value;
                 return true;
@@ -61,6 +79,8 @@ namespace PFound.RemoteResourceCache.Core
             value = default;
             return false;
         }
+
+        private bool IsExpired(Entry e) => _ttl > TimeSpan.Zero && (_clock() - e.CreatedUtc) > _ttl;
 
         public void Insert(string key, T value, long size) => Upsert(key, value, size, pin: false);
 
@@ -105,13 +125,14 @@ namespace PFound.RemoteResourceCache.Core
                 _bytes += size - e.Size;
                 e.Value = value;
                 e.Size = size;
+                e.CreatedUtc = _clock(); // fresh content restarts the TTL clock
                 Touch(e);
             }
             else
             {
                 e = new Entry
                 {
-                    Key = key, Value = value, Size = size,
+                    Key = key, Value = value, Size = size, CreatedUtc = _clock(),
                     CreationSeq = ++_creationSeq, LastAccessSeq = ++_seq, AccessCount = 1,
                 };
                 _entries[key] = e;

@@ -2,12 +2,16 @@
 
 ## Purpose
 
-Serve remote binary resources fast and offline-tolerantly through a three-tier cache —
+Serve remote binary resources fast and offline-tolerantly through a tiered cache — by default
 **memory → disk → remote**. It de-duplicates concurrent loads (single-flight), pins hot resources
-by ref-count, retries transient transport faults with backoff, expires disk entries by TTL, and
-evicts bounded tiers by a selectable strategy. The cache engine is pure engine-free C#
-(`ResourceCache<T>`, generic over the decoded runtime type); a thin Unity adapter specialises it to
-`Texture2D`.
+by ref-count, retries transient transport faults with backoff, expires entries by TTL on **both**
+the memory and disk tiers, and evicts bounded tiers by a selectable strategy. The disk tier carries
+a **content version** (bump it to purge a prior on-disk generation) and an optional **partition**
+namespace; optional **loading-feedback hooks** report started/completed/failed for spinner UIs; and
+an **N-source composition builder** replaces the fixed trio with any ordered layer topology
+(memory-only, extra disk levels, custom stores) with write-back to earlier writable layers. The
+cache engine is pure engine-free C# (`ResourceCache<T>`, generic over the decoded runtime type); a
+thin Unity adapter specialises it to `Texture2D`.
 
 ## Assemblies
 
@@ -34,11 +38,13 @@ Every assembly is `autoReferenced: false` — a consumer references it explicitl
 **Core cache (`PFound.RemoteResourceCache.Core`)**
 
 - `ResourceCache<T>` — the generic tiered cache; the primary entry point. Construct one per resource type.
-- `MemoryResourceCache<T>` — the RAM tier: bounded by count and/or bytes, ref-count pinning, eviction.
-- `DiskCache` — the persistent middle tier over an `IBlobStore` with a debounced metadata index + TTL.
-- `FileBlobStore` — file-backed `IBlobStore`; one file per key named by `XxHash3` of the key, atomic temp+rename writes.
+- `ResourceCacheBuilder<T>` — fluent builder for arbitrary N-source topologies (memory-only, extra disk levels, custom stores).
+- `MemoryResourceCache<T>` — the RAM tier: bounded by count and/or bytes, ref-count pinning, eviction, read-time TTL.
+- `DiskCache` — the persistent middle tier over an `IBlobStore` with a debounced metadata index, TTL, and a content-version generation stamp.
+- `FileBlobStore` — file-backed `IBlobStore`; one file per key named by `XxHash3` of the key, atomic temp+rename writes, optional partition sub-scope.
+- `DiskByteSource` / `TransportByteSource` — the built-in composable layers wrapping a `DiskCache` (writable) and an `IResourceTransport` (read-only remote).
 - `CacheTier` — enum `None`/`Memory`/`Disk`/`Remote`: which tier served a result.
-- `CachePolicy` — retention/eviction/TTL tuning for both tiers (`CachePolicy.Default`).
+- `CachePolicy` — retention/eviction/TTL tuning for both tiers, plus disk content-version + partition (`CachePolicy.Default`).
 - `EvictionStrategy` — enum `Lru`/`Lfu`/`TimeBased`.
 - `RetryPolicy` — remote-tier retry: attempts + backoff (`RetryPolicy.Default`, `RetryPolicy.None`).
 - `ResourceResult<T>` — the outcome value: `Success`, `Value`, `Tier`, `Failure`.
@@ -47,7 +53,9 @@ Every assembly is `autoReferenced: false` — a consumer references it explicitl
 **Seams (interfaces + delegates)**
 
 - `IResourceTransport` — the remote-tier fetch boundary: `Task<byte[]> FetchAsync(key, ct)`.
-- `IBlobStore` — the disk-tier storage boundary.
+- `IBlobStore` — the disk-tier storage boundary (`TryRead`/`Write`/`Exists`/`Delete`/`GetTimestampUtc`/`Clear`).
+- `IResourceByteSource` — one ordered layer of a composed cache (`Tier`, `CanWrite`, `Retryable`, `TryReadAsync`, `Write`); `ByteReadResult` is its hit/miss return.
+- `IResourceLoadObserver` — optional loading-feedback hooks: `OnLoadStarted`/`OnLoadCompleted`/`OnLoadFailed`.
 - `ResourceDecoder<out T>(byte[] rawBytes)` — turns raw bytes into `T`.
 - `ResourceSizer<in T>(T value)` — measures a decoded value's in-memory footprint (bytes).
 - `ResourceCacheException` / `ResourceNotFoundException` — the fetch-contract exception types.
@@ -76,12 +84,49 @@ public ResourceCache(
     RetryPolicy retry = null,          // null => RetryPolicy.Default (3 attempts, 200ms exp)
     ResourceSizer<T> sizeOf = null,    // null => every entry sizes to 0 (count-bounded only)
     Action<T> disposer = null,         // called on eviction/removal for native values
-    Func<TimeSpan, CancellationToken, Task> delay = null) // null => Task.Delay (injectable for tests)
+    Func<TimeSpan, CancellationToken, Task> delay = null, // null => Task.Delay (injectable for tests)
+    Func<DateTime> clock = null,       // null => DateTime.UtcNow (injectable; drives memory + disk TTL)
+    IResourceLoadObserver observer = null) // null => no loading-feedback callbacks
 ```
 
 `transport`, `disk`, and `decode` are required; the rest have permissive defaults. There is no null
 guard on the required trio — passing a null transport surfaces as a thrown (non-retried) error on
-the first fetch, per the fail-fast contract.
+the first fetch, per the fail-fast contract. This constructor is sugar for the two-source
+composition `[disk, remote]`; for any other topology use `ResourceCacheBuilder<T>`.
+
+### `ResourceCacheBuilder<T>` — arbitrary N-source composition
+
+Compose an ordered list of `IResourceByteSource` layers (nearest first) instead of the fixed trio.
+A hit from any layer is decoded once, **written back to every earlier writable layer**, and cached
+in the always-present decoded memory tier — so a value pulled from a far layer warms the near ones.
+Enables memory-only, memory+remote (no disk), multi-disk-level, or fully custom topologies. The
+memory tier's bounds/eviction/TTL come from the supplied `CachePolicy`.
+
+```csharp
+var cache = ResourceCacheBuilder<byte[]>.Create(decode)
+    .Policy(policy).Retry(retry).Sizer(sizeOf).Disposer(disposer)
+    .Clock(clock).Delay(delay).Observer(observer)
+    .AddDisk(diskA)                  // writable near layer         (sugar for AddSource(new DiskByteSource(diskA)))
+    .AddDisk(diskB)                  // writable second disk level
+    .AddRemote(transport)            // read-only remote            (sugar for AddSource(new TransportByteSource(transport)))
+    .AddSource(myCustomLayer)        // any IResourceByteSource
+    .Build();
+```
+
+`AddSource` order is the tier order: earlier = nearer/faster, and only earlier layers receive
+write-backs. A source declares its `Tier` (reported in the result), whether it `CanWrite`
+(write-back target), and whether it is `Retryable` (governed by the `RetryPolicy`; a read-only
+remote is retryable, a store is not). With **no** sources you get a memory-only cache: a miss is a
+graceful `NotFound` failure, not a throw.
+
+### Loading-feedback hooks (`IResourceLoadObserver`)
+
+Attach an observer (constructor `observer:` arg or `.Observer(...)`) and it is notified per request:
+exactly one `OnLoadStarted(key)` followed by exactly one terminal `OnLoadCompleted(key, servedBy)`
+or `OnLoadFailed(key, failure)`. Callbacks are per-request (concurrent callers sharing one
+single-flight load each get their own pair), so a spinner can be reference-counted. A memory-tier
+hit still fires the pair (completing with `CacheTier.Memory`) — ignore memory-tier completions if
+you only care about slow loads.
 
 ### `ResourceCache<T>` methods
 
@@ -111,9 +156,11 @@ not exceptions — inspect `Failure.Kind` (`Network`/`NotFound`/`Decode`/`RetryE
 
 Memory: `int MaxMemoryCount`, `long MaxMemoryBytes`, `EvictionStrategy MemoryEviction` (`Lru`).
 Disk: `int MaxDiskEntries`, `long MaxDiskBytes`, `EvictionStrategy DiskEviction` (`Lru`),
-`TimeSpan DiskFlushInterval` (5s). Shared: `TimeSpan Ttl` (`Zero` = never expires),
-`Func<string, bool> Cacheable` (null = cache everything; `bool CanCache(key)`). `0` on any bound axis
-means unbounded on that axis. `CachePolicy.Default` = an all-defaults instance.
+`TimeSpan DiskFlushInterval` (5s), `int DiskContentVersion` (0; bump to purge a prior on-disk
+generation on open), `string DiskPartition` (null = the root itself; a sub-scope isolating blobs
+under one root). Shared: `TimeSpan Ttl` (`Zero` = never expires; enforced on read by **both** the
+memory and disk tiers), `Func<string, bool> Cacheable` (null = cache everything; `bool CanCache(key)`).
+`0` on any bound axis means unbounded on that axis. `CachePolicy.Default` = an all-defaults instance.
 
 ### `RetryPolicy`
 
@@ -124,9 +171,9 @@ exponential), `RetryPolicy.None` (single attempt).
 
 ### `DiskCache` / `FileBlobStore`
 
-- `new DiskCache(IBlobStore store, string metadataPath, EvictionStrategy strategy = Lru, int maxEntries = 0, long maxBytes = 0, TimeSpan ttl = default, TimeSpan flushInterval = default, Func<DateTime> clock = null)`.
-- `static DiskCache DiskCache.FromPolicy(IBlobStore store, string metadataPath, CachePolicy policy, Func<DateTime> clock = null)` — builds the disk tier from a policy's disk knobs (used by `RemoteTextureCache`).
-- `new FileBlobStore(string rootDirectory)`; `string FileNameFor(string key)` — the xxHash3 filename a key maps to. `IBlobStore`: `TryRead`, `Write` (atomic), `Exists`, `Delete`, `GetTimestampUtc`.
+- `new DiskCache(IBlobStore store, string metadataPath, EvictionStrategy strategy = Lru, int maxEntries = 0, long maxBytes = 0, TimeSpan ttl = default, TimeSpan flushInterval = default, Func<DateTime> clock = null, int contentVersion = 0)`. When the persisted content version differs from `contentVersion`, the whole prior generation is purged on open; `int ContentVersion` reports the current stamp.
+- `static DiskCache DiskCache.FromPolicy(IBlobStore store, string metadataPath, CachePolicy policy, Func<DateTime> clock = null)` — builds the disk tier from a policy's disk knobs incl. `DiskContentVersion` (used by `RemoteTextureCache`).
+- `new FileBlobStore(string rootDirectory, string partition = null)`; `string FileNameFor(string key)` — the xxHash3 filename a key maps to. `IBlobStore`: `TryRead`, `Write` (atomic), `Exists`, `Delete`, `GetTimestampUtc`, `Clear` (wipes the store's own blobs — leaves a foreign sidecar alone). `partition` scopes the store to a sub-directory so several caches share one root without colliding.
 
 ### `IResourceTransport`
 
@@ -210,12 +257,17 @@ RemoteResourceCache/
 ├── Core/
 │   ├── Runtime/                         # PFound.RemoteResourceCache.Core (engine-free)
 │   │   ├── ResourceCache.cs             # the generic tiered cache — primary entry
-│   │   ├── MemoryResourceCache.cs       # RAM tier (bounds, pinning, eviction)
-│   │   ├── DiskCache.cs                 # persistent tier + metadata index + TTL
-│   │   ├── FileBlobStore.cs             # file-backed IBlobStore (xxHash3 names, atomic writes)
+│   │   ├── ResourceCacheBuilder.cs      # fluent N-source composition builder
+│   │   ├── MemoryResourceCache.cs       # RAM tier (bounds, pinning, eviction, read-time TTL)
+│   │   ├── DiskCache.cs                 # persistent tier + metadata index + TTL + content version
+│   │   ├── FileBlobStore.cs             # file-backed IBlobStore (xxHash3 names, atomic writes, partition)
 │   │   ├── IBlobStore.cs                # disk-tier storage seam
+│   │   ├── IResourceByteSource.cs       # composable-layer seam + ByteReadResult
+│   │   ├── DiskByteSource.cs            # DiskCache-as-layer (writable)
+│   │   ├── TransportByteSource.cs       # transport-as-layer (read-only remote)
+│   │   ├── IResourceLoadObserver.cs     # loading-feedback hooks (started/completed/failed)
 │   │   ├── IResourceTransport.cs        # remote-tier fetch seam
-│   │   ├── CachePolicy.cs               # retention/eviction/TTL tuning
+│   │   ├── CachePolicy.cs               # retention/eviction/TTL + content-version/partition tuning
 │   │   ├── CacheTier.cs                 # None/Memory/Disk/Remote
 │   │   ├── EvictionStrategy.cs          # Lru/Lfu/TimeBased
 │   │   ├── RetryPolicy.cs               # attempts + backoff

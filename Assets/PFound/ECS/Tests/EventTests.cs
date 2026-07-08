@@ -15,6 +15,8 @@ internal static class EventTests
         QueueDrainsAfterDispatch();
         Unsubscribe();
         PublishDuringDispatchDefersToNextRound();
+        BatchDelivery();
+        BatchAndPerEventCoexist();
     }
 
     private static void DeferredDelivery()
@@ -89,5 +91,43 @@ internal static class EventTests
         TestKit.Check(rounds == 1, "event published during Dispatch is not delivered in the same round");
         w.Events.Dispatch();
         TestKit.Check(rounds == 2, "it is delivered on the next Dispatch");
+    }
+
+    private static void BatchDelivery()
+    {
+        var w = new World();
+        int calls = 0, total = 0, batchLen = 0;
+        w.Events.SubscribeBatch<Damage>(events =>
+        {
+            calls++;
+            batchLen = events.Length;
+            for (int i = 0; i < events.Length; i++) total += events[i].Amount;
+        });
+
+        w.Events.Publish(new Damage { Amount = 3 });
+        w.Events.Publish(new Damage { Amount = 4 });
+        w.Events.Publish(new Damage { Amount = 5 });
+        w.Events.Dispatch();
+
+        TestKit.Check(calls == 1, "batch handler is invoked once per Dispatch");
+        TestKit.Check(batchLen == 3 && total == 12, "batch handler receives all queued events in one Span");
+
+        w.Events.Dispatch();
+        TestKit.Check(calls == 1, "batch handler is not re-invoked when nothing is queued");
+    }
+
+    private static void BatchAndPerEventCoexist()
+    {
+        var w = new World();
+        int perEvent = 0, batchCount = 0;
+        w.Events.Subscribe<Damage>(_ => perEvent++);
+        w.Events.SubscribeBatch<Damage>(events => batchCount += events.Length);
+
+        w.Events.Publish(new Damage { Amount = 1 });
+        w.Events.Publish(new Damage { Amount = 1 });
+        w.Events.Dispatch();
+
+        TestKit.Check(perEvent == 2 && batchCount == 2,
+            "per-event and batch subscribers both receive the same round");
     }
 }

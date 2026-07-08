@@ -69,6 +69,23 @@ namespace PFound.RemoteResourceCache.Core.Tests
 
                 // ---- xxHash3 filename ----
                 Run("xxHash3 filename is deterministic + canonical empty vector", () => Hash_FilenameDeterminism());
+
+                // ---- memory-tier TTL (gap 1) ----
+                Run("Memory-tier TTL: an expired in-memory entry misses and re-loads", () => Memory_TtlExpiryRefetches(temp));
+
+                // ---- disk content-version + partition (gap 2) ----
+                Run("Disk content-version bump purges the prior on-disk generation", () => Disk_ContentVersionPurgesPrior(temp));
+                Run("Disk content-version match keeps the generation intact", () => Disk_ContentVersionMatchKeeps(temp));
+                Run("Disk partition isolates blobs (and their clears) under one root", () => Disk_PartitionIsolates(temp));
+
+                // ---- loading-feedback hooks (gap 3) ----
+                Run("Load observer fires started→completed on success (with the serving tier)", () => Observer_StartedCompleted(temp));
+                Run("Load observer fires started→failed on a typed failure", () => Observer_StartedFailed(temp));
+
+                // ---- arbitrary N-source composition (gap 4) ----
+                Run("Composition warms earlier writable sources on a far hit (write-back)", () => Composition_WriteBackToEarlier(temp));
+                Run("Composition supports a memory-only topology (no disk, no remote)", () => Composition_MemoryOnly(temp));
+                Run("Composition: tiered builder matches the fixed memory→disk→remote default", () => Composition_TieredEquivalence(temp));
             }
             finally
             {
@@ -627,6 +644,190 @@ namespace PFound.RemoteResourceCache.Core.Tests
                 Assert(seen.Add(XxHash3.HashToHex(k)), "distinct keys yield distinct filenames for '" + k + "'");
         }
 
+        // ---- memory-tier TTL (gap 1) -------------------------------------------------------------
+
+        private static void Memory_TtlExpiryRefetches(string root)
+        {
+            string dir = Fresh(root);
+            var transport = new FakeTransport();
+            transport.Put("k", Bytes("v"));
+            var clock = new FakeClock(new DateTime(2026, 4, 1, 0, 0, 0, DateTimeKind.Utc));
+
+            // memory + remote only (no disk): isolates the memory tier's TTL so the re-load provably comes from
+            // the remote source, not a disk fallback.
+            var cache = ResourceCacheBuilder<byte[]>.Create(Identity)
+                .Policy(new CachePolicy { Ttl = TimeSpan.FromMinutes(10) })
+                .Sizer(b => b.Length).Delay(NoDelay).Clock(clock.Now)
+                .AddRemote(transport)
+                .Build();
+
+            ResourceResult<byte[]> first = Wait(cache.GetAsync("k"));
+            AssertEqual(CacheTier.Remote, first.Tier, "cold miss served from remote");
+            AssertEqual(1, transport.Calls, "downloaded once");
+            AssertEqual(CacheTier.Memory, Wait(cache.GetAsync("k")).Tier, "fresh entry served from memory");
+            AssertEqual(1, transport.Calls, "no second download while fresh");
+
+            clock.Advance(TimeSpan.FromMinutes(20)); // past the memory TTL
+
+            ResourceResult<byte[]> afterExpiry = Wait(cache.GetAsync("k"));
+            AssertEqual(CacheTier.Remote, afterExpiry.Tier, "expired memory entry misses and re-loads from remote");
+            AssertEqual(2, transport.Calls, "TTL expiry forced a fresh download");
+        }
+
+        // ---- disk content-version + partition (gap 2) --------------------------------------------
+
+        private static void Disk_ContentVersionPurgesPrior(string root)
+        {
+            string dir = Fresh(root);
+            string idx = Path.Combine(dir, "__idx.bin");
+
+            var v1 = new DiskCache(new FileBlobStore(dir), idx, flushInterval: TimeSpan.Zero, contentVersion: 1);
+            v1.Write("a", Bytes("aa"));
+            v1.Flush();
+            Assert(new FileBlobStore(dir).Exists("a"), "generation 1 wrote the blob");
+
+            // Reopen at a new content version → the whole prior generation is purged on open.
+            var v2 = new DiskCache(new FileBlobStore(dir), idx, flushInterval: TimeSpan.Zero, contentVersion: 2);
+            Assert(!new FileBlobStore(dir).Exists("a"), "bumping the content version purged the old blob");
+            AssertEqual(0, v2.Count, "index emptied by the purge");
+
+            // The new stamp persists: reopening at the SAME version does not purge again.
+            v2.Write("b", Bytes("bb"));
+            v2.Flush();
+            var v2b = new DiskCache(new FileBlobStore(dir), idx, flushInterval: TimeSpan.Zero, contentVersion: 2);
+            Assert(v2b.Exists("b"), "same-version reopen keeps the new generation");
+            AssertEqual(1, v2b.Count, "index restored for the current generation");
+        }
+
+        private static void Disk_ContentVersionMatchKeeps(string root)
+        {
+            string dir = Fresh(root);
+            string idx = Path.Combine(dir, "__idx.bin");
+
+            var first = new DiskCache(new FileBlobStore(dir), idx, flushInterval: TimeSpan.Zero, contentVersion: 5);
+            first.Write("a", Bytes("aa"));
+            first.Flush();
+
+            var reopened = new DiskCache(new FileBlobStore(dir), idx, flushInterval: TimeSpan.Zero, contentVersion: 5);
+            Assert(reopened.Exists("a"), "matching content version keeps the blob");
+            AssertEqual(1, reopened.Count, "index intact");
+            AssertEqual(5, reopened.ContentVersion, "content version reported");
+        }
+
+        private static void Disk_PartitionIsolates(string root)
+        {
+            string dir = Fresh(root);
+            var a = new FileBlobStore(dir, "alpha");
+            var b = new FileBlobStore(dir, "beta");
+
+            a.Write("k", Bytes("in-alpha"));
+            b.Write("k", Bytes("in-beta"));
+
+            Assert(a.TryRead("k", out byte[] va) && Str(va) == "in-alpha", "alpha holds its own bytes for the key");
+            Assert(b.TryRead("k", out byte[] vb) && Str(vb) == "in-beta", "beta holds independent bytes for the same key");
+
+            a.Clear();
+            Assert(!a.Exists("k"), "clearing alpha wiped its partition");
+            Assert(b.Exists("k"), "beta is untouched by alpha's clear");
+        }
+
+        // ---- loading-feedback hooks (gap 3) ------------------------------------------------------
+
+        private static void Observer_StartedCompleted(string root)
+        {
+            string dir = Fresh(root);
+            var transport = new FakeTransport();
+            transport.Put("k", Bytes("v"));
+            var rec = new RecordingObserver();
+            var cache = new ResourceCache<byte[]>(transport, NewDisk(dir, CachePolicy.Default), Identity,
+                policy: CachePolicy.Default, retry: null, sizeOf: b => b.Length, disposer: null,
+                delay: NoDelay, clock: null, observer: rec);
+
+            Wait(cache.GetAsync("k"));
+            AssertEqual(1, rec.Started.Count, "started fired once");
+            AssertEqual("k", rec.Started[0], "started carried the key");
+            AssertEqual(1, rec.Completed.Count, "completed fired once");
+            AssertEqual(CacheTier.Remote, rec.Completed[0].Item2, "completed reported the serving tier");
+            AssertEqual(0, rec.Failed.Count, "no failure on success");
+
+            Wait(cache.GetAsync("k")); // memory hit still fires the pair
+            AssertEqual(CacheTier.Memory, rec.Completed[1].Item2, "memory hit completes with the Memory tier");
+        }
+
+        private static void Observer_StartedFailed(string root)
+        {
+            string dir = Fresh(root);
+            var transport = new FakeTransport(); // nothing put → NotFound
+            var rec = new RecordingObserver();
+            var cache = new ResourceCache<byte[]>(transport, NewDisk(dir, CachePolicy.Default), Identity,
+                policy: CachePolicy.Default, retry: RetryPolicy.None, sizeOf: b => b.Length, disposer: null,
+                delay: NoDelay, clock: null, observer: rec);
+
+            Wait(cache.GetAsync("ghost"));
+            AssertEqual(1, rec.Started.Count, "started fired for the failing request");
+            AssertEqual(0, rec.Completed.Count, "no completion on failure");
+            AssertEqual(1, rec.Failed.Count, "failed fired once");
+            AssertEqual(ResourceFailureKind.NotFound, rec.Failed[0].Item2.Kind, "failed carried the typed failure");
+        }
+
+        // ---- arbitrary N-source composition (gap 4) ----------------------------------------------
+
+        private static void Composition_WriteBackToEarlier(string root)
+        {
+            var near = new MapByteSource(CacheTier.Disk, canWrite: true); // empty, writable near layer
+            var transport = new FakeTransport();
+            transport.Put("k", Bytes("far-bytes"));
+
+            var cache = ResourceCacheBuilder<byte[]>.Create(Identity)
+                .Policy(CachePolicy.Default).Sizer(b => b.Length).Delay(NoDelay)
+                .AddSource(near)          // layer 0 — writable
+                .AddRemote(transport)     // layer 1 — read-only remote
+                .Build();
+
+            ResourceResult<byte[]> hit = Wait(cache.GetAsync("k"));
+            AssertEqual(CacheTier.Remote, hit.Tier, "served from the far remote layer on a cold miss");
+            AssertEqual(1, transport.Calls, "downloaded once");
+            Assert(near.Contains("k"), "the far hit was written back to the earlier writable source");
+
+            cache.ClearMemory();
+            ResourceResult<byte[]> second = Wait(cache.GetAsync("k"));
+            AssertEqual(CacheTier.Disk, second.Tier, "now served by the warmed near layer, not the remote");
+            AssertEqual(1, transport.Calls, "no second download — write-back satisfied it");
+        }
+
+        private static void Composition_MemoryOnly(string root)
+        {
+            // A memory-only topology: no disk, no remote. A miss is a graceful typed failure, never a throw.
+            var cache = ResourceCacheBuilder<byte[]>.Create(Identity)
+                .Policy(CachePolicy.Default).Sizer(b => b.Length).Delay(NoDelay)
+                .Build();
+
+            ResourceResult<byte[]> result = Wait(cache.GetAsync("x"));
+            Assert(!result.Success, "a diskless/remoteless miss fails rather than throwing");
+            AssertEqual(ResourceFailureKind.NotFound, result.Failure.Kind, "no source could provide it → NotFound");
+            AssertEqual(0, cache.DiskCount, "diskless topology reports zero disk entries");
+        }
+
+        private static void Composition_TieredEquivalence(string root)
+        {
+            string dir = Fresh(root);
+            var transport = new FakeTransport();
+            transport.Put("k", Bytes("v"));
+            var disk = NewDisk(dir, CachePolicy.Default);
+
+            var cache = ResourceCacheBuilder<byte[]>.Create(Identity)
+                .Policy(CachePolicy.Default).Sizer(b => b.Length).Delay(NoDelay)
+                .AddDisk(disk)
+                .AddRemote(transport)
+                .Build();
+
+            ResourceResult<byte[]> first = Wait(cache.GetAsync("k"));
+            AssertEqual(CacheTier.Remote, first.Tier, "cold miss served from remote");
+            Assert(cache.InMemory("k"), "memory warmed like the tiered default");
+            AssertEqual(1, cache.DiskCount, "disk warmed like the tiered default");
+            AssertEqual(CacheTier.Memory, Wait(cache.GetAsync("k")).Tier, "second request is a memory hit");
+        }
+
         // ---- fixtures ----------------------------------------------------------------------------
 
         private static ResourceCache<byte[]> NewCache(
@@ -699,6 +900,41 @@ namespace PFound.RemoteResourceCache.Core.Tests
             public FakeClock(DateTime start) => _now = start;
             public DateTime Now() => _now;
             public void Advance(TimeSpan by) => _now += by;
+        }
+
+        /// <summary>Records the loading-feedback callbacks so a test can assert the started→terminal sequence.</summary>
+        private sealed class RecordingObserver : IResourceLoadObserver
+        {
+            public readonly List<string> Started = new List<string>();
+            public readonly List<Tuple<string, CacheTier>> Completed = new List<Tuple<string, CacheTier>>();
+            public readonly List<Tuple<string, ResourceFailure>> Failed = new List<Tuple<string, ResourceFailure>>();
+
+            public void OnLoadStarted(string key) => Started.Add(key);
+            public void OnLoadCompleted(string key, CacheTier servedBy) => Completed.Add(Tuple.Create(key, servedBy));
+            public void OnLoadFailed(string key, ResourceFailure failure) => Failed.Add(Tuple.Create(key, failure));
+        }
+
+        /// <summary>An in-memory byte source for composition tests: a dictionary-backed, non-retryable custom layer.</summary>
+        private sealed class MapByteSource : IResourceByteSource
+        {
+            private readonly Dictionary<string, byte[]> _map = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+
+            public MapByteSource(CacheTier tier, bool canWrite)
+            {
+                Tier = tier;
+                CanWrite = canWrite;
+            }
+
+            public CacheTier Tier { get; }
+            public bool CanWrite { get; }
+            public bool Retryable => false;
+
+            public bool Contains(string key) => _map.ContainsKey(key);
+
+            public Task<ByteReadResult> TryReadAsync(string key, CancellationToken cancellationToken) =>
+                Task.FromResult(_map.TryGetValue(key, out byte[] bytes) ? ByteReadResult.Hit(bytes) : ByteReadResult.Miss);
+
+            public void Write(string key, byte[] bytes) => _map[key] = bytes;
         }
 
         // ---- harness -----------------------------------------------------------------------------
