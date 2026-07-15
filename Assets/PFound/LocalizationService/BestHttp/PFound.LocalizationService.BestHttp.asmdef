@@ -1,0 +1,20 @@
+{
+    "name": "PFound.LocalizationService.BestHttp",
+    "rootNamespace": "PFound.LocalizationService.Unity",
+    "references": [
+        "PFound.LocalizationService",
+        "PFound.LocalizationService.Unity",
+        "BestHTTP"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "PFOUND_BESTHTTP"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.TypeTools",
+    "rootNamespace": "PFound.Utilities.TypeTools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

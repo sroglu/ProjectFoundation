@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.Pooling",
+    "rootNamespace": "PFound.Utilities.Pooling",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

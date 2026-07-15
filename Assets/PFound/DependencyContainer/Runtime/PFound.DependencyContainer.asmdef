@@ -1,0 +1,14 @@
+{
+    "name": "PFound.DependencyContainer",
+    "rootNamespace": "PFound.DependencyContainer",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

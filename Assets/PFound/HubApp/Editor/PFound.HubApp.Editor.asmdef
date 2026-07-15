@@ -1,0 +1,19 @@
+{
+    "name": "PFound.HubApp.Editor",
+    "rootNamespace": "PFound.HubApp.Editor",
+    "references": [
+        "PFound.HubApp",
+        "PFound.Utilities.EditorHelpers"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

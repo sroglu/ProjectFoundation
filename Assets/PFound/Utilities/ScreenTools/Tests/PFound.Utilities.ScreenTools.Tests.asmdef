@@ -1,0 +1,24 @@
+{
+    "name": "PFound.Utilities.ScreenTools.Tests",
+    "rootNamespace": "PFound.Utilities.ScreenTools.Tests",
+    "references": [
+        "PFound.Utilities.ScreenTools",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

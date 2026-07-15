@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.CryptoTools",
+    "rootNamespace": "PFound.Utilities.CryptoTools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
