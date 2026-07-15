@@ -2,7 +2,7 @@
 
 Immediate-mode in-game debug overlay for Unity — the whole UI renders in **one draw call** with
 **zero per-frame GC** via a Burst-compiled vertex pipeline. Runtime namespace `Kunai`, static entry
-point `KUI.*`; sanctioned asmdef `mehmetsrl.KunaiDebugTool`.
+point `KUI.*`; sanctioned asmdef `PFound.KunaiDebugTool`.
 
 ## Quick reference
 

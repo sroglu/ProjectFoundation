@@ -9,7 +9,8 @@
         "PFound.EpochClock",
         "PFound.ScreenRouter",
         "PFound.UISystem",
-        "PFound.HubApp"
+        "PFound.HubApp",
+        "PFound.KunaiDebugTool"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

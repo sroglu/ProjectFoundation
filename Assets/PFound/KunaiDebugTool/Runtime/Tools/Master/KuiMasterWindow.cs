@@ -25,7 +25,7 @@ namespace Kunai
     /// </summary>
     public class KuiMasterWindow : KuWindow
     {
-        public override string Title => KuiIcons.Cog + " Toolbox";
+        public override string Title { get; } = KuiIcons.Cog + " Toolbox";
         public override bool ShowInMasterToggle => false;
 
         const string PrefKeyPrefix    = "Kunai.Master.Vis.";
@@ -73,7 +73,7 @@ namespace Kunai
             // the whole overlay (this slider included) live under the finger. Drag previews the value;
             // release commits the real rescale once.
             if (_pendingScale < 0f) _pendingScale = ctx.Settings.UserScale;
-            KUI.Label($"UI Scale: {Mathf.RoundToInt(_pendingScale * 100f)}%");
+            KUI.Label("UI Scale: ", Mathf.RoundToInt(_pendingScale * 100f), "%");
             _pendingScale = KUI.Slider(_pendingScale, KuiDPI.MinUserScale, KuiDPI.MaxUserScale);
             if (ctx.InputHandler.State.MouseUp && !Mathf.Approximately(_pendingScale, ctx.Settings.UserScale))
                 KuiDPI.SetUserScale(ctx.Settings, _pendingScale);

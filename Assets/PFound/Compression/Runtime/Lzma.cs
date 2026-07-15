@@ -7,12 +7,11 @@ using System.Text;
 namespace PFound.Compression
 {
     /// <summary>
-    /// Clean-room LZMA codec (the LZMA1 algorithm family: a binary range coder over a literal / match model with
-    /// rep-distance history and slot-coded lengths and distances), implemented from the published algorithm — NOT
-    /// a port of the 7-Zip SDK. It is self-consistent: <see cref="Decompress"/> inverts <see cref="Compress"/>,
+    /// LZMA codec (the LZMA1 algorithm family: a binary range coder over a literal / match model with
+    /// rep-distance history and slot-coded lengths and distances). It is self-consistent: <see cref="Decompress"/> inverts <see cref="Compress"/>,
     /// which is the only property content delivery needs (the editor compresses and the runtime decompresses with
     /// this same codec). The encoder emits literals and simple matches (greedy hash-chain match finder); it never
-    /// chooses rep matches, so the stream is smaller-than-LZ4 but not bit-identical to 7-Zip — that is fine here.
+    /// chooses rep matches, so the stream is smaller-than-LZ4 but not bit-identical to a maximal LZMA encode — that is fine here.
     ///
     /// Stream layout (the classic .lzma/"alone" header): 1 byte packed props (lc,lp,pb) · 4 bytes little-endian
     /// dictionary size · 8 bytes little-endian uncompressed length · range-coded payload.

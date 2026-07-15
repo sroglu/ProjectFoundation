@@ -30,7 +30,13 @@ namespace PFound.SampleGame
         private CancellationTokenSource _lifetimeCts;
         private bool _containerBuilt;
 
-        private void Awake() => _lifetimeCts = new CancellationTokenSource();
+        private void Awake()
+        {
+            _lifetimeCts = new CancellationTokenSource();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            SampleKunaiBootstrap.Initialize(); // debug overlay: toggle with ` / F1 or 3-tap top-left
+#endif
+        }
 
         private async void Start()
         {

@@ -16,7 +16,7 @@ namespace Kunai
     /// </summary>
     public class KuiSystemInfoWindow : KuWindow
     {
-        public override string Title => KuiIcons.Info + " System Info";
+        public override string Title { get; } = KuiIcons.Info + " System Info";
 
         const int CollapsibleIdBase = 9401;
 
@@ -56,7 +56,7 @@ namespace Kunai
                 if (KUI.BeginCollapsible(CollapsibleIdBase + i, sec.Title, ref open))
                 {
                     for (int r = 0; r < sec.Rows.Count; r++)
-                        KUI.Label("  " + sec.Rows[r].key + ": " + sec.Rows[r].value);
+                        KUI.Label(KUI.Text().Add("  ").Add(sec.Rows[r].key).Add(": ").Add(sec.Rows[r].value));
                 }
                 KUI.EndCollapsible();
                 if (open != prev) _expanded[sec.Title] = open;

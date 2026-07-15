@@ -57,6 +57,59 @@ namespace Kunai
             ctx.CommandBuffer.PushLabel(text, rect, color, ctx.Layout.CurrentClip);
         }
 
+        /// <summary>
+        /// Zero-allocation label: renders the first <paramref name="count"/> chars of a
+        /// caller-owned <c>char[]</c> (e.g. one assembled with <see cref="KuiTextBuilder"/>)
+        /// straight through the glyph path, never creating a string. Use for readouts that
+        /// refresh every frame/tick.
+        /// </summary>
+        public static void Label(char[] text, int count)
+        {
+            Label(text, count, KuiStyles.Text);
+        }
+
+        public static void Label(char[] text, int count, Color32 color)
+        {
+            var ctx = KuiContext.Instance;
+            if (ctx == null) return;
+
+            float height = KuiDPI.Px(ctx.Settings.BaseFontSize + 4f);
+            var rect = ctx.Layout.NextRect(height);
+            ctx.CommandBuffer.PushLabel(text, 0, count, rect, color, ctx.Layout.CurrentClip);
+        }
+
+        // ---- Zero-GC dynamic text ---------------------------------------------
+        // The systemic way to draw label + numbers in ANY window (built-in or a
+        // developer's custom window) WITHOUT allocating a string per frame. Prefer
+        // these over $"..."/string concat, which allocate on every render.
+        static readonly char[] s_textBuffer = new char[1024];
+
+        /// <summary>
+        /// Returns a fresh, allocation-free builder over KUI's shared buffer. Chain
+        /// <c>.Add(...)</c> and pass to <see cref="Label(KuiTextBuilder)"/>. Build and consume
+        /// immediately — the buffer is reused by the next <c>Text()</c> call.
+        /// <code>KUI.Label(KUI.Text().Add("FPS: ").Add(fps).Add(" / ").Add(ms).Add(" ms"));</code>
+        /// </summary>
+        public static KuiTextBuilder Text() => new KuiTextBuilder(s_textBuffer);
+
+        public static void Label(KuiTextBuilder text) => Label(text, KuiStyles.Text);
+
+        public static void Label(KuiTextBuilder text, Color32 color)
+        {
+            var ctx = KuiContext.Instance;
+            if (ctx == null) return;
+
+            float height = KuiDPI.Px(ctx.Settings.BaseFontSize + 4f);
+            var rect = ctx.Layout.NextRect(height);
+            ctx.CommandBuffer.PushLabel(text.Buffer, 0, text.Length, rect, color, ctx.Layout.CurrentClip);
+        }
+
+        // One-call convenience for the most common "label + number [+ suffix]" case — zero-GC.
+        public static void Label(string prefix, long value)                => Label(Text().Add(prefix).Add(value));
+        public static void Label(string prefix, long value, string suffix) => Label(Text().Add(prefix).Add(value).Add(suffix));
+        public static void Label(string prefix, float value)                => Label(Text().Add(prefix).Add(value));
+        public static void Label(string prefix, float value, string suffix) => Label(Text().Add(prefix).Add(value).Add(suffix));
+
         public static void Rect(float width, float height, Color32 color)
         {
             var ctx = KuiContext.Instance;
@@ -204,14 +257,16 @@ namespace Kunai
             KuiScrollImpl.End(ctx, ref scrollPos, handle);
         }
 
-        public static IDisposable BeginGroup()
+        // Returns the concrete struct (NOT IDisposable) so `using (KUI.BeginGroup())`
+        // disposes without boxing the scope onto the heap every call.
+        public static GroupScope BeginGroup()
         {
             var ctx = KuiContext.Instance;
             ctx?.Layout.BeginGroup();
             return new GroupScope();
         }
 
-        struct GroupScope : IDisposable
+        public readonly struct GroupScope : IDisposable
         {
             public void Dispose() => KuiContext.Instance?.Layout.EndGroup();
         }

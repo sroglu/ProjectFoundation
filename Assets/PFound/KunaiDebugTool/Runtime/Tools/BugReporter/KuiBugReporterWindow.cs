@@ -30,7 +30,7 @@ namespace Kunai
     /// </summary>
     public class KuiBugReporterWindow : KuWindow
     {
-        public override string Title => KuiIcons.Bug + " Bug Report";
+        public override string Title { get; } = KuiIcons.Bug + " Bug Report";
 
         const int    DescFieldId        = 9501;
         const string MaxSizePrefKey     = "Kunai.BugReporter.MaxSizeMb";
@@ -91,7 +91,9 @@ namespace Kunai
             // Max-storage slider — persists to PlayerPrefs. Reports older than
             // the cap are pruned after each capture (oldest first) so the
             // folder size stays bounded across long testing sessions.
-            KUI.Label($"Max storage: {_maxSizeMb} MB" + UsageSuffix());
+            if (_currentTotalBytes < 0) _currentTotalBytes = ComputeTotalBugReportBytes();
+            float usedMb = _currentTotalBytes / (1024f * 1024f);
+            KUI.Label(KUI.Text().Add("Max storage: ").Add(_maxSizeMb).Add(" MB   (using ").Add(usedMb).Add(" MB)"));
             float newCap = KUI.Slider(_maxSizeMb, MinMaxSizeMb, MaxMaxSizeMb);
             int rounded = Mathf.RoundToInt(newCap);
             if (rounded != _maxSizeMb)

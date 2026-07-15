@@ -17,7 +17,7 @@ namespace Kunai
     /// </summary>
     public class KuiProfilerWindow : KuWindow
     {
-        public override string Title => KuiIcons.Cpu + " Profiler";
+        public override string Title { get; } = KuiIcons.Cpu + " Profiler";
 
         const float CapLineFps   = 60f;             // 60 fps budget reference (graph in FPS units)
         const float GraphHeight  = 90f;
@@ -50,10 +50,15 @@ namespace Kunai
         int              _hz = DefaultHz;
         bool             _prefsLoaded;
         float            _nextTick;
-        string           _txtFps   = "FPS: --";
-        string           _txtMs    = "ms:  --";
-        string           _txtGc    = "GC:  --";
-        string           _txtDraws = "Draws: --";
+        // Zero-GC readout buffers: numbers are formatted straight into these
+        // char[]s (via KuiTextBuilder) and rendered through KUI.Label(char[]),
+        // so the overlay allocates no strings when the readouts refresh.
+        readonly char[]  _bufFps     = new char[32];
+        readonly char[]  _bufMs      = new char[40];
+        readonly char[]  _bufGc      = new char[40];
+        readonly char[]  _bufDraws   = new char[32];
+        readonly char[]  _bufRefresh = new char[24];
+        int              _lenFps, _lenMs, _lenGc, _lenDraws, _lenRefresh;
         Color32          _txtFpsColor = KuiOkColor;
 
         public override void Initialize()
@@ -67,6 +72,12 @@ namespace Kunai
             _sampler = KuiFrameSampler.Create(240);
             _initialised = true;
             _nextTick = 0f;
+
+            // Placeholder readouts until the first tick computes real stats.
+            var b = new KuiTextBuilder(_bufFps);   b.Append("FPS: --");   _lenFps   = b.Length;
+            b = new KuiTextBuilder(_bufMs);        b.Append("ms:  --");   _lenMs    = b.Length;
+            b = new KuiTextBuilder(_bufGc);        b.Append("GC:  --");   _lenGc    = b.Length;
+            b = new KuiTextBuilder(_bufDraws);     b.Append("Draws: --"); _lenDraws = b.Length;
         }
 
         public override void Shutdown()
@@ -115,17 +126,30 @@ namespace Kunai
                 int statsN = _hz < _sampler.Count ? _hz : _sampler.Count;
                 if (statsN < 1) statsN = 1;
                 var s = _sampler.ComputeStats(statsN);
-                _txtFps = "FPS: " + Mathf.RoundToInt(s.AvgFps) + " avg / "
-                                  + Mathf.RoundToInt(s.MinFps) + " min";
+                var bFps = new KuiTextBuilder(_bufFps);
+                bFps.Append("FPS: ");    bFps.AppendInt(Mathf.RoundToInt(s.AvgFps));
+                bFps.Append(" avg / ");  bFps.AppendInt(Mathf.RoundToInt(s.MinFps));
+                bFps.Append(" min");
+                _lenFps = bFps.Length;
+
                 // ms shows avg + min (the floor the engine can hit) per user
                 // request: a single hitch dominates "peak" and obscures
                 // sustained perf, while min reads as "what the engine could
                 // sustain without bottlenecks". The graph still draws the peak
                 // line so spikes remain visible over time.
-                _txtMs  = "ms:  " + s.AvgMs.ToString("F2") + " avg / "
-                                  + s.MinMs.ToString("F2") + " min";
-                _txtGc  = "GC:  " + s.AvgGcKb.ToString("F2") + " KB/f avg";
-                _txtDraws = "Draws: " + GetDrawCallsHint();
+                var bMs = new KuiTextBuilder(_bufMs);
+                bMs.Append("ms:  ");     bMs.AppendF2(s.AvgMs);
+                bMs.Append(" avg / ");   bMs.AppendF2(s.MinMs);
+                bMs.Append(" min");
+                _lenMs = bMs.Length;
+
+                var bGc = new KuiTextBuilder(_bufGc);
+                bGc.Append("GC:  ");     bGc.AppendF2(s.AvgGcKb);   bGc.Append(" KB/f avg");
+                _lenGc = bGc.Length;
+
+                var bDraws = new KuiTextBuilder(_bufDraws);
+                bDraws.Append("Draws: "); AppendDrawCalls(ref bDraws);
+                _lenDraws = bDraws.Length;
 
                 _txtFpsColor = s.AvgFps >= 58f ? KuiOkColor
                              : s.AvgFps >= 28f ? KuiWarnColor
@@ -135,16 +159,19 @@ namespace Kunai
             // Vertical stack — KUI.Label has no width overload that plays well
             // with BeginGroup's horizontal layout, and four short readouts read
             // perfectly fine stacked.
-            KUI.Label(_txtFps, _txtFpsColor);
-            KUI.Label(_txtMs);
-            KUI.Label(_txtGc);
-            KUI.Label(_txtDraws);
+            KUI.Label(_bufFps, _lenFps, _txtFpsColor);
+            KUI.Label(_bufMs, _lenMs);
+            KUI.Label(_bufGc, _lenGc);
+            KUI.Label(_bufDraws, _lenDraws);
 
             // Refresh slider: governs the shared graph + text cadence.
             // Lower Hz = calmer text AND a narrower graph (right-aligned in
             // the available area; left side stays empty rather than
             // stretching the few visible samples to fill width).
-            KUI.Label("Refresh: " + _hz + " Hz");
+            var bRefresh = new KuiTextBuilder(_bufRefresh);
+            bRefresh.Append("Refresh: "); bRefresh.AppendInt(_hz); bRefresh.Append(" Hz");
+            _lenRefresh = bRefresh.Length;
+            KUI.Label(_bufRefresh, _lenRefresh);
             float newHz = KUI.Slider(_hz, MinHz, MaxHz);
             int rounded = Mathf.RoundToInt(newHz);
             if (rounded != _hz)
@@ -173,15 +200,15 @@ namespace Kunai
             KUI.Label("— min FPS (bottleneck)", KuiBottleneckLabelColor);
         }
 
-        static string GetDrawCallsHint()
+        static void AppendDrawCalls(ref KuiTextBuilder b)
         {
 #if UNITY_EDITOR
             // UnityEditor.UnityStats is editor-only; in standalone we don't have
             // a cheap counter, so we report n/a.
-            try { return UnityStats.drawCalls.ToString(); }
-            catch { return "n/a"; }
+            try { b.AppendInt(UnityStats.drawCalls); }
+            catch { b.Append("n/a"); }
 #else
-            return "n/a";
+            b.Append("n/a");
 #endif
         }
 

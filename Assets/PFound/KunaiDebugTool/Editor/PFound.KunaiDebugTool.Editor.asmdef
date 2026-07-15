@@ -1,8 +1,8 @@
 {
-    "name": "mehmetsrl.KunaiDebugTool.Editor",
+    "name": "PFound.KunaiDebugTool.Editor",
     "rootNamespace": "Kunai.Editor",
     "references": [
-        "mehmetsrl.KunaiDebugTool"
+        "PFound.KunaiDebugTool"
     ],
     "includePlatforms": [
         "Editor"

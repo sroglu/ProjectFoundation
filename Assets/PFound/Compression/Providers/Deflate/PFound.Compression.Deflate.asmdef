@@ -1,15 +1,12 @@
 {
-    "name": "mehmetsrl.KunaiDebugTool",
-    "rootNamespace": "Kunai",
+    "name": "PFound.Compression.Deflate",
+    "rootNamespace": "PFound.Compression.Deflate",
     "references": [
-        "Unity.Collections",
-        "Unity.Mathematics",
-        "Unity.Burst",
-        "Unity.InputSystem"
+        "PFound.Compression"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
-    "allowUnsafeCode": true,
+    "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,

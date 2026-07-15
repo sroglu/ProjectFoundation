@@ -11,7 +11,7 @@ namespace Kunai
     /// </summary>
     public class KuiInspectorWindow : KuWindow
     {
-        public override string Title => KuiIcons.Cog + " Inspector";
+        public override string Title { get; } = KuiIcons.Cog + " Inspector";
 
         readonly KuiOptionRegistry _registry = new();
         readonly Dictionary<string, bool> _expanded = new(System.StringComparer.Ordinal);

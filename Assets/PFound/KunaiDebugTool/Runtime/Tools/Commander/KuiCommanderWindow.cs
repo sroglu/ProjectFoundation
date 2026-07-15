@@ -17,7 +17,7 @@ namespace Kunai
     /// </summary>
     public class KuiCommanderWindow : KuWindow
     {
-        public override string Title => KuiIcons.Cog + " Commander";
+        public override string Title { get; } = KuiIcons.Cog + " Commander";
 
         const int InputFieldId = 9201;
 

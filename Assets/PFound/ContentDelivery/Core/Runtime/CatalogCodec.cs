@@ -38,7 +38,7 @@ namespace PFound.ContentDelivery.Core
             if (LooksLikeJson(bytes)) return jsonParser(bytes);
 
             if (depth < MaxDecompressDepth && LooksLikeLzma(bytes))
-                return Decode(Lzma.Decompress(bytes), jsonParser, depth + 1);
+                return Decode(CompressionCodecs.Default.Decompress(bytes), jsonParser, depth + 1);
 
             throw new ContentDeliveryException("Unrecognized catalog format (not PFound binary, JSON, or LZMA).");
         }

@@ -38,7 +38,7 @@ toolchain that flattens a configured material into a baked texture when desired.
 | `UIShapeEffectComposition` (static) | Enables/disables the correct keyword set for a chosen effect composition. |
 
 Shaders in `Runtime/Shaders/UIShape.shader` (`Render/UI/Shape`) with `Runtime/UIShapeSDF.hlsl`,
-`UIShapeNoise.hlsl` (clean-room noise: Perlin/Worley from public algorithm descriptions),
+`UIShapeNoise.hlsl` (Perlin/Worley noise from standard algorithm descriptions),
 `UIShapeEffects.hlsl`, plus a default `Runtime/UIShape.mat`.
 
 ### Editor (`PFound.Render.UIShapes.Editor`)

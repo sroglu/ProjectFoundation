@@ -34,7 +34,7 @@ namespace PFound.LocalizationService.EditorTools
         {
             byte[] utf8 = Encoding.UTF8.GetBytes(text);
             File.WriteAllBytes(Path.Combine(dir, prefix + LocalizationConstants.PlainExtension), utf8);
-            File.WriteAllBytes(Path.Combine(dir, prefix + LocalizationConstants.CompressedExtension), Lzma.Compress(utf8));
+            File.WriteAllBytes(Path.Combine(dir, prefix + LocalizationConstants.CompressedExtension), CompressionCodecs.Default.Compress(utf8));
         }
     }
 }

@@ -3,10 +3,9 @@
 
 // ─────────────────────────────────────────────────────────────────────
 // UIShapeNoise.hlsl
-// Clean-room noise library for the Render/UI/Shape shader.
-// Implementations are original to this codebase — derived from public
-// algorithmic descriptions (Perlin '02 simplex-style gradient hashing,
-// Worley '96 cellular F1 distance).
+// Noise library for the Render/UI/Shape shader.
+// Perlin '02 simplex-style gradient hashing and Worley '96 cellular F1
+// distance, implemented from the standard algorithm descriptions.
 //
 // All functions return values normalized to [0, 1].
 // ─────────────────────────────────────────────────────────────────────

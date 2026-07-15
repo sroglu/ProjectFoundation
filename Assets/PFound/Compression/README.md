@@ -1,6 +1,6 @@
 # PFound.Compression
 
-Engine-free compression codecs for PFound. Today it ships a single clean-room `Lzma` static codec
+Engine-free compression codecs for PFound. Today it ships a single `Lzma` static codec
 (future codecs slot in as sibling classes in the same namespace) — no scene, MonoBehaviour, DI, or
 lifecycle setup.
 

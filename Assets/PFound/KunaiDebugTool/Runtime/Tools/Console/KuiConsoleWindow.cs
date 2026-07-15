@@ -6,7 +6,7 @@ namespace Kunai
 {
     public class KuiConsoleWindow : KuWindow
     {
-        public override string Title => KuiIcons.FileCode + " Console";
+        public override string Title { get; } = KuiIcons.FileCode + " Console";
         // Console is pinned — the master toolbox does not toggle it off.
         public override bool ShowInMasterToggle => false;
         // NOTE: deliberately NOT StretchHorizontal. That per-frame full-width override fought the
@@ -253,6 +253,10 @@ namespace Kunai
             return -1;
         }
 
+        // Reusable scratch for per-row badge text, so the console draws its rows
+        // without allocating a string per row per frame.
+        readonly char[] _rowScratch = new char[512];
+
         void DrawEntryRow(int index, ref KuiLogEntry entry, int runCount)
         {
             var ctx = KuiContext.Instance;
@@ -306,7 +310,9 @@ namespace Kunai
                 float catW = KuiDPI.Px(80f);
                 float4 badgeRect = new float4(msgX, rect.y + KuiDPI.Px(2f), catW, h);
                 float4 badgeClip = IntersectClip(badgeRect, clip);
-                ctx.CommandBuffer.PushLabel("[" + entry.Category + "]",
+                var cb = new KuiTextBuilder(_rowScratch);
+                cb.Append('['); cb.Append(entry.Category); cb.Append(']');
+                ctx.CommandBuffer.PushLabel(_rowScratch, 0, cb.Length,
                     badgeRect, KuiStyles.TextDim, badgeClip);
                 msgX += catW + KuiDPI.Px(4f);
             }
@@ -315,9 +321,10 @@ namespace Kunai
             float msgRightTrim = pad;
             if (runCount > 1)
             {
-                string badge = "(" + runCount + "×)";
+                var rb = new KuiTextBuilder(_rowScratch);
+                rb.Append('('); rb.AppendInt(runCount); rb.Append('×'); rb.Append(')');
                 float badgeW = KuiDPI.Px(50f);
-                ctx.CommandBuffer.PushLabel(badge,
+                ctx.CommandBuffer.PushLabel(_rowScratch, 0, rb.Length,
                     new float4(rect.x + rect.z - badgeW - pad, rect.y + KuiDPI.Px(2f), badgeW, h),
                     KuiStyles.TextDim, clip);
                 msgRightTrim += badgeW + KuiDPI.Px(4f);

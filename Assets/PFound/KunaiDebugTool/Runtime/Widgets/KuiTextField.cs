@@ -151,14 +151,15 @@ namespace Kunai
                     char c = typed[i];
                     switch (c)
                     {
-                        case '\b':              // Backspace
+                        case '\b':              // Backspace (0x08)
+                        case '\u007f':          // DEL (0x7F) — macOS delete key / some IMEs send this
                             BackspaceAtCursor(ref state);
                             break;
                         case '\n':
                         case '\r':              // Enter
                             return true;
                         default:
-                            if (c < 32) break;  // ignore other control chars
+                            if (c < 32 || c == 127) break;  // ignore control chars incl. DEL
                             InsertAtCursor(ref state, c);
                             break;
                     }

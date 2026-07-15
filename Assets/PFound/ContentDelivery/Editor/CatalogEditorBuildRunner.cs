@@ -143,7 +143,7 @@ namespace PFound.ContentDelivery.Editor
             // form, LZMA-compressed, named with its content hash last: catalog_<gameId>_v<ver>_b<build>_<dev|prod>_<hash>.lzma.
             // The SAME bytes go to the embedded package AND (online) the publish/CDN dir, so no .json catalog exists
             // anywhere. Runtime reads it via CatalogCodec (auto-detects LZMA → PFCB binary).
-            byte[] stored = Lzma.Compress(CatalogBinary.Write(catalog));
+            byte[] stored = CompressionCodecs.Default.Compress(CatalogBinary.Write(catalog));
             string catalogFileName = config.CatalogFileName(new XxHash3ContentHasher().Compute(stored));
 
             // Embedded package (StreamingAssets): the catalog + a bare-name pointer the embedded reader consumes.

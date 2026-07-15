@@ -3,8 +3,25 @@
 ## Purpose
 
 High-performance, immediate-mode in-game debug overlay for Unity: console, commander, inspector,
-profiler, system info, and bug reporter. The whole UI renders in **one draw call** with **zero
-per-frame GC allocations** via a Burst-compiled vertex pipeline. Two-layer architecture:
+profiler, system info, and bug reporter. The whole UI renders in **one draw call** via a
+Burst-compiled vertex pipeline. The render pipeline and the built-in windows are **zero per-frame
+GC**: dynamic text (label + numbers) is assembled through the shared allocation-free
+`KUI.Text()` builder — `KUI.Label(KUI.Text().Add("FPS: ").Add(fps))` or the convenience overload
+`KUI.Label("FPS: ", fps)` — instead of `$"..."`/string concatenation, which allocate every frame.
+**Custom windows must use `KUI.Text()` for dynamic text to stay zero-GC.**
+
+**Known cost — the Inspector (left unsolved on purpose).** The reflection-based Inspector reads
+live values through `Func<object>` — the price of its one-attribute `[KuiOption]` design — which
+boxes value types, so it allocates modestly *while that window is open*. Note this is **boxing**,
+not string building, so the `KUI.Text()` API cannot remove it. Eliminating it would need typed,
+per-value accessors: either a tagged union of six `Func<T>`/`Action<T>` pairs (most always null),
+or a generic `KuiOptionEntry<T>` hierarchy — plus cached enum names (`enum.ToString` allocates) and
+IL2CPP/AOT-safe generic delegates from reflection. That meaningfully heavies the design for no real
+benefit: the Inspector is a dev tool that never runs on a shipping hot path and only allocates when
+a developer has it open. The trade isn't worth it — so the boxing stays and the other six windows
+plus the render pipeline remain zero-GC.
+
+Two-layer architecture:
 
 - **UI Layer** (Phase 1): immediate-mode widget API, a deferred command buffer, the Burst pipeline,
   and a single combined shader.
@@ -15,12 +32,12 @@ per-frame GC allocations** via a Burst-compiled vertex pipeline. Two-layer archi
 
 | Assembly | Folder | Namespace |
 |---|---|---|
-| `mehmetsrl.KunaiDebugTool` | `Runtime/` | `Kunai` |
-| `mehmetsrl.KunaiDebugTool.Editor` | `Editor/` | `Kunai` |
-| `mehmetsrl.KunaiDebugTool.Tests` | `Tests/Runtime/` | `Kunai` |
+| `PFound.KunaiDebugTool` | `Runtime/` | `Kunai` |
+| `PFound.KunaiDebugTool.Editor` | `Editor/` | `Kunai` |
+| `PFound.KunaiDebugTool.Tests` | `Tests/Runtime/` | `Kunai` |
 
-The `mehmetsrl.KunaiDebugTool*` asmdef namespace is a sanctioned, retained exception — do not rename
-it. The runtime C# namespace is `Kunai`; the static entry point is `KUI.*`.
+The runtime C# namespace is `Kunai` — a sanctioned product name, retained by design; do not rename
+it. The static entry point is `KUI.*`.
 
 ## Dependencies
 
@@ -512,7 +529,7 @@ proper `Samples~/` scenes.
 ## Testing
 
 `Tests/Runtime/` is an NUnit Editor-mode suite (`UNITY_INCLUDE_TESTS`, asmdef
-`mehmetsrl.KunaiDebugTool.Tests`) with fixtures: `KuiTextFieldTests`, `KuiReflectionScannerTests`,
+`PFound.KunaiDebugTool.Tests`) with fixtures: `KuiTextFieldTests`, `KuiReflectionScannerTests`,
 `KuiCategoryParserTests`, `KuiLogBufferCollapseTests`, `KuiFrameSamplerTests`,
 `KuiOptionRegistryTests`, `KuiCommandParserTests`, `KuiCommandRegistryTests`,
 `KuiBugReportSinkTests`.

@@ -1,8 +1,8 @@
 {
-    "name": "mehmetsrl.KunaiDebugTool.Tests",
+    "name": "PFound.KunaiDebugTool.Tests",
     "rootNamespace": "Kunai.Tests",
     "references": [
-        "mehmetsrl.KunaiDebugTool",
+        "PFound.KunaiDebugTool",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
