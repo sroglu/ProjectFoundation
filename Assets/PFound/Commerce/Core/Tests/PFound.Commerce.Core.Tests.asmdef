@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Commerce.Core.Tests",
+    "rootNamespace": "PFound.Commerce.Core.Tests",
+    "references": [
+        "PFound.Commerce.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

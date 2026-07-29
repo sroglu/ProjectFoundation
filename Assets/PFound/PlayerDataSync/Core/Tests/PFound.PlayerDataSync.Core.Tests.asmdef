@@ -1,0 +1,16 @@
+{
+    "name": "PFound.PlayerDataSync.Core.Tests",
+    "rootNamespace": "PFound.PlayerDataSync.Core.Tests",
+    "references": [
+        "PFound.PlayerDataSync.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,14 @@
+{
+    "name": "PFound.PlayerDataSync.Core",
+    "rootNamespace": "PFound.PlayerDataSync.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

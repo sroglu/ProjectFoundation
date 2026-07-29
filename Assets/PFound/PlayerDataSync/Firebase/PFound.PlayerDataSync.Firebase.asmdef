@@ -1,0 +1,19 @@
+{
+    "name": "PFound.PlayerDataSync.Firebase",
+    "rootNamespace": "PFound.PlayerDataSync.Firebase",
+    "references": [
+        "PFound.PlayerDataSync.Core",
+        "PFound.PlayerDataSync"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "PFOUND_FIREBASE"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
