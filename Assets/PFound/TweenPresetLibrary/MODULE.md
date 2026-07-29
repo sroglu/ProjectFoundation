@@ -1,5 +1,7 @@
 # TweenPresetLibrary
 
+> **Module group — UI & Presentation.** Sibling modules in this group: `UISystem`, `ScreenRouter`, `GuidedOnboardingFlow`, `MVC`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Authored, data-driven tween presets. A `TweenPreset` ScriptableObject bundles up to four channels

@@ -1,5 +1,7 @@
 # GameDataStore
 
+> **Module group — Data & Persistence.** Sibling modules in this group: `UserPrefs`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 Two-layer runtime in-game data-modeling layer: **Entries** defines a union-style value type (`Entry`) that can hold many primitive and custom types in a single struct; **Storage** provides strongly-typed singleton databases plus a keyed in-memory store and a database registry. This is a runtime data model, NOT an app-level save/persistence system (no JSON schema, atomic write, or migration here).
 
@@ -171,6 +173,8 @@ GameDataStore is a **runtime in-game data modeling layer** — NOT an app-level 
 - **Do NOT use GameDataStore when:** writing JSON save files with schema versioning, atomic file writes, migrations, or multi-namespace profile data. These concerns belong to an app-level save layer (e.g. a hub-app `Save` module built on `Utilities/FileSystemTools` atomic write).
 
 The two coexist: an app's save layer serializes a `GameDataStore` database snapshot into its own JSON schema on save, and rehydrates the database on load. GameDataStore does not own the file format, the atomic write, or the migration pipeline.
+
+**Which persistence layer** (GameDataStore is none of them): flat, pre-declared typed **settings/prefs** → `PFound.UserPrefs`; a per-profile / per-minigame **structured local save document** → the HubApp save subsystem; authoritative **cloud-synced** player state → `PFound.PlayerDataSync`.
 
 ## Adding a New EntryType
 

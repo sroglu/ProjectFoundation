@@ -1,5 +1,7 @@
 # KunaiDebugTool
 
+> **Module group — Dev Tools.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 High-performance, immediate-mode in-game debug overlay for Unity: console, commander, inspector,

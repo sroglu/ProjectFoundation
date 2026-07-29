@@ -1,5 +1,7 @@
 # LoopScheduler
 
+> **Module group — App Foundation.** Sibling modules in this group: `DependencyContainer`, `Signaling`, `StartupOrchestration`, `EpochClock`, `Collections`, `Utilities`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 A deterministic multi-phase frame scheduler injected into Unity's PlayerLoop. Replaces scattered
 `Update()` methods with ordered `LoopPhase` phases plus owner-scoped, re-entrancy-safe callbacks and
@@ -7,6 +9,12 @@ a per-phase Profiler marker. Every phase fires at its **real engine moment** —
 injected into each engine frame slot (early-update, pre-update, update, pre-late-update,
 post-late-update) and each ticks the phases mapped to it in order; `BeforeRender` runs on the
 engine's pre-render hook.
+
+## Scope boundary — per-frame scheduler vs one-time boot
+
+LoopScheduler runs **every frame**, ordering ongoing per-frame work across PlayerLoop phases. For the
+**one-time** async startup sequence (boot steps + a loading-screen progress aggregate) use
+`PFound.StartupOrchestration`. Ongoing frame work → LoopScheduler; app boot → StartupOrchestration.
 
 ## Assemblies
 

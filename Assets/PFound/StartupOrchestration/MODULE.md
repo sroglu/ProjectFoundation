@@ -1,10 +1,18 @@
 # StartupOrchestration
 
+> **Module group — App Foundation.** Sibling modules in this group: `DependencyContainer`, `Signaling`, `LoopScheduler`, `EpochClock`, `Collections`, `Utilities`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 A weighted, multi-step async app-boot pipeline. You register self-contained `IStartupStep`s; the
 orchestrator runs them **all concurrently** and reports a single aggregated `StartupAggregate`
 (overall `0..1` + a dominant "what are we waiting on" reason) per tick, so a loading screen can bind
 straight to it. Returns when every step finishes — success or fail-soft.
+
+## Scope boundary — one-time boot vs per-frame scheduling
+
+StartupOrchestration runs **once at app boot** — concurrent `IStartupStep`s with an aggregated
+progress/reason a loading screen binds to. For **ongoing per-frame** phase scheduling (replacing
+scattered `Update()`s) use `PFound.LoopScheduler`.
 
 ## Assemblies
 

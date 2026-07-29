@@ -1,5 +1,7 @@
 # Render
 
+> **Module group — Rendering.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 Rendering building blocks for Unity URP: a pooled render-texture / global-shader-parameter core, a
 Burst-culled GPU instancing service, an off-screen render-to-texture "context" for portraits and
 previews, a set of pure texture utilities, volume-driven full-screen effects (blur, outline, an

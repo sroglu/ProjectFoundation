@@ -1,5 +1,7 @@
 # DependencyContainer
 
+> **Module group — App Foundation.** Sibling modules in this group: `Signaling`, `LoopScheduler`, `StartupOrchestration`, `EpochClock`, `Collections`, `Utilities`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 A lightweight constructor-injection DI container for Unity. Register services fluently, `Build()` to
 wire the object graph, then resolve by lifetime. Pure C# — no engine reference, no `MonoBehaviour`,

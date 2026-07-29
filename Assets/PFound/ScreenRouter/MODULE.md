@@ -1,11 +1,25 @@
 # ScreenRouter
 
+> **Module group — UI & Presentation.** Sibling modules in this group: `UISystem`, `TweenPresetLibrary`, `GuidedOnboardingFlow`, `MVC`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 A UI presentation router for Unity: one active **screen** plus a stack of modal **frames**, with
 guards, runtime type registration, four pooling tiers, animated transitions, and a background-blur
 surface. The view *is* the content — a content prefab carries both a `ContentBase` MonoBehaviour and
 an `IContentRenderer` component; there is no separate view instantiation.
+
+## Scope boundary — the app navigator (vs UISystem, MVC)
+
+ScreenRouter is THE app-wide navigation / presentation system: it owns *which* screen and modal
+frames are on-stack and their transition lifecycle (guards, pooling, animation, blur). It composes
+with, but does not overlap:
+- **`PFound.UISystem`** — the visual widgets/theme rendered *inside* a screen's content prefab.
+  ScreenRouter decides which screen shows; UISystem is what it looks like. Used together.
+- **`PFound.MVC`** — a per-screen view↔model logic pattern. It is NOT the app navigator: its
+  `ViewManager` page-stack is a separate, non-interoperable mechanism, has no production consumer, and
+  is superseded by Toolbox's `mvp` + `viewmanager` packages (slated for retirement — see the MVC
+  module note). For navigation, use ScreenRouter.
 
 ## Model
 

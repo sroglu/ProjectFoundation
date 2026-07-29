@@ -1,9 +1,30 @@
 # Signaling
 
+> **Module group — App Foundation.** Sibling modules in this group: `DependencyContainer`, `LoopScheduler`, `StartupOrchestration`, `EpochClock`, `Collections`, `Utilities`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 A type-safe, deferred publish/subscribe signal bus. Signals are payload-free — the type *is* the
 message. Publishers `Queue<T>` during a frame; a single `EmitQueuedSignals()` pump delivers the whole
 batch to listeners in queue order.
+
+## Scope boundary — which event/signal/message mechanism?
+
+Signaling is ONE of several dispatch mechanisms in PFound; they do not overlap. Pick by two axes:
+**do you need to carry data?** and **at what scope / across what?**
+
+| Need | Use |
+|---|---|
+| Payload-FREE notification, app-wide, many decoupled listeners, deferred + ordered | **`PFound.Signaling`** (this module) — the type *is* the message |
+| An event that CARRIES DATA, inside an ECS `World`, consumed by systems in-frame | `PFound.ECS` `World.Events` (`Publish<T>(in struct)`) |
+| A message sent ACROSS the wire to a client/server (serialized, opcode-bound) | `PFound.NetworkLayer` notify (`Post`/`OnNotify`) |
+| A data-carrying event confined to one screen graph's controllers | `PFound.MVC` `Broadcast<TEvent>` (MvcContext-scoped, immediate) |
+| Raw device input turned into typed intents, phase-based | `PFound.InputRouter` |
+| A single point-to-point callback (one publisher → one/few known subscribers) | a plain C# `event`/`Action` |
+
+Key distinction: **Signaling is payload-free.** If you must pass a value with the event, Signaling is
+the wrong tool — a listener that needs data reads current state after the signal, or you use a
+data-carrying mechanism (ECS events / MVC `Broadcast` / a raw `Action<T>`). Signaling is in-process,
+main-thread C# delegates — NOT for cross-process/networked delivery (that is NetworkLayer).
 
 ## Assemblies
 

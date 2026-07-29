@@ -1,5 +1,7 @@
 # InputRouter
 
+> **Module group — Input.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 A backend-agnostic input **intent** router. Caller-supplied source adapters turn raw device input

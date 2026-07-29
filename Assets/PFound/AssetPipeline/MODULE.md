@@ -1,5 +1,7 @@
 # AssetPipeline
 
+> **Module group — Content & Assets.** Sibling modules in this group: `ContentDelivery`, `RemoteResourceCache`, `Compression`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Editor-only build-prep tooling that audits authored textures and meshes against an import policy
@@ -12,6 +14,14 @@ the same authoring source the bundle build reads. The audit is gated by a refere
 assets are skipped and atlas members are exempt from per-texture format rules. The policy/decision layer
 is engine-free pure C# (unit-testable, 41 tests); the editor layer reads and rewrites Unity importer
 settings and injects the graph.
+
+## Scope boundary — build-time asset prep vs ContentDelivery
+
+AssetPipeline is **editor / build-time** tooling: it audits import settings and builds atlases over the
+`AssetGroup`s. It ships and loads nothing at runtime. `PFound.ContentDelivery` is the module that
+**builds the bundles + catalog and delivers/loads assets at runtime** over those same groups. Rule:
+"is this asset imported/packed well?" → AssetPipeline; "get me this asset at runtime by address" →
+ContentDelivery. Shared AssetGroup authoring source, different stage.
 
 ## Assemblies
 

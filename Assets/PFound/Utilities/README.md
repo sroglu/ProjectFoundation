@@ -1,5 +1,7 @@
 # PFound.Utilities
 
+> **Module group — App Foundation.** Sibling modules in this group: `DependencyContainer`, `Signaling`, `LoopScheduler`, `StartupOrchestration`, `EpochClock`, `Collections`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's dependencies for exact edges. (`Utilities` is the most-depended-on leaf.)
+
 Per-domain Unity utility sub-libraries (math, strings, color, pooling, filesystem, collections, and
 more). Each sub-module is an **independent assembly** (`PFound.Utilities.<Name>`) — **reference only
 the ones you use**; there is no umbrella assembly. **Almost everything here is pure static helpers or

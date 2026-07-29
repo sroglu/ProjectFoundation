@@ -1,5 +1,7 @@
 # LocalizationService
 
+> **Module group — Localization.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Key→text localization with a pluggable content source, active/fallback language resolution,

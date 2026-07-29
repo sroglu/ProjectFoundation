@@ -1,11 +1,26 @@
 # NetworkLayer
 
+> **Module group — Networking.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 Transport-agnostic request/reply/notify messaging layer for Unity clients and dedicated servers.
 Typed messages are bound to opcodes in a shared catalog, packed into length-prefixed frames, and
 carried over a pluggable link (in-process loopback for tests, Telepathy TCP in production). The
 messaging core only ever sees opaque byte frames — it knows nothing about sockets. All delivery is
 single-threaded and pump-driven via a per-frame `Update()`.
+
+## Notify vs in-process Signaling (scope note)
+
+NetworkLayer `notify` (`Post`/`OnNotify`, one-way, opcode-bound, MessagePack-serialized over the link)
+crosses a transport to a client/server — do not confuse it with the in-process event bus. For app-wide
+payload-free notifications between C# systems on one machine use `PFound.Signaling`; for data-carrying
+events inside an ECS `World` use `World.Events`. This module is strictly the across-the-wire path.
+
+**Transport choice (socket vs HTTP):** NetworkLayer is realtime, bidirectional, connection-oriented
+messaging over a socket (Telepathy TCP) — use it for live client↔server gameplay/session traffic. For
+one-shot request/response **fetch over HTTP**, use the BestHTTP-based modules instead:
+`PFound.ContentDelivery` (assets/bundles), `PFound.RemoteGameConfig` (config values),
+`PFound.RemoteResourceCache` (generic cached blobs).
 
 ## Assemblies
 | Assembly | Location | Notes |

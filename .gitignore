@@ -1,5 +1,6 @@
 # Planning / internal docs + local instructions — never pushed
 /docs/
+/TODO.md
 CLAUDE.local.md
 
 # Per-project MCP config — machine-specific absolute paths, kept local

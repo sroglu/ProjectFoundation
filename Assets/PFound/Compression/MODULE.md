@@ -1,5 +1,7 @@
 # Compression
 
+> **Module group — Content & Assets.** Sibling modules in this group: `ContentDelivery`, `AssetPipeline`, `RemoteResourceCache`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Engine-free compression codecs for PFound. It ships one `Lzma` codec — a static

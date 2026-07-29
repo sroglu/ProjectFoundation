@@ -1,11 +1,20 @@
 # ECS
 
+> **Module group — Gameplay / Simulation.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 A pure-C# sparse-set ECS runtime: a `World` of entities and `struct` components, ref-returning
 queries, a deferred `CommandBuffer`, deferred events, transient interactions, and an attribute-driven,
 phase-ordered system scheduler. The core has **no** Unity, Burst, Collections or Mathematics
 dependency — you `new World()` and drive it from any update loop.
+
+## Events vs Signaling (scope note)
+
+`World.Events` (`Publish<T>(in struct)` + `Subscribe`/`SubscribeBatch`, drained per `Dispatch`) is for
+**data-carrying** events **inside a `World`**, consumed by systems within the tick. For app-wide,
+**payload-free** notifications decoupling systems that are not part of a `World`, use `PFound.Signaling`
+instead. `World.Interactions` is a transient relational data store you poll — not a dispatcher.
 
 ## Assemblies
 

@@ -1,5 +1,7 @@
 # Collections
 
+> **Module group — App Foundation.** Sibling modules in this group: `DependencyContainer`, `Signaling`, `LoopScheduler`, `StartupOrchestration`, `EpochClock`, `Utilities`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Allocation-conscious, engine-free data structures and graph search for hot paths: a double-ended

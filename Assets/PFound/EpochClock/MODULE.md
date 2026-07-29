@@ -1,5 +1,7 @@
 # EpochClock
 
+> **Module group — App Foundation.** Sibling modules in this group: `DependencyContainer`, `Signaling`, `LoopScheduler`, `StartupOrchestration`, `Collections`, `Utilities`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 A Unix-epoch game clock: an advancing `Now` plus duration/progress math, period and day/week
 boundaries, drift diagnostics, and time comparisons — built on the value types `Timestamp` (seconds

@@ -1,5 +1,7 @@
 # PFound.UISystem — Architecture
 
+> **Module group — UI & Presentation.** Sibling modules in this group: `ScreenRouter`, `TweenPresetLibrary`, `GuidedOnboardingFlow`, `MVC`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 Deep reference for the module's architecture. For the doc map see [GUIDE.md](GUIDE.md);
 for component-authoring rules see [COMPONENT-GUIDE.md](COMPONENT-GUIDE.md).
 
@@ -11,6 +13,15 @@ system, an M3 type scale, and a set of themed interactive components — plus ed
 to author pages and generate themes. It is not a 1:1 M3 implementation; it borrows M3's
 research-backed sizing, spacing, state feedback, and color hierarchy on a Unity-native,
 batched, performant base.
+
+## Scope boundary — widgets, not navigation or screen-logic
+
+UISystem is the visual **component/theme library** — what UI *looks like*. It knows nothing about
+navigation or screen logic and depends on neither; it is rendered *inside* whatever content hosts it:
+- Which screen/frame is on-stack + transitions → **`PFound.ScreenRouter`** (widgets live inside its
+  `Screen`/`Frame` content prefabs; SampleGame uses both together).
+- A screen's internal view↔model wiring → an app's own logic (plain code, or `PFound.MVC`).
+UISystem is orthogonal to both.
 
 ## Assemblies
 

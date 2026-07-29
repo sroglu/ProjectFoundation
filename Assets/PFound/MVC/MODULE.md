@@ -1,5 +1,7 @@
 # MVC
 
+> **Module group — UI & Presentation.** Sibling modules in this group: `UISystem`, `ScreenRouter`, `TweenPresetLibrary`, `GuidedOnboardingFlow`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 A lightweight Model-View-Controller framework for Unity. A `Controller<V, M>` owns a typed `Model`
 and a `ViewBase`; it is either **page** type (one screen-level view drawn from a pre-registered
@@ -7,6 +9,18 @@ roster) or **instance** type (a view instantiated per object). Controllers route
 through a scoped `MvcContext` with type-safe `Redirect`/`Broadcast`. The assembly is
 **input-source-agnostic** — it references no input package; pointer enter/exit rides Unity's
 `EventSystem`, and games wire their own input layer to controllers (see *Game-specific input*).
+
+## Status & scope boundary
+
+**MVC is a lightweight per-screen view↔model logic pattern — NOT the app navigator.** To choose which
+screen/frame is shown (stack, guards, pooling, transitions) use `PFound.ScreenRouter`; MVC's
+`ViewManager` page-stack is a separate, non-interoperable mechanism and must not run as a parallel app
+navigator alongside ScreenRouter. Visual widgets belong to `PFound.UISystem`.
+
+> **Slated for retirement** (2026-07-27 decision — see `TODO.md`). MVC has no production consumer (only
+> Samples/Tests), and Toolbox already ships cleaner, separated equivalents: `com.sroglu.toolbox.mvp`
+> (the pattern) and `com.sroglu.toolbox.viewmanager` (the page navigation). PFound's MVC is a rougher
+> combined version of those. Prefer the Toolbox packages; do not build new dependencies on PFound.MVC.
 
 ## Assemblies
 

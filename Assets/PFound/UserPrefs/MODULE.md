@@ -1,5 +1,7 @@
 # UserPrefs
 
+> **Module group — Data & Persistence.** Sibling modules in this group: `GameDataStore`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 A typed, schema-versioned player-preferences store built with a fluent builder. Keys are strongly
@@ -178,14 +180,25 @@ untouched. A stored version newer than current raises `PrefsSchemaDowngradeExcep
 
 ## Scope vs. other modules
 
+UserPrefs is for small, flat, pre-declared **typed settings/preferences** (device-local). It is NOT
+for profile/progress documents or cloud state — those are different layers:
+
 | If you want… | Use |
 |---|---|
-| In-memory typed entries that change every frame | `PFound.GameDataStore` |
-| Persistent user preferences (settings, profile, progress) | **`PFound.UserPrefs`** |
-| Generic LRU/disk caching of remote resources | `PFound.RemoteResourceCache` |
-| Bundled asset distribution | `PFound.AssetSystem` |
+| In-memory typed entries that change every frame (no disk) | `PFound.GameDataStore` |
+| Flat, pre-declared **typed settings/prefs** on this device | **`PFound.UserPrefs`** |
+| A per-profile / per-minigame **structured local save document** (profiles, badges, per-game blobs) | the HubApp save subsystem |
+| Authoritative player game-state **synced to a backend / cloud** | `PFound.PlayerDataSync` |
+| Generic disk caching of remote binary resources | `PFound.RemoteResourceCache` |
+| Addressable asset distribution | `PFound.ContentDelivery` |
 
 UserPrefs and GameDataStore are intentionally independent (zero cross-dependency).
+
+> **Planned (see TODO.md):** UserPrefs and the HubApp save subsystem currently each reimplement local
+> on-disk persistence (separate atomic-write, JSON serializer, and migration chain). Agreed direction
+> is to level UserPrefs up into the single shared local-persistence layer (adding a complex/nested-type
+> backend) and have HubApp-save build on it — no feature regression, no duplicated mechanism. Until
+> then they are distinct by data-kind/scope as above.
 
 ## Editor Tooling
 

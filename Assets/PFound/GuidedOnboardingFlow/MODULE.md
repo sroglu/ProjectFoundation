@@ -1,5 +1,7 @@
 # GuidedOnboardingFlow
 
+> **Module group — UI & Presentation.** Sibling modules in this group: `UISystem`, `ScreenRouter`, `TweenPresetLibrary`, `MVC`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 A guided, step-driven onboarding/tutorial engine for Unity. A `TutorialManager` runs one tutorial

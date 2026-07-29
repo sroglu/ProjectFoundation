@@ -1,11 +1,39 @@
 # ContentDelivery
 
+> **Module group — Content & Assets.** Sibling modules in this group: `AssetPipeline`, `RemoteResourceCache`, `Compression`. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Addressable content delivery: author assets into groups, build AssetBundles + a content catalog,
 ship them locally (StreamingAssets) or remotely (CDN), and load them at runtime by string address
 with per-owner reference counting. The catalog model, bundle provisioning and download scheduling
 are engine-free pure C#; the Unity runtime and the editor build pipeline layer on top.
+
+## Scope boundary — ContentDelivery vs RemoteGameConfig vs RemoteResourceCache
+
+These modules all deal with "remote, updatable-without-an-app-update game data" and are easy to
+confuse. The boundary is by DATA TYPE and PURPOSE:
+
+- **ContentDelivery ships ASSETS** — the binary things the game is *made of*: AssetBundles, prefabs,
+  textures, audio, scenes, ScriptableObject assets, the content catalog. Loaded by string address,
+  ref-counted, hash-verified, disk-cached. Use it when you need the actual bytes/object of an asset.
+- **RemoteGameConfig ships VALUES** — small tunable config that changes *behaviour/balance*: feature
+  flags, A/B experiments, numbers/strings/bools, cadences, small JSON tuning tables (product catalog,
+  reward amounts). Read as typed config. Use it for a knob you *read*, not an asset you *load*.
+- **RemoteResourceCache** is the low-level generic "fetch bytes by URL/key, tiered cache" primitive
+  (e.g. a remote image not in the catalog). ContentDelivery is the addressable asset pipeline above
+  that idea; RemoteGameConfig builds its config fetch on RemoteResourceCache.
+
+**Sharp rule + handoff:**
+- Small VALUE you read (`GetInt` / typed section) → RemoteGameConfig. Unity ASSET you load by
+  address → ContentDelivery.
+- Config carries ADDRESSES/IDS; ContentDelivery resolves them to assets. Config never ships an asset;
+  ContentDelivery never ships a tuning value.
+- Example: RemoteGameConfig `{ "summerEventEnabled": true, "bannerAddress": "banners/summer2026" }`;
+  ContentDelivery loads `banners/summer2026`. The decision/flag is config; the image is content.
+- Grey area (a level): its tuning (enemy counts, timers) = RemoteGameConfig; its scene/prefab/art =
+  ContentDelivery. Localization tables = LocalizationService. The RemoteGameConfig document itself is
+  fetched via RemoteResourceCache, NOT through ContentDelivery.
 
 ## Assemblies
 

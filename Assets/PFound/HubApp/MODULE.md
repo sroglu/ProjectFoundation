@@ -1,11 +1,28 @@
 # PFound.HubApp
 
+> **Module group — App Shell.** Single-module group. Grouped by purpose — see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
+
 ## Purpose
 
 Hub-app shell services for a multi-mini-game front-end: save, profiles, badges, stickers, photo
 album, audio, parent-gate, analytics — plus a `MiniGameHost` that loads, scopes, and tears down one
 mini-game at a time. Every service is a plain C# class with constructor injection; there is no
 container, no singleton, and no host MonoBehaviour — the consuming app owns construction and lifetime.
+
+## Scope boundary — the save subsystem vs other data modules
+
+HubApp's `SaveService` persists ONE per-profile / per-minigame **structured document** (`save.json`:
+profiles, badges, stickers, photos, settings, and per-game blobs), with `ScopedSaveService` giving
+each mini-game an isolated `games.{profile}.{game}.*` bag. It is distinct from:
+- **`PFound.UserPrefs`** — flat, pre-declared **typed settings keys** (device-local); a global bag of
+  declared keys, not a multi-profile document.
+- **`PFound.GameDataStore`** — **in-memory** runtime data model, no persistence.
+- **`PFound.PlayerDataSync`** — authoritative player state synced to a **backend/cloud**; HubApp-save
+  is device-local only.
+
+> Note: the save subsystem currently reimplements local persistence (its own Newtonsoft atomic-write +
+> migration) rather than building on UserPrefs. Planned direction is to unify onto an enhanced
+> UserPrefs (see TODO.md); the per-profile/scoped structure stays HubApp-owned regardless.
 
 ## Assemblies
 
