@@ -22,8 +22,8 @@ namespace PFound.ServerOperation.Tests
     // (W3) Banded two-level opcodes: a tiny central NetDomain enum (high byte, one entry per subsystem)
     // plus a per-domain op enum (low byte) with LOCAL values. opcode = (domain << 8) | op, composed by
     // Opcode.Of. Different domain ⇒ different high byte ⇒ cross-subsystem collisions are impossible. This
-    // test needs only one domain. Request and reply are separate catalog entries (the reply frame carries
-    // its own opcode), so each op gets its own local value.
+    // test needs only one domain. A reply is decoded by CORRELATION (the caller's known reply type), not
+    // by its own opcode, so replies are NOT enrolled and cost no op value — only the request does.
     public enum NetDomain : byte
     {
         Reward = 1,          // 0x01 — becomes the opcode HIGH byte
@@ -32,7 +32,6 @@ namespace PFound.ServerOperation.Tests
     public enum RewardOp : byte
     {
         GrantRequest = 1,    // 0x01 -> opcode 0x0101  ((domain << 8) | op)
-        GrantReply   = 2,    // 0x02 -> opcode 0x0102
     }
 
     // (W2) Request content = an immutable readonly struct DTO with explicit [Key]s + IEquatable
@@ -97,10 +96,11 @@ namespace PFound.ServerOperation.Tests
         {
             // MessagePackBodyCodec so the [Key]-attributed DTOs are really packed/unpacked over the wire.
             var catalog = new MessageCatalog(new MessagePackBodyCodec());
-            // (W3) banded overload via the domain-scoped registrar: domain written once, ops chain.
+            // (W3) banded request/reply PAIR in one call: the request takes the op; the reply is decoded by
+            // correlation (the caller's known reply type), so it is un-enrolled and merely registered for
+            // pooling by type — the two-type Enroll does both.
             catalog.ForDomain(NetDomain.Reward)
-                .Enroll<GrantRewardRequest>(RewardOp.GrantRequest)
-                .Enroll<GrantRewardReply>(RewardOp.GrantReply);
+                .Enroll<GrantRewardRequest, GrantRewardReply>(RewardOp.GrantRequest);
             return catalog;
         }
 
@@ -167,7 +167,9 @@ namespace PFound.ServerOperation.Tests
                 if (env.Kind != MessageKind.Request) return;
                 var reply = new GrantRewardReply { Content = new GrantOutcome(serverBalance) };
                 byte[] body = catalog.PackBody(reply);
-                byte[] replyFrame = FrameCodec.WriteReply(Opcode.Of(NetDomain.Reward, RewardOp.GrantReply), env.CallToken, ReplyStatus.Ok,
+                // Echo the REQUEST opcode: the reply has no opcode of its own (correlation model);
+                // the client ignores the reply opcode and decodes by the awaited reply type.
+                byte[] replyFrame = FrameCodec.WriteReply(Opcode.Of(NetDomain.Reward, RewardOp.GrantRequest), env.CallToken, ReplyStatus.Ok,
                     new ArraySegment<byte>(body));
                 serverLink.Deliver(peer, new ArraySegment<byte>(replyFrame));
             };
@@ -255,7 +257,9 @@ namespace PFound.ServerOperation.Tests
                 requestFramesSeenByServer++;
                 var reply = new GrantRewardReply { Content = new GrantOutcome(serverBalance) };
                 byte[] body = catalog.PackBody(reply);
-                byte[] replyFrame = FrameCodec.WriteReply(Opcode.Of(NetDomain.Reward, RewardOp.GrantReply), env.CallToken, ReplyStatus.Ok,
+                // Echo the REQUEST opcode: the reply has no opcode of its own (correlation model);
+                // the client ignores the reply opcode and decodes by the awaited reply type.
+                byte[] replyFrame = FrameCodec.WriteReply(Opcode.Of(NetDomain.Reward, RewardOp.GrantRequest), env.CallToken, ReplyStatus.Ok,
                     new ArraySegment<byte>(body));
                 serverLink.Deliver(peer, new ArraySegment<byte>(replyFrame));
             };

@@ -21,6 +21,10 @@ namespace PFound.NetworkLayer
         {
             public TaskCompletionSource<Message> Promise;
             public long DeadlineMs;
+            // The reply type the caller awaits. The reply is correlated by token, so
+            // its own frame carries no opcode — the receive path decodes the payload
+            // as this stored type (see ClientPeer.RouteReply).
+            public Type ReplyType;
         }
 
         readonly Dictionary<uint, Slot> _slots = new Dictionary<uint, Slot>();
@@ -32,9 +36,22 @@ namespace PFound.NetworkLayer
 
         void Close(uint token) => Closed?.Invoke(token);
 
-        public void Open(uint token, TaskCompletionSource<Message> promise, long deadlineMs)
+        public void Open(uint token, TaskCompletionSource<Message> promise, long deadlineMs, Type replyType)
         {
-            _slots.Add(token, new Slot { Promise = promise, DeadlineMs = deadlineMs });
+            _slots.Add(token, new Slot { Promise = promise, DeadlineMs = deadlineMs, ReplyType = replyType });
+        }
+
+        /// <summary>The reply type a live call awaits, so its (opcode-less) reply frame can be
+        /// decoded by correlation. Returns false for an unknown token (late/expired reply).</summary>
+        public bool TryGetReplyType(uint token, out Type replyType)
+        {
+            if (_slots.TryGetValue(token, out var slot))
+            {
+                replyType = slot.ReplyType;
+                return true;
+            }
+            replyType = null;
+            return false;
         }
 
         /// <summary>Deliver a reply to its waiter. Unknown tokens (late/expired) are dropped.</summary>

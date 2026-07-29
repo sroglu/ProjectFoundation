@@ -55,6 +55,21 @@ namespace PFound.NetworkLayer
             => Enroll<T>(Opcode.Of(domain, op));
 
         /// <summary>
+        /// Enroll a request/reply PAIR in one call: the request takes the banded opcode, and the reply is
+        /// registered for pooling by type only (opcode-less — it is decoded by correlation, see
+        /// <see cref="RegisterReplyType{T}"/>). Prefer this for an RPC operation so the request and its
+        /// reply are declared together. Notifies and one-off messages keep the single-type
+        /// <see cref="Enroll{T}(Enum, Enum)"/>.
+        /// </summary>
+        public void Enroll<TRequest, TReply>(Enum domain, Enum op)
+            where TRequest : RequestMessage, new()
+            where TReply : ReplyMessage, new()
+        {
+            Enroll<TRequest>(domain, op);
+            RegisterReplyType<TReply>();
+        }
+
+        /// <summary>
         /// Open a chainable registrar bound to a single <c>domain</c>, so the domain is written once and
         /// each message's op chains off it:
         /// <c>catalog.ForDomain(NetDomain.Wallet).Enroll&lt;SpendReq&gt;(WalletOp.Spend).Enroll&lt;SpendReply&gt;(WalletOp.SpendReply)</c>.
@@ -95,6 +110,19 @@ namespace PFound.NetworkLayer
         public ushort OpcodeFor(Type type) => _byType[type];
         public Type TypeFor(ushort opcode) => _byOpcode[opcode];
 
+        /// <summary>
+        /// Register a reply type for POOLING only, without an opcode. A reply is correlated by
+        /// call token and decoded against the type the caller already knows
+        /// (<see cref="ClientPeer.CallAsync{TReply}"/>), so it needs no wire opcode and is never
+        /// enrolled — but it still rides the per-type free list, so <see cref="Take{T}"/> /
+        /// <see cref="Recycle"/> work for it. Requests and notifies keep enrolling by opcode.
+        /// </summary>
+        public void RegisterReplyType<T>() where T : ReplyMessage, new() => RegisterReplyType(typeof(T));
+
+        /// <summary>Non-generic form of <see cref="RegisterReplyType{T}"/> (for the source generator's
+        /// per-op <c>Register</c>). Creates the reply type's free list with no opcode entry.</summary>
+        public void RegisterReplyType(Type replyType) => _freeLists.Add(replyType, new Stack<Message>());
+
         // --- pooling ---------------------------------------------------------
 
         public T Take<T>() where T : Message, new()
@@ -115,6 +143,11 @@ namespace PFound.NetworkLayer
 
         public Message UnpackByOpcode(ushort opcode, ArraySegment<byte> body)
             => _codec.Unpack(_byOpcode[opcode], body);
+
+        /// <summary>Decode a payload as an explicitly known type — the path for opcode-less replies,
+        /// which the client decodes by correlation against the caller's awaited reply type.</summary>
+        public Message Unpack(Type type, ArraySegment<byte> body)
+            => _codec.Unpack(type, body);
 
         /// <summary>
         /// A chainable registrar bound to one banded <c>domain</c>, returned by
@@ -140,6 +173,17 @@ namespace PFound.NetworkLayer
             public DomainEnroller Enroll<T>(Enum op) where T : Message, new()
             {
                 _catalog.Enroll<T>(_domain, op);
+                return this;
+            }
+
+            /// <summary>Enroll a request/reply PAIR under this registrar's domain (request takes the op, the
+            /// reply is registered for pooling by type — opcode-less, decoded by correlation), then return
+            /// this registrar so further ops chain.</summary>
+            public DomainEnroller Enroll<TRequest, TReply>(Enum op)
+                where TRequest : RequestMessage, new()
+                where TReply : ReplyMessage, new()
+            {
+                _catalog.Enroll<TRequest, TReply>(_domain, op);
                 return this;
             }
         }

@@ -130,7 +130,7 @@ namespace PFound.NetworkLayer
             var promise = new TaskCompletionSource<Message>(TaskCreationOptions.RunContinuationsAsynchronously);
             long now = _clock.NowMs;
             long deadline = now + (deadlineMs < 0 ? _options.CallDeadlineMs : deadlineMs);
-            _outstanding.Open(token, promise, deadline);
+            _outstanding.Open(token, promise, deadline, typeof(TReply));
             _timings[token] = new CallTiming { Opcode = opcode, SentMs = now };
 
             _catalog.Recycle(request);
@@ -244,7 +244,13 @@ namespace PFound.NetworkLayer
                 return;
             }
 
-            var reply = (ReplyMessage)_catalog.UnpackByOpcode(env.Opcode, env.Payload);
+            // Correlation decode: the reply frame carries no opcode of its own (the server
+            // echoes the request's), so decode the payload as the type this call already
+            // awaits. An unknown token means the caller already gave up — drop the frame.
+            if (!_outstanding.TryGetReplyType(env.CallToken, out var replyType))
+                return;
+
+            var reply = (ReplyMessage)_catalog.Unpack(replyType, env.Payload);
             reply.Status = env.Status;
             if (!_outstanding.Settle(env.CallToken, reply))
                 _catalog.Recycle(reply); // arrived after the caller gave up

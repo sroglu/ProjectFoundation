@@ -109,24 +109,24 @@ static class CallLatencyStandaloneTests
         var calls = new OutstandingCalls();
         calls.Closed += closed.Add;
 
-        // settle
+        // settle (reply type is irrelevant to this outcome-only lifecycle check)
         var p1 = new TaskCompletionSource<Message>();
-        calls.Open(1, p1, 10_000);
+        calls.Open(1, p1, 10_000, null);
         Check(calls.Settle(1, null), "settle known token");
 
         // break (fault)
         var p2 = new TaskCompletionSource<Message>();
-        calls.Open(2, p2, 10_000);
+        calls.Open(2, p2, 10_000, null);
         Check(calls.Break(2, new CallExpiredFault()), "break known token");
 
         // expire
         var p3 = new TaskCompletionSource<Message>();
-        calls.Open(3, p3, 100);
+        calls.Open(3, p3, 100, null);
         calls.ExpireDue(200);
 
         // break-all (link drop)
         var p4 = new TaskCompletionSource<Message>();
-        calls.Open(4, p4, 10_000);
+        calls.Open(4, p4, 10_000, null);
         calls.BreakAll(new CallExpiredFault());
 
         Check(closed.Contains(1), "Closed fired on settle");

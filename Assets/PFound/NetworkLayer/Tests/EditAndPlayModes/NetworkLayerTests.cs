@@ -48,7 +48,9 @@ namespace PFound.NetworkLayer.Tests
         {
             var catalog = new MessageCatalog(new ReflectionBodyCodec());
             catalog.Enroll<EchoRequest>(Opcodes.EchoRequest);
-            catalog.Enroll<EchoReply>(Opcodes.EchoReply);
+            // A reply is decoded by correlation (the caller's known reply type), not by its
+            // own opcode, so it is NOT enrolled — only registered for pooling by type.
+            catalog.RegisterReplyType<EchoReply>();
             catalog.Enroll<HeartbeatNotify>(Opcodes.Heartbeat);
             return catalog;
         }

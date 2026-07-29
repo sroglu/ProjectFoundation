@@ -2,12 +2,11 @@ namespace PFound.NetworkLayer.Samples.Wallet
 {
     /// <summary>
     /// The Wallet subsystem's operations — the LOW byte of each opcode, folded against
-    /// <see cref="NetDomain.Wallet"/> at enrol time. A request and its reply are distinct catalog
-    /// entries, so each carries its own value.
+    /// <see cref="NetDomain.Wallet"/> at enrol time. One op per operation: the request carries the value,
+    /// the reply is opcode-less (decoded by correlation), so there is no separate reply op.
     /// </summary>
     public enum WalletOp : byte
     {
-        Spend = 1,       // 0x01 -> opcode 0x0101
-        SpendReply = 2,  // 0x02 -> opcode 0x0102
+        Spend = 1,  // 0x01 -> opcode 0x0101
     }
 }

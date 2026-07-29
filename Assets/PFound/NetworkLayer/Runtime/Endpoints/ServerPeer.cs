@@ -98,7 +98,7 @@ namespace PFound.NetworkLayer
                 TReply reply = handler(peer, request);
                 _catalog.Recycle(request);
 
-                EmitReply(peer, token, reply);
+                EmitReply(peer, token, opcode, reply);
                 long serviceMs = _clock.NowMs - started;
                 Metrics.CountReply(serviceMs);
                 Diagnostics.RecordServed(opcode, serviceMs, _clock.NowMs);
@@ -210,7 +210,7 @@ namespace PFound.NetworkLayer
             exchange.Answered = true;
             _deferred.Remove(exchange);
 
-            EmitReply(exchange.Peer, exchange.CallToken, reply);
+            EmitReply(exchange.Peer, exchange.CallToken, exchange.Opcode, reply);
             long serviceMs = _clock.NowMs - exchange.StartedMs;
             Metrics.CountReply(serviceMs);
             Diagnostics.RecordServed(exchange.Opcode, serviceMs, _clock.NowMs);
@@ -352,10 +352,13 @@ namespace PFound.NetworkLayer
                                 "; falling back to the raw socket address.");
         }
 
-        void EmitReply(int peer, uint token, ReplyMessage reply)
+        // The reply is correlated by call token and decoded on the client against the type
+        // that call awaits, so the reply type has no opcode of its own. The frame still needs
+        // a NON-control opcode (0 is reserved for control), so echo the REQUEST's opcode —
+        // the client ignores it for routing. This also means the reply type is never enrolled.
+        void EmitReply(int peer, uint token, ushort requestOpcode, ReplyMessage reply)
         {
-            ushort opcode = _catalog.OpcodeFor(reply.GetType());
-            byte[] frame = FrameCodec.WriteReply(opcode, token, reply.Status, _catalog.PackBody(reply));
+            byte[] frame = FrameCodec.WriteReply(requestOpcode, token, reply.Status, _catalog.PackBody(reply));
             _link.Deliver(peer, new ArraySegment<byte>(frame));
         }
     }

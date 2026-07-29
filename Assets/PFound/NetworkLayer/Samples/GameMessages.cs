@@ -14,12 +14,12 @@ namespace PFound.NetworkLayer.Samples
     {
         public static void RegisterAll(MessageCatalog c) => c.EnrollAll(Wallet, Alliance);
 
+        // Each RPC enrols as a request/reply PAIR: the request takes the opcode, the reply is registered
+        // for pooling by type only (opcode-less — decoded by correlation, see MessageCatalog.RegisterReplyType).
         static void Wallet(MessageCatalog c) => c.ForDomain(NetDomain.Wallet)
-            .Enroll<SpendCoinsRequest>(WalletOp.Spend)
-            .Enroll<SpendCoinsReply>(WalletOp.SpendReply);
+            .Enroll<SpendCoinsRequest, SpendCoinsReply>(WalletOp.Spend);
 
         static void Alliance(MessageCatalog c) => c.ForDomain(NetDomain.Alliance)
-            .Enroll<JoinAllianceRequest>(AllianceOp.Join)
-            .Enroll<JoinAllianceReply>(AllianceOp.JoinReply);
+            .Enroll<JoinAllianceRequest, JoinAllianceReply>(AllianceOp.Join);
     }
 }
