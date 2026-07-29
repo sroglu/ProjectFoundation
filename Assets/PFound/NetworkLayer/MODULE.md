@@ -48,6 +48,7 @@ HTTP transport for the ContentDelivery / RemoteResourceCache modules, not for Ne
 | `ReplyMessage` | Abstract base for replies. Carries a `ReplyStatus Status`. |
 | `NotifyMessage` | Abstract base for fire-and-forget notifications. |
 | `MessageCatalog` | Binds a `ushort` opcode to each message type; shared by both peers. Also owns the pool and codec. |
+| `Opcode` | `Opcode.Of(domain, op)` folds a banded two-level opcode: `(domain << 8) | op` (high-byte domain + low-byte op). |
 | `MessageContractAttribute` | `[MessageContract(opcode)]` for reflection-based catalog population. |
 | `IBodyCodec` | Payload serialization seam. |
 
@@ -112,9 +113,50 @@ strictly wider view than the server-only `ServerDiagnostics` service-time record
 `SendTo(peer, notify)` / `Broadcast(notify)` / `SendToMany(peers, notify)`; `Update(budget)`;
 `IsListening`, `Peers`, `Metrics`, `Diagnostics`, `PeerConnected`/`PeerDisconnected` events.
 
-**Catalog (`MessageCatalog`):** `Enroll<T>(opcode)` (explicit) or `HarvestContracts(assembly)`
-(reads `[MessageContract(opcode)]`); `Take<T>()` / `Recycle(msg)` (pooling);
-`OpcodeFor(type)` / `TypeFor(opcode)`.
+**Catalog (`MessageCatalog`):** three enroll overloads —
+`Enroll<T>(Enum domain, Enum op)` (the **banded** form: a central `NetDomain : byte` + a per-domain
+`XxxOp : byte`, folded to `(domain << 8) | op` via `Opcode.Of` so cross-subsystem collisions are
+structurally impossible — recommended for a multi-subsystem game), `Enroll<T>(Enum opcode)` (a single
+flat per-domain opcode enum, narrowed to `ushort` — fine for a small game), or `Enroll<T>(ushort opcode)`
+(a raw number) — plus two bulk-enrol conveniences over the banded form: `ForDomain(domain)` returns a
+chainable `DomainEnroller` so the domain is written once and ops chain
+(`ForDomain(NetDomain.Wallet).Enroll<SpendReq>(WalletOp.Spend).Enroll<SpendReply>(WalletOp.SpendReply)`),
+and `EnrollAll(params Action<MessageCatalog>[])` runs several per-domain enrol blocks in one call.
+Also `HarvestContracts(assembly)` (reads `[MessageContract(opcode)]`);
+`Take<T>()` / `Recycle(msg)` (pooling); `OpcodeFor(type)` / `TypeFor(opcode)`. A request and its reply
+are DISTINCT entries (the reply frame carries its own opcode) — enroll both with their own op values.
+Raw composition without the catalog: `Opcode.Of(domain, op)` (`Convert.ToByte` throws on an out-of-range
+byte → fail-fast).
+
+### The one-file opcode sheet (recommended convention)
+
+Keep the whole game's wire opcodes in **one `.cs` file** — every `NetDomain` band and every per-domain
+op enum side by side — so collisions are visible at a glance instead of scattered across subsystems.
+`ForDomain` + `EnrollAll` let that one file also own the wiring:
+
+```csharp
+// GameMessages.cs — the whole game's opcode sheet in one file
+public enum NetDomain : byte { Wallet = 1, Alliance = 2, Reward = 3 }   // value = opcode HIGH byte (0x01 / 0x02 / 0x03)
+public enum WalletOp   : byte { Spend = 1, SpendReply = 2, Grant = 3, GrantReply = 4 }
+public enum AllianceOp : byte { Join = 1, JoinReply = 2 }
+public enum RewardOp   : byte { Grant = 1, GrantReply = 2 }
+
+public static class GameMessages
+{
+    public static void RegisterAll(MessageCatalog c) => c.EnrollAll(Wallet, Alliance, Reward);
+    static void Wallet(MessageCatalog c)   => c.ForDomain(NetDomain.Wallet)
+        .Enroll<SpendCoinsRequest>(WalletOp.Spend).Enroll<SpendCoinsReply>(WalletOp.SpendReply)
+        .Enroll<GrantCoinsRequest>(WalletOp.Grant).Enroll<GrantCoinsReply>(WalletOp.GrantReply);
+    static void Alliance(MessageCatalog c) => c.ForDomain(NetDomain.Alliance)
+        .Enroll<JoinAllianceRequest>(AllianceOp.Join).Enroll<JoinAllianceReply>(AllianceOp.JoinReply);
+    static void Reward(MessageCatalog c)   => c.ForDomain(NetDomain.Reward)
+        .Enroll<GrantRewardRequest>(RewardOp.Grant).Enroll<GrantRewardReply>(RewardOp.GrantReply);
+}
+// usage: GameMessages.RegisterAll(catalog);
+```
+
+The per-call `catalog.Enroll<T>(NetDomain.X, XxxOp.Y)` form (see the wiring example above) stays valid —
+`ForDomain`/`EnrollAll` are just the collision-visible convenience for a game with several subsystems.
 
 ## Setup / wiring
 
@@ -124,11 +166,18 @@ catalog registration (same opcode→type mapping) for frames to decode.
 
 ```csharp
 // --- shared: one catalog, one codec, same on both ends ---
+// Banded two-level opcodes: ONE tiny central domain list (eyeball it for collisions), then each
+// domain owns a small op enum with LOCAL values. opcode = (domain << 8) | op.
+enum NetDomain : byte { Movement = 1, Chat = 2 }  // central; value = opcode HIGH byte (0x01 / 0x02)
+enum MoveOp    : byte { Request  = 1,    Reply = 2 }     // per-domain, local values (1..255)
 var catalog = new MessageCatalog(new MessagePackBodyCodec());
-catalog.Enroll<MoveRequest>(1042);
-catalog.Enroll<MoveReply>(1043);
-catalog.Enroll<ChatNotify>(2001);
-// or: catalog.HarvestContracts(assembly);   // reads [MessageContract(opcode)]
+catalog.Enroll<MoveRequest>(NetDomain.Movement, MoveOp.Request);   // banded overload (recommended)
+catalog.Enroll<MoveReply>(NetDomain.Movement, MoveOp.Reply);
+catalog.Enroll<ChatNotify>(NetDomain.Chat, ChatOp.Say);
+// Different domain ⇒ different high byte ⇒ Movement and Chat can never collide.
+// Alternatives: catalog.Enroll<MoveReply>(SomeFlatOp.Reply)  // single flat enum, narrowed to ushort
+//               catalog.Enroll<MoveReply>((ushort)0x1002)    // raw number
+//               catalog.HarvestContracts(assembly);          // reads [MessageContract(opcode)]
 
 // --- client ---
 var options = ClientLinkOptions.Default;
@@ -143,6 +192,32 @@ client.Post(new ChatNotify { Text = "hi" });
 // per frame:
 void Update() => client.Update();
 ```
+
+## Wire contract discipline (stable messages across independent deploys)
+
+The default codec is MessagePack **contractless** (plain fields "just work"), which is convenient but
+serializes by member order/name — fragile once the client and server deploy independently. For anything
+that crosses the wire and evolves, use this discipline instead:
+
+- **Model the payload CONTENT as an immutable value DTO** — a `readonly struct` marked
+  `[MessagePackObject]` with an explicit `[Key(n)]` on every field + `[SerializationConstructor]`, and
+  `IEquatable<>` for value-equality. Explicit keys are append-only forward/backward compatible, and
+  `[MessagePackObject]` makes a forgotten key a hard error. The `ContractlessStandardResolver` routes
+  attributed types through the stable path automatically — **no codec change**.
+- **Keep the message ENVELOPE (`RequestMessage`/`ReplyMessage` subclass) a plain poolable class** that
+  carries the DTO as a field. Do NOT put `[MessagePackObject]` on the envelope or the base message types:
+  the base types stay MessagePack-attribute-free so the standalone mono/csc core build keeps compiling
+  (it excludes MessagePack). The envelope's only members are the base `Status` + the DTO, so its
+  contractless-ness is a framework constant, not a per-message churn point.
+- **Declare opcodes with the banded two-level scheme** — a central `NetDomain : byte` (one entry per
+  subsystem) plus a per-domain `XxxOp : byte` with local values — and enroll via
+  `Enroll<T>(NetDomain.X, XxxOp.Y)` (which folds `(domain << 8) | op` through `Opcode.Of`). Different
+  domain ⇒ different high byte ⇒ cross-subsystem collisions are structurally impossible; the catalog's
+  duplicate-enroll guard backstops within-domain dupes. Request and reply get distinct op values. For a
+  small single-subsystem game a single flat enum via `Enroll<T>(Enum)` is a fine simpler alternative.
+
+The `ServerOperation` module builds on exactly this discipline (its request/reply DTOs), and a future
+codegen phase will emit the attributed DTOs from field declarations automatically.
 
 ## File Structure
 ```

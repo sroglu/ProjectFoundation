@@ -8,9 +8,16 @@ production, in-process loopback for tests.
 
 ```csharp
 // shared catalog (same opcode→type map on both ends)
+// Recommended: BANDED two-level opcodes — a tiny central NetDomain (high byte, one per subsystem) plus a
+// per-domain op enum (low byte) with local values, folded to (domain << 8) | op. Different domain ⇒
+// different high byte ⇒ cross-subsystem collisions are impossible. Request and reply get distinct ops.
+enum NetDomain : byte { Movement = 1 }   // value = opcode HIGH byte (0x01)
+enum MoveOp    : byte { Request  = 1, Reply = 2 }
 var catalog = new MessageCatalog(new MessagePackBodyCodec());
-catalog.Enroll<MoveRequest>(1042);
-catalog.Enroll<MoveReply>(1043);
+catalog.Enroll<MoveRequest>(NetDomain.Movement, MoveOp.Request);   // banded overload — prefer this
+catalog.Enroll<MoveReply>(NetDomain.Movement, MoveOp.Reply);
+// (Also: Enroll<T>(Enum) for a single flat enum, or Enroll<T>(ushort) for a raw number.)
+// (Re-enrolling the same opcode OR the same type throws NetworkFault — collisions fail fast, never silent.)
 
 // client — pure library, consumer owns the peer
 var link   = new TelepathyClientLink(ClientLinkOptions.Default);   // TCP transport
@@ -23,7 +30,7 @@ void Update() => client.Update();   // pump once per frame
 // per-opcode round-trip latency + a slow-call alert (reuses the reply correlation)
 client.Latency.SlowCall += r =>
     Debug.Log($"opcode {r.Opcode} took {r.RoundTripMs} ms (>= {r.ThresholdMs} ms)");
-client.Latency.TryGet(1042, out var move);   // move.Completed / MinMs / MaxMs / AverageMs
+client.Latency.TryGet(Opcode.Of(NetDomain.Movement, MoveOp.Request), out var move);   // move.Completed / MinMs / MaxMs / AverageMs
 ```
 
 ## Dependencies
