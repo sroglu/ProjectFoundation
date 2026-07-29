@@ -113,18 +113,28 @@ strictly wider view than the server-only `ServerDiagnostics` service-time record
 `SendTo(peer, notify)` / `Broadcast(notify)` / `SendToMany(peers, notify)`; `Update(budget)`;
 `IsListening`, `Peers`, `Metrics`, `Diagnostics`, `PeerConnected`/`PeerDisconnected` events.
 
-**Catalog (`MessageCatalog`):** three enroll overloads —
+**Catalog (`MessageCatalog`):** the **recommended RPC enrolment is the request/reply PAIR overload** —
+`Enroll<TRequest, TReply>(Enum domain, Enum op)`: the request takes the banded opcode; the reply is
+registered for pooling by TYPE only (opcode-less — see the reply-model note below). This declares an
+operation's request and reply together in one call, so each operation costs exactly one op value. The
+single-type overloads enroll ONE message (a notify, or a hand-written message) against an opcode:
 `Enroll<T>(Enum domain, Enum op)` (the **banded** form: a central `NetDomain : byte` + a per-domain
 `XxxOp : byte`, folded to `(domain << 8) | op` via `Opcode.Of` so cross-subsystem collisions are
 structurally impossible — recommended for a multi-subsystem game), `Enroll<T>(Enum opcode)` (a single
 flat per-domain opcode enum, narrowed to `ushort` — fine for a small game), or `Enroll<T>(ushort opcode)`
-(a raw number) — plus two bulk-enrol conveniences over the banded form: `ForDomain(domain)` returns a
-chainable `DomainEnroller` so the domain is written once and ops chain
-(`ForDomain(NetDomain.Wallet).Enroll<SpendReq>(WalletOp.Spend).Enroll<SpendReply>(WalletOp.SpendReply)`),
-and `EnrollAll(params Action<MessageCatalog>[])` runs several per-domain enrol blocks in one call.
-Also `HarvestContracts(assembly)` (reads `[MessageContract(opcode)]`);
-`Take<T>()` / `Recycle(msg)` (pooling); `OpcodeFor(type)` / `TypeFor(opcode)`. A request and its reply
-are DISTINCT entries (the reply frame carries its own opcode) — enroll both with their own op values.
+(a raw number) — plus two bulk-enrol conveniences: `ForDomain(domain)` returns a chainable `DomainEnroller`
+so the domain is written once and ops chain — it carries BOTH the pair form and the single-type form
+(`ForDomain(NetDomain.Wallet).Enroll<SpendRequest, SpendReply>(WalletOp.Spend).Enroll<BalanceNotify>(WalletOp.BalanceChanged)`)
+— and `EnrollAll(params Action<MessageCatalog>[])` runs several per-domain enrol blocks in one call.
+Also `RegisterReplyType<T>()` (pool a reply type with no opcode — what the pair overload calls under the
+hood; use it directly to pool a hand-written reply); `HarvestContracts(assembly)` (reads
+`[MessageContract(opcode)]`); `Take<T>()` / `Recycle(msg)` (pooling); `OpcodeFor(type)` / `TypeFor(opcode)`.
+
+**Reply-model note (replies are un-enrolled).** A reply carries NO opcode: it is decoded by CORRELATION —
+the outstanding call already knows the reply TYPE (`CallAsync<TReply>` stored `typeof(TReply)`), so the
+reply frame needs no opcode entry. Only requests and notifies are enrolled against opcodes; the full
+per-domain op space (1..255) therefore serves requests + notifies with no reserved "reply half". Replies
+are only registered for POOLING by type (`RegisterReplyType<T>()`, done for you by the pair overload).
 Raw composition without the catalog: `Opcode.Of(domain, op)` (`Convert.ToByte` throws on an out-of-range
 byte → fail-fast).
 
@@ -137,25 +147,28 @@ op enum side by side — so collisions are visible at a glance instead of scatte
 ```csharp
 // GameMessages.cs — the whole game's opcode sheet in one file
 public enum NetDomain : byte { Wallet = 1, Alliance = 2, Reward = 3 }   // value = opcode HIGH byte (0x01 / 0x02 / 0x03)
-public enum WalletOp   : byte { Spend = 1, SpendReply = 2, Grant = 3, GrantReply = 4 }
-public enum AllianceOp : byte { Join = 1, JoinReply = 2 }
-public enum RewardOp   : byte { Grant = 1, GrantReply = 2 }
+// One op per operation — replies are opcode-less (decoded by correlation), so there is NO reply op value.
+public enum WalletOp   : byte { Spend = 1, Grant = 2, BalanceChanged = 3 }
+public enum AllianceOp : byte { Join = 1 }
+public enum RewardOp   : byte { Grant = 1 }
 
 public static class GameMessages
 {
     public static void RegisterAll(MessageCatalog c) => c.EnrollAll(Wallet, Alliance, Reward);
     static void Wallet(MessageCatalog c)   => c.ForDomain(NetDomain.Wallet)
-        .Enroll<SpendCoinsRequest>(WalletOp.Spend).Enroll<SpendCoinsReply>(WalletOp.SpendReply)
-        .Enroll<GrantCoinsRequest>(WalletOp.Grant).Enroll<GrantCoinsReply>(WalletOp.GrantReply);
+        .Enroll<SpendCoinsRequest, SpendCoinsReply>(WalletOp.Spend)   // RPC → pair overload
+        .Enroll<GrantCoinsRequest, GrantCoinsReply>(WalletOp.Grant)
+        .Enroll<BalanceChangedNotify>(WalletOp.BalanceChanged);       // notify → single-type
     static void Alliance(MessageCatalog c) => c.ForDomain(NetDomain.Alliance)
-        .Enroll<JoinAllianceRequest>(AllianceOp.Join).Enroll<JoinAllianceReply>(AllianceOp.JoinReply);
+        .Enroll<JoinAllianceRequest, JoinAllianceReply>(AllianceOp.Join);
     static void Reward(MessageCatalog c)   => c.ForDomain(NetDomain.Reward)
-        .Enroll<GrantRewardRequest>(RewardOp.Grant).Enroll<GrantRewardReply>(RewardOp.GrantReply);
+        .Enroll<GrantRewardRequest, GrantRewardReply>(RewardOp.Grant);
 }
 // usage: GameMessages.RegisterAll(catalog);
 ```
 
-The per-call `catalog.Enroll<T>(NetDomain.X, XxxOp.Y)` form (see the wiring example above) stays valid —
+The per-call `catalog.Enroll<TRequest, TReply>(NetDomain.X, XxxOp.Y)` pair form (and the single-type
+`Enroll<T>(NetDomain.X, XxxOp.Y)` for a notify — see the wiring example above) stays valid —
 `ForDomain`/`EnrollAll` are just the collision-visible convenience for a game with several subsystems.
 
 ## Setup / wiring
@@ -169,15 +182,15 @@ catalog registration (same opcode→type mapping) for frames to decode.
 // Banded two-level opcodes: ONE tiny central domain list (eyeball it for collisions), then each
 // domain owns a small op enum with LOCAL values. opcode = (domain << 8) | op.
 enum NetDomain : byte { Movement = 1, Chat = 2 }  // central; value = opcode HIGH byte (0x01 / 0x02)
-enum MoveOp    : byte { Request  = 1,    Reply = 2 }     // per-domain, local values (1..255)
+enum MoveOp    : byte { Move = 1 }     // per-domain, local values (1..255); one op per operation
+enum ChatOp    : byte { Say = 1 }      // the reply has NO op — it is decoded by correlation
 var catalog = new MessageCatalog(new MessagePackBodyCodec());
-catalog.Enroll<MoveRequest>(NetDomain.Movement, MoveOp.Request);   // banded overload (recommended)
-catalog.Enroll<MoveReply>(NetDomain.Movement, MoveOp.Reply);
-catalog.Enroll<ChatNotify>(NetDomain.Chat, ChatOp.Say);
+catalog.Enroll<MoveRequest, MoveReply>(NetDomain.Movement, MoveOp.Move);   // pair overload (recommended for RPC)
+catalog.Enroll<ChatNotify>(NetDomain.Chat, ChatOp.Say);                    // single-type for a notify
 // Different domain ⇒ different high byte ⇒ Movement and Chat can never collide.
-// Alternatives: catalog.Enroll<MoveReply>(SomeFlatOp.Reply)  // single flat enum, narrowed to ushort
-//               catalog.Enroll<MoveReply>((ushort)0x1002)    // raw number
-//               catalog.HarvestContracts(assembly);          // reads [MessageContract(opcode)]
+// Alternatives: catalog.Enroll<ChatNotify>(SomeFlatOp.Say)  // single flat enum, narrowed to ushort
+//               catalog.Enroll<ChatNotify>((ushort)0x0201)  // raw number
+//               catalog.HarvestContracts(assembly);         // reads [MessageContract(opcode)]
 
 // --- client ---
 var options = ClientLinkOptions.Default;
@@ -211,19 +224,97 @@ that crosses the wire and evolves, use this discipline instead:
   contractless-ness is a framework constant, not a per-message churn point.
 - **Declare opcodes with the banded two-level scheme** — a central `NetDomain : byte` (one entry per
   subsystem) plus a per-domain `XxxOp : byte` with local values — and enroll via
-  `Enroll<T>(NetDomain.X, XxxOp.Y)` (which folds `(domain << 8) | op` through `Opcode.Of`). Different
-  domain ⇒ different high byte ⇒ cross-subsystem collisions are structurally impossible; the catalog's
-  duplicate-enroll guard backstops within-domain dupes. Request and reply get distinct op values. For a
-  small single-subsystem game a single flat enum via `Enroll<T>(Enum)` is a fine simpler alternative.
+  `Enroll<TRequest, TReply>(NetDomain.X, XxxOp.Y)` for an RPC (the request takes the op; the reply is
+  opcode-less, pooled by type, decoded by correlation) or the single-type `Enroll<T>(NetDomain.X, XxxOp.Y)`
+  for a notify — both fold `(domain << 8) | op` through `Opcode.Of`. Different domain ⇒ different high byte
+  ⇒ cross-subsystem collisions are structurally impossible; the catalog's duplicate-enroll guard backstops
+  within-domain dupes. Each operation costs ONE op value (no reply half). For a small single-subsystem game
+  a single flat enum via `Enroll<T>(Enum)` is a fine simpler alternative.
 
-The `ServerOperation` module builds on exactly this discipline (its request/reply DTOs), and a future
-codegen phase will emit the attributed DTOs from field declarations automatically.
+The `ServerOperation` module builds on exactly this discipline (its request/reply DTOs). You can write
+that boilerplate by hand (above) or let the **source generator** emit it from a compact declaration (below).
+
+## Message codegen (source generator)
+
+A Roslyn incremental source generator turns one compact partial-class declaration per operation into the
+full wire boilerplate — the immutable `[MessagePackObject]` DTO(s) with explicit `[Key]`s, the poolable
+envelope(s), and the catalog enrolment — so the discipline above is applied for you and can't be gotten
+subtly wrong.
+
+### Declaring an operation
+
+```csharp
+using PFound.NetworkLayer;
+
+[NetworkOp(NetDomain.Wallet, WalletOp.Spend)]     // an RPC: request + reply
+public partial class Spend
+{
+    [Request(0)] public int  Amount;      // request payload fields, explicit wire indices
+    [Request(1)] public long AccountId;
+    [Reply(0)]   public long NewBalance;  // reply payload fields
+}
+
+[NetworkNotify(NetDomain.Wallet, WalletOp.BalanceChanged)]   // one-way notify, no reply
+public partial class BalanceChanged
+{
+    [Field(0)] public long NewBalance;
+}
+```
+
+The generator emits, nested under each partial (names derived by convention):
+
+- `Spend.Req` / `Spend.Reply` (and `BalanceChanged.Data`) — immutable `[MessagePackObject] readonly struct`
+  with `[Key(n)]` taken **verbatim from the `[Request/Reply/Field(n)]` index** (not declaration order),
+  `[SerializationConstructor]`, `IEquatable<>`, and a value `ToString`.
+- `Spend.RequestMessage` / `Spend.ReplyMessage` (and `BalanceChanged.NotifyMessage`) — the poolable
+  envelope carrying a settable `Content` field plus a zero-copy `ref readonly … View` read accessor, and a
+  `Clear()` override for pooling.
+- `Spend.Register(catalog)` — enrols **only the request** (`ForDomain(domain).Enroll<RequestMessage,
+  ReplyMessage>(op)`); the reply carries no opcode (decoded by correlation) but is registered for pooling by
+  type. A notify enrols its single opcode.
+- one assembly-wide `GeneratedMessages.RegisterAll(catalog)` that calls every generated `Register` — boot a
+  catalog with a single call and no operation can be forgotten. (The hand-written `ForDomain`/`EnrollAll`
+  path still works for messages you don't generate.)
+
+Usage mirrors the hand-written path: `new Spend.RequestMessage { Content = new Spend.Req(50, id) }`; the
+`ServerOperation` subclass is generic over `Spend.RequestMessage, Spend.ReplyMessage`.
+
+### `[Reserved]` — retired-index discipline (wire versioning)
+
+Explicit indices are **append-only**: gaps are legal, but a deleted field's number must never be reused (an
+old peer's bytes would be read as the new field). Record retired numbers on the type so the source itself is
+the history:
+
+```csharp
+[NetworkOp(NetDomain.Wallet, WalletOp.Spend)]
+[Reserved(1)]                 // AccountId used to live at index 1 — never reuse
+public partial class Spend { [Request(0)] public int Amount; [Request(2)] public string Note; }
+```
+
+The compiler has no memory of deleted fields, so without a `[Reserved]` marker there is no cross-version
+protection. (A companion analyzer that enforces reserved-index reuse, duplicate indices, and opcode
+collisions is a separate later piece; the `[Reserved]` attribute already ships so the intent is recorded.)
+
+### Wiring the generator into a Unity project
+
+The generator ships as `Plugins/PFound.NetworkLayer.Generator.dll`, labelled **RoslynAnalyzer** (all
+platforms disabled — it runs in the compiler, not at runtime). Because it sits **outside any `.asmdef`
+folder**, Unity applies it globally to every user assembly, so any assembly that declares `[NetworkOp]` /
+`[NetworkNotify]` partials gets its types generated with no per-assembly wiring. The assembly that declares
+the partials must reference `PFound.NetworkLayer` (for the attributes + `MessageCatalog`) and
+`MessagePack.Annotations.dll` (for the `[Key]`/`[MessagePackObject]` attributes on the generated structs).
+
+Rebuild the DLL from `Generator~/` (a Unity-ignored folder) with `dotnet build -c Release`, or `./build.sh`
+when no .NET SDK is present (compiles with mono `csc` against the Roslyn 4.3 netstandard2.0 reference
+assemblies — the version Unity 6000.3 hosts; System.Collections.Immutable is pinned to 6.0.0 to match, or
+the analyzer silently fails to load). `CodegenSample/` is a runnable example + EditMode round-trip test.
 
 ## File Structure
 ```
 NetworkLayer/
   Runtime/                       # assembly PFound.NetworkLayer
     Messaging/                   # Message hierarchy, MessageCatalog, MessageContractAttribute, IBodyCodec
+    Codegen/                     # [NetworkOp]/[NetworkNotify]/[Request]/[Reply]/[Field]/[Reserved] attributes
     Endpoints/                   # ClientPeer, ServerPeer (#if BACKEND), RequestExchange<T>, EarlyArrivalBuffer
     Transports/                  # IClientLink/IServerLink, Telepathy links, Loopback links + hub, LatencyShapedLink
     Serialization/               # MessagePackBodyCodec (prod), ReflectionBodyCodec (test)
@@ -232,6 +323,9 @@ NetworkLayer/
     Diagnostics/                 # NetLog, CallLatencyStats (client), ServerMetrics/ServerDiagnostics (server-only)
     Telepathy/                   # vendored MIT TCP library (sockets/threads/framing)
     Plugins/                     # vendored MessagePack-CSharp
+  Plugins/                       # PFound.NetworkLayer.Generator.dll (RoslynAnalyzer, global source generator)
+  Generator~/                    # generator source + .csproj + build.sh (Unity-ignored; builds the DLL above)
+  CodegenSample/                 # runnable [NetworkOp]/[NetworkNotify] example + EditMode round-trip test
   Tests/EditAndPlayModes/        # assembly PFound.NetworkLayer.Tests.EditAndPlayModes
   Tests/Standalone/              # csc/mono runner for engine-free metrics (guarded by PF_STANDALONE_TESTS)
   MODULE.md / README.md / THIRD-PARTY-NOTICES.md

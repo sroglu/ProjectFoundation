@@ -78,11 +78,11 @@ using MessagePack;
 
 // (W3) Banded two-level opcodes: a tiny CENTRAL domain enum (high byte, one entry per subsystem) plus a
 // per-domain op enum (low byte) with LOCAL values, folded to (domain << 8) | op. Different domain ⇒
-// different high byte ⇒ cross-subsystem collisions are structurally impossible. Request and reply are
-// DISTINCT catalog entries (the reply frame carries its own opcode, decoded via UnpackByOpcode), so give
-// each its own op value.
+// different high byte ⇒ cross-subsystem collisions are structurally impossible. Only the REQUEST carries
+// an opcode — the reply is decoded by CORRELATION (the outstanding call already knows the reply type) and
+// is NOT enrolled, so each operation costs exactly one op value (no reply half).
 public enum NetDomain : byte { Wallet = 1 }   // central; value = opcode HIGH byte (0x01)
-public enum WalletOp  : byte { Spend = 1, SpendReply = 2, Grant = 3, GrantReply = 4 }
+public enum WalletOp  : byte { Spend = 1, Grant = 2 }   // one op per operation; replies have no opcode
 
 // (W2) Content = an immutable readonly struct DTO with explicit [Key]s + IEquatable value-equality.
 [MessagePackObject]
@@ -111,16 +111,27 @@ public sealed class SpendCoinsReply : ReplyMessage
     public override void Clear() { base.Clear(); Balance = 0; }
 }
 
-// Enrolment (once, shared by both peers) — request and reply each get their own op:
-catalog.Enroll<SpendCoinsRequest>(NetDomain.Wallet, WalletOp.Spend);
-catalog.Enroll<SpendCoinsReply>(NetDomain.Wallet, WalletOp.SpendReply);
+// Enrolment (once, shared by both peers) — the request/reply PAIR overload: the request takes the opcode,
+// the reply is registered for pooling by TYPE only (opcode-less, decoded by correlation):
+catalog.ForDomain(NetDomain.Wallet).Enroll<SpendCoinsRequest, SpendCoinsReply>(WalletOp.Spend);
 ```
 
 > `DuplicateKey` is a `string`, so fold the content DTO into it (e.g. `DuplicateKey => $"Grant:{_content}"`).
 > An immutable value DTO with a value-based `ToString()` gives a stable per-value key, so two runs with
 > value-equal content dedup correctly (see example 5); the DTO's `IEquatable`/value-equality is what makes
-> that projection well-defined. Phase 2's codegen will emit this DTO shape from `[param(n)]` fields;
-> hand-write it until then.
+> that projection well-defined. You can hand-write this DTO+envelope shape as above, or let Phase 2's
+> **source generator** emit it from a compact `[NetworkOp]` declaration (`[Request(n)]`/`[Reply(n)]` fields
+> → `[Key(n)]` DTOs, envelopes, and the pair `Register`); see NetworkLayer's MODULE.md "Message codegen".
+>
+> **Zero-copy read:** each generated envelope exposes `public ref readonly TContent View => ref Content;`, so
+> a consumer reads the immutable content DTO without copying the struct (`ref readonly var r = ref reply.View;`)
+> — matters for large multi-field DTOs, harmless for small ones. `Content` stays a settable field for
+> `BuildRequest`/pooling.
+>
+> **Wire versioning (`[Reserved]`):** wire indices are append-only — never reuse a retired index (an old
+> peer's bytes would be read as the new field). Mark retired numbers at the type level with `[Reserved(n)]`
+> (or `[Reserved(n, m, …)]`) so the source records the history; a type-level marker retires that number
+> across BOTH the request and reply key spaces. The analyzer enforces it.
 
 ### 1. A minimal task (pre-check + request + success-apply)
 
@@ -286,9 +297,10 @@ share the same opcode→type catalog for the request/reply to decode.
   **pre-check gate only** (reject impossible ops locally). Optimistically applying a result before the
   server confirms — then reconciling/rolling back on mismatch — is an advanced mode that is intentionally
   NOT implemented.
-- **Codegen is phase 2.** Request/response DTOs are hand-written typed NetworkLayer messages bound to
-  opcodes via `MessageCatalog`. A Roslyn generator emitting DTOs + explicit keys + pooling + wire-versioning
-  is a separate, later spec.
+- **Codegen shipped (NetworkLayer).** Request/response DTOs can be hand-written typed NetworkLayer messages
+  bound to opcodes via `MessageCatalog`, or emitted by NetworkLayer's Roslyn source generator from a compact
+  `[NetworkOp]` declaration (DTOs + explicit keys + pooling envelopes + the pair `Register`), with a companion
+  analyzer for wire-versioning/opcode rules. See NetworkLayer's MODULE.md "Message codegen".
 - **Cancellation covers post-effects, not the in-flight network hop.** The seam's `CancellationToken`
   governs the cancellable post-effect phase; the underlying `ClientPeer.CallAsync` is deadline-bounded, so a
   stuck request faults on its deadline rather than being cancelled mid-flight.
