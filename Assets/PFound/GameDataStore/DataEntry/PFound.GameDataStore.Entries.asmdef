@@ -1,0 +1,17 @@
+{
+    "name": "PFound.GameDataStore.Entries",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Mathematics",
+        "ZString"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

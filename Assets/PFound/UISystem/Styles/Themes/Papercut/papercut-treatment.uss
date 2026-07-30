@@ -1,0 +1,176 @@
+/* ============================================================
+   Papercut Theme — Treatment Mixins (skeleton)
+   ============================================================
+   The whole theme runs on TWO surface decorations:
+
+     1. Edge band — bottom-right stripe, fill darkened, height
+        encodes M3 emphasis tier.
+     2. Highlight curve — top-left "10 o'clock" white curve graphic.
+
+   Class contracts (to be implemented in Phase 3):
+
+     .pc-surface                 base — relative-positioned host
+     .pc-emphasis--elevated     ~10% height
+     .pc-emphasis--filled       ~6%  height
+     .pc-emphasis--tonal        ~3%  height
+     .pc-highlight               top-left curve
+
+   States (apply to .pc-surface):
+
+     :active              fill darken ~10%, edge-band hidden,
+                          highlight hidden  → component flat
+     :disabled            opacity ~0.5, band/highlight muted
+     .pc-surface--inactive cream fill + thin gray outline,
+                          band/highlight quiet
+
+   IMPORTANT — UI Toolkit caveat:
+   USS has no ::before / ::after pseudo-elements. The edge band
+   and highlight curve almost certainly need to be real
+   VisualElement children added in C# (e.g., a PapercutSurface
+   manipulator). Resolve before writing component classes —
+   see PAPERCUT-THEME-TODO.md Phase 3.
+   ============================================================ */
+
+/* ============================================================
+   Base classes (T005)
+   ============================================================ */
+
+/* `.pc-surface` — host for every Papercut interactive control.
+   Sets the uniform outline (FR-004) and the box-model basics.
+   Components compose `.pc-surface` + a palette/emphasis variant. */
+.pc-surface {
+    /* Outline = uniform thin contour around the entire shape.
+       Colour overridden per palette slot in papercut-components.uss
+       (e.g. .pc-button sets border-color: var(--pc-primary-edge)).
+
+       border-radius default = 24px — a generous rounded rectangle that
+       reads as "chunky kid-friendly" without going full pill. Pure
+       capsule shapes (Chip, Radio, Switch, Segmented, Slider) opt in
+       to `border-radius: 9999px` explicitly in papercut-components.uss. */
+    border-width: 2px;
+    border-radius: 8px;
+    /* `position: relative` so absolute children (highlight, knob)
+       are positioned against this element's rect. */
+    position: relative;
+    overflow: visible;
+}
+
+/* `.pc-tap-target` — 88×88 pt minimum hit area (FR-023, SC-007).
+   Compose on top of `.pc-surface` for any tappable component.
+   Cards do NOT compose this — they are containers, not targets. */
+.pc-tap-target {
+    min-width: 88px;
+    min-height: 88px;
+}
+
+/* `.pc-highlight` — top-left curve graphic (FR-005).
+   The child VisualElement is expected to be the FIRST child of a
+   `.pc-surface`, sized at ~30% of the smaller component dimension.
+   `background-image` resolves to the alpha-only PNG produced by T004. */
+/* `.pc-highlight` — top-left curve graphic (FR-005).
+   Renders the PapercutAssetGenerator PNG as background. */
+.pc-highlight {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 28px;
+    height: 28px;
+    background-image: url("./highlight-curve.png");
+}
+
+/* Edge band — three emphasis tiers (FR-006, FR-007).
+   The band is implemented as a localised thickening of the same
+   border-color used by the uniform outline. Applied alongside
+   `.pc-surface` on the host element. */
+.pc-emphasis--elevated {
+    /* Thickest band — strong "raised" hierarchy. */
+    border-bottom-width: 12px;
+    border-right-width: 12px;
+}
+
+.pc-emphasis--filled {
+    /* Standard band — the visual default for actions. */
+    border-bottom-width: 8px;
+    border-right-width: 8px;
+}
+
+.pc-emphasis--tonal {
+    /* Subtle band — quiet variant; still perceptible vs the 2px outline. */
+    border-bottom-width: 4px;
+    border-right-width: 4px;
+}
+
+/* Outlined tier and Text tier have no edge band; they are
+   represented by absence of `.pc-emphasis--*`. Outlined-tier
+   buttons keep the `.pc-surface` outline; Text-tier buttons skip
+   `.pc-surface` entirely (FR-008). */
+
+/* ============================================================
+   State rules (T006)
+   ============================================================ */
+
+/* Pressed — `:active` pseudo (FR-010).
+   Hide highlight + edge band; darken fill ~10% via palette-level
+   pressed tokens applied per palette in papercut-components.uss.
+   Outline UNCHANGED (Clarification Q3 — outline encodes identity).
+   `.pc-force-pressed` engages the same rules statically for docs /
+   Showcase scenes that need a "Pressed column" snapshot. */
+.pc-surface:active > .pc-highlight,
+.pc-surface.pc-force-pressed > .pc-highlight {
+    display: none;
+}
+
+.pc-surface:active.pc-emphasis--elevated,
+.pc-surface:active.pc-emphasis--filled,
+.pc-surface:active.pc-emphasis--tonal,
+.pc-surface.pc-force-pressed.pc-emphasis--elevated,
+.pc-surface.pc-force-pressed.pc-emphasis--filled,
+.pc-surface.pc-force-pressed.pc-emphasis--tonal {
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+}
+
+/* Disabled — `:disabled` pseudo (FR-011).
+   Opacity 0.5; desaturated fill applied per palette in components.
+   Outline + band + highlight stay rendered but quieter (the
+   opacity collapse alone produces "muted" without removing layers). */
+.pc-surface:disabled {
+    opacity: 0.5;
+}
+
+/* Inactive — `.pc-inactive` class modifier (FR-012).
+   The PapercutInactiveModifier (T007) toggles this class on Chip
+   selection / Switch off / Segmented-unselected. Visual recipe:
+   cream fill + gray outline + edge band absent + highlight absent. */
+.pc-surface.pc-inactive {
+    background-color: var(--pc-inactive-fill);
+    border-color: var(--pc-inactive-line);
+}
+
+/* Inactive + Pressed — stay cream, just darken slightly. Without
+   this override the per-component `.pc-X:active` rule would force
+   the palette-pressed colour (e.g. primary-pressed pink) even on
+   an Inactive chip — wrong, the chip is supposed to read as
+   "off but tappable" the whole press. */
+.pc-surface.pc-inactive:active,
+.pc-surface.pc-inactive.pc-force-pressed {
+    background-color: rgb(230, 215, 195);
+}
+
+.pc-surface.pc-inactive > .pc-highlight {
+    display: none;
+}
+
+.pc-surface.pc-inactive.pc-emphasis--elevated,
+.pc-surface.pc-inactive.pc-emphasis--filled,
+.pc-surface.pc-inactive.pc-emphasis--tonal {
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+}
+
+/* Disabled overrides Inactive when both apply (data-model.md
+   Component State validation rules). USS does not enforce
+   precedence by source order alone; component code should ensure
+   `.pc-inactive` is removed before `:disabled` is set, OR rely
+   on the opacity 0.5 collapse making the Inactive cream effectively
+   neutral. PapercutSurfaceStateTests (T009) covers this case. */

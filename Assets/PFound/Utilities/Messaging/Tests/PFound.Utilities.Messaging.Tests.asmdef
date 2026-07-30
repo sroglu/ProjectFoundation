@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Utilities.Messaging.Tests",
+    "rootNamespace": "PFound.Utilities.Messaging.CoreTests",
+    "references": [
+        "PFound.Utilities.Messaging"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

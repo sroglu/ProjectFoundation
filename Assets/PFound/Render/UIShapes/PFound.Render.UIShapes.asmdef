@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Render.UIShapes",
+    "rootNamespace": "PFound.Render.UIShapes",
+    "references": [
+        "PFound.Render.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

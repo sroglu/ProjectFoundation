@@ -1,0 +1,73 @@
+/*
+ * navigation-bar.uss — M3 Navigation Bar Component Styles
+ *
+ * M3 Navigation Bar spec:
+ *   Height: 80dp
+ *   3–5 items, evenly distributed
+ *   Bar: --m3-surface bg
+ *   Active indicator: 64×32dp pill, secondary-container
+ */
+
+/* ============================================================ */
+/*  Navigation Bar                                              */
+/* ============================================================ */
+
+.m3-nav-bar {
+    height: 80px;
+    width: 100%;
+    background-color: var(--m3-surface, rgb(254, 247, 255));
+    flex-direction: row;
+    align-items: stretch;
+}
+
+/* ============================================================ */
+/*  Navigation Item                                             */
+/* ============================================================ */
+
+.m3-nav-item {
+    flex-grow: 1;
+    align-items: center;
+    flex-direction: column;
+    padding-top: 12px;
+    padding-bottom: 16px;
+}
+
+.m3-nav-item__indicator-wrap {
+    width: 64px;
+    height: 32px;
+    align-items: center;
+    justify-content: center;
+}
+
+.m3-nav-item__indicator {
+    width: 64px;
+    height: 32px;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette path).
+     * M3NavigationItem.OnActiveChanged → _indicator.FillColorOverride =
+     * secondaryContainer when active, Color.clear when inactive. USS bg here
+     * would corrupt the SDF tint encoding — same gotcha as fab / chip / dialog. */
+}
+
+.m3-nav-item__icon {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 24px;
+    -unity-text-align: middle-center;
+    transition: color 200ms ease-in-out;
+}
+
+.m3-nav-item--active .m3-nav-item__icon {
+    color: var(--m3-on-secondary-container, rgb(29, 25, 43));
+}
+
+.m3-nav-item__label {
+    font-size: 12px;
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    -unity-text-align: middle-center;
+    margin-top: 4px;
+    transition: color 200ms ease-in-out;
+}
+
+.m3-nav-item--active .m3-nav-item__label {
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+    -unity-font-style: bold;
+}

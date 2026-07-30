@@ -1,0 +1,149 @@
+/* Settings layout (Papercut). */
+
+.pc-settings-profile-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 14px 16px;
+    margin: 12px 16px;
+}
+
+.pc-settings-profile-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.55);
+    align-items: center;
+    justify-content: center;
+    margin-right: 14px;
+}
+
+.pc-settings-profile-avatar-icon {
+    color: rgb(255, 255, 255);
+    font-size: 24px;
+}
+
+.pc-settings-profile-text {
+    flex: 1;
+}
+
+.pc-settings-profile-name {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 20px;
+}
+
+.pc-settings-profile-age {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 14px;
+}
+
+.pc-settings-switch-btn {
+    padding: 8px 14px;
+    align-items: center;
+    flex-direction: row;
+}
+
+.pc-settings-switch-icon {
+    color: rgb(255, 255, 255);
+    font-size: 16px;
+    margin-right: 6px;
+}
+
+.pc-settings-switch-label {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 13px;
+}
+
+/* --- Rows --- */
+
+.pc-settings-volume-row,
+.pc-settings-language-row,
+.pc-settings-toggle-row {
+    flex-direction: row;
+    align-items: center;
+    margin: 8px 12px;
+}
+
+.pc-settings-volume-icon {
+    color: var(--pc-primary-edge);
+    font-size: 22px;
+    margin-right: 8px;
+}
+
+.pc-settings-volume-label,
+.pc-settings-language-label,
+.pc-settings-toggle-label {
+    color: rgb(82, 50, 65);
+    font-size: 16px;
+    flex: 0 0 120px;
+}
+
+.pc-settings-volume-slider {
+    flex: 1;
+    height: 32px;
+    margin-left: 12px;
+}
+
+.pc-settings-screen-time-row {
+    margin: 8px 12px;
+}
+
+.pc-settings-screen-time-header {
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.pc-settings-screen-time-label {
+    color: rgb(82, 50, 65);
+    font-size: 16px;
+}
+
+.pc-settings-screen-time-value {
+    color: var(--pc-primary-edge);
+    -unity-font-style: bold;
+    font-size: 14px;
+}
+
+.pc-settings-screen-time-slider {
+    height: 32px;
+}
+
+/* --- About --- */
+
+.pc-settings-about-row {
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 6px 12px;
+    margin: 4px 0;
+}
+
+.pc-settings-about-key {
+    color: rgb(82, 50, 65);
+    font-size: 14px;
+}
+
+.pc-settings-about-value {
+    color: var(--pc-primary-edge);
+    -unity-font-style: bold;
+    font-size: 14px;
+}
+
+.pc-settings-about-credits {
+    color: rgb(82, 50, 65);
+    -unity-text-align: middle-center;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+/* --- Action buttons --- */
+
+.pc-settings-actions {
+    margin: 16px;
+}
+
+.pc-settings-action-btn {
+    margin: 8px 0;
+    min-height: 52px;
+}

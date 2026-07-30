@@ -1,0 +1,20 @@
+{
+    "name": "PFound.Commerce.UnityIap",
+    "rootNamespace": "PFound.Commerce.UnityIap",
+    "references": [
+        "PFound.Commerce.Core",
+        "PFound.Commerce",
+        "Unity.Purchasing"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "PFOUND_UNITY_IAP"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

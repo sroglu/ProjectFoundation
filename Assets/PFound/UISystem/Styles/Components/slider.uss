@@ -1,0 +1,62 @@
+/*
+ * slider.uss — M3 Slider Component Styles
+ *
+ * M3 Slider spec:
+ *   Track: 4dp height, 2dp radius
+ *   Thumb: 20dp circle (40dp touch target)
+ *   Active: --m3-primary
+ *   Inactive: --m3-surface-variant
+ */
+
+.m3-slider {
+    width: 100%;
+    height: 40px;
+    align-items: center;
+}
+
+.m3-slider__track-wrap {
+    flex-grow: 1;
+    height: 40px;
+    align-items: center;
+}
+
+.m3-slider__track-active {
+    height: 4px;
+    background-color: var(--m3-primary, rgb(103, 80, 164));
+}
+
+.m3-slider__track-inactive {
+    height: 4px;
+    background-color: var(--m3-surface-variant, rgb(231, 224, 236));
+}
+
+.m3-slider__thumb {
+    width: 20px;
+    height: 20px;
+    background-color: transparent; /* visual painted by M3Surface child */
+}
+
+.m3-slider__stop-dot {
+    background-color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+.m3-slider__stop-dot--active {
+    background-color: var(--m3-on-primary, rgb(255, 255, 255));
+}
+
+.m3-slider__value-label {
+    position: absolute;
+    background-color: var(--m3-primary, rgb(103, 80, 164));
+    color: var(--m3-on-primary, rgb(255, 255, 255));
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-size: 12px;
+    -unity-text-align: middle-center;
+}
+
+/* M3Surface disabled colors handled in C# (Painter2D can't read USS vars).
+   This rule covers non-SDF children (labels, stop dots). */
+.m3-slider.m3-disabled .m3-slider__value-label,
+.m3-slider.m3-disabled .m3-slider__stop-dot {
+    opacity: 0.38;
+}

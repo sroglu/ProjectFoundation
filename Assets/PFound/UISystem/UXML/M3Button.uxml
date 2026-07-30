@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:PFound="PFound.UISystem.Components">
+    <ui:Style src="../Styles/Components/button.uss" />
+    <ui:Style src="../Styles/state-layer.uss" />
+    <PFound:M3Button variant="Filled" text="Button" />
+</ui:UXML>

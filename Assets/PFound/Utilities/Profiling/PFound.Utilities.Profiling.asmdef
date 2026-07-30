@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.Profiling",
+    "rootNamespace": "PFound.Utilities.Profiling",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

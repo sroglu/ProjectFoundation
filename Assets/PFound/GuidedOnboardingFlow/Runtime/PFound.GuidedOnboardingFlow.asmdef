@@ -1,0 +1,21 @@
+{
+    "name": "PFound.GuidedOnboardingFlow",
+    "rootNamespace": "PFound.GuidedOnboardingFlow",
+    "references": [
+        "PFound.GuidedOnboardingFlow.Core",
+        "PFound.DependencyContainer",
+        "PFound.Signaling",
+        "PFound.ScreenRouter",
+        "PFound.TweenPresetLibrary.Core",
+        "PFound.UserPrefs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

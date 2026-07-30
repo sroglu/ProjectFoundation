@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.ColorTools",
+    "rootNamespace": "PFound.Utilities.ColorTools",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

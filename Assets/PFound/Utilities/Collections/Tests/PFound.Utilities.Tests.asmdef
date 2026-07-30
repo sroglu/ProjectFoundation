@@ -1,0 +1,19 @@
+{
+    "name": "PFound.Utilities.Tests",
+    "rootNamespace": "PFound.Utilities.Tests",
+    "references": [
+        "PFound.Utilities.Collections",
+        "PFound.Utilities.EnumTools"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

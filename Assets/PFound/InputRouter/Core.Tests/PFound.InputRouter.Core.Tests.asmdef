@@ -1,0 +1,16 @@
+{
+    "name": "PFound.InputRouter.Core.Tests",
+    "rootNamespace": "PFound.InputRouter.Tests",
+    "references": [
+        "PFound.InputRouter.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

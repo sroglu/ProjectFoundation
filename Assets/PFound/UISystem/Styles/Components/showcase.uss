@@ -1,0 +1,89 @@
+/*
+ * showcase.uss — Base layout classes for UISystem demo/showcase scenes
+ * Use with: typography.uss + light.uss (or dark.uss)
+ *
+ * Structure pattern:
+ *   .showcase-root
+ *     └── ui:ScrollView.showcase-scroll
+ *           └── .showcase-content
+ *                 ├── Label.showcase-page-title
+ *                 └── .showcase-section (repeated)
+ *                       ├── Label.showcase-section__title
+ *                       └── .showcase-row
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Root container — fills the entire panel                            */
+/* ------------------------------------------------------------------ */
+.showcase-root {
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background-color: var(--m3-background, rgb(255, 251, 254));
+}
+
+/* ------------------------------------------------------------------ */
+/*  ScrollView — fills remaining space, transparent background         */
+/* ------------------------------------------------------------------ */
+.showcase-scroll {
+    flex-grow: 1;
+    background-color: rgba(0, 0, 0, 0);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Content area inside the ScrollView                                 */
+/* ------------------------------------------------------------------ */
+.showcase-content {
+    width: 100%;
+    flex-direction: column;
+    padding: 24px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Page title                                                          */
+/* ------------------------------------------------------------------ */
+.showcase-page-title {
+    color: var(--m3-on-background, rgb(28, 27, 31));
+    margin-bottom: 24px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section wrapper (title + row of components)                        */
+/* ------------------------------------------------------------------ */
+.showcase-section {
+    flex-direction: column;
+    margin-bottom: 24px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Section header label                                                */
+/* ------------------------------------------------------------------ */
+.showcase-section__title {
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+    margin-bottom: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Horizontal row of components — wraps onto next line if needed      */
+/* ------------------------------------------------------------------ */
+.showcase-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+/* ------------------------------------------------------------------ */
+/*  M3 reference link panel — top-right corner, absolute              */
+/* ------------------------------------------------------------------ */
+.m3-reference-panel {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background-color: var(--m3-primary-container, rgb(234, 221, 255));
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: arrow;
+}
+
+.m3-reference-label {
+    color: var(--m3-on-primary-container, rgb(33, 0, 93));
+}

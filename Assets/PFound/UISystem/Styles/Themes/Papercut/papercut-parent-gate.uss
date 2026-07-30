@@ -1,0 +1,67 @@
+/* ParentGate layout (Papercut). 4-answer math challenge grid. */
+
+.pc-parent-gate-overlay {
+    position: absolute;
+    left: 0; right: 0; top: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.pc-parent-gate-card {
+    width: 520px;
+    max-width: 92%;
+    padding: 36px 32px;
+    align-items: center;
+}
+
+.pc-parent-gate-title {
+    color: rgb(140, 50, 40);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 26px;
+    margin-bottom: 4px;
+}
+
+.pc-parent-gate-question {
+    color: rgb(82, 50, 65);
+    -unity-text-align: middle-center;
+    font-size: 22px;
+    margin-bottom: 22px;
+}
+
+.pc-parent-gate-answers {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    width: 100%;
+    margin-bottom: 12px;
+}
+
+.pc-parent-gate-answer-btn {
+    width: 44%;
+    min-height: 88px;
+    margin: 6px 1%;
+    align-items: center;
+    justify-content: center;
+    /* Math digit answer — large readable from arm's length. */
+    font-size: 36px;
+}
+
+.pc-parent-gate-answer-btn > .pc-highlight {
+    width: 32px;
+    height: 32px;
+}
+
+.pc-parent-gate-feedback {
+    color: var(--pc-primary-edge);
+    -unity-text-align: middle-center;
+    min-height: 24px;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.pc-parent-gate-cancel {
+    margin-top: 4px;
+    font-size: 16px;
+}

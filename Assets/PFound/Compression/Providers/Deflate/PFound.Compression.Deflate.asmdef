@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Compression.Deflate",
+    "rootNamespace": "PFound.Compression.Deflate",
+    "references": [
+        "PFound.Compression"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

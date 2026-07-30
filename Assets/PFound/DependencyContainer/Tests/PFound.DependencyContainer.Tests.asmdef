@@ -1,0 +1,16 @@
+{
+    "name": "PFound.DependencyContainer.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.DependencyContainer"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

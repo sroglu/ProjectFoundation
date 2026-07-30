@@ -1,0 +1,19 @@
+{
+    "name": "PFound.NetworkLayer.Editor",
+    "rootNamespace": "PFound.NetworkLayer.EditorTools",
+    "references": [
+        "PFound.NetworkLayer",
+        "PFound.ServerOperation.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

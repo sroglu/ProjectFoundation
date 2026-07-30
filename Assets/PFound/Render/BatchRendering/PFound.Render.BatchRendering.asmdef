@@ -1,0 +1,23 @@
+{
+    "name": "PFound.Render.BatchRendering",
+    "rootNamespace": "PFound.Render.BatchRendering",
+    "references": [
+        "PFound.Render.Core",
+        "PFound.LoopScheduler",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Jobs"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: SdfShape_WithShadow
+  m_Shader: {fileID: 4800000, guid: 30e3fb511e87c48b6b853453f8095c31, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords:
+  - EFFECT_VERTEX_TINT_PALETTE_ON
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _MainTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _AAWidth: 1
+    - _BandingEnable: 0
+    - _BandingSpacing: 8
+    - _DotsEnable: 0
+    - _DotsRadius: 2
+    - _DotsSpacing: 8
+    - _GradientAngle: 90
+    - _GradientEnable: 0
+    - _GradientFalloff: 1
+    - _GradientMode: 0
+    - _NoiseAmplitude: 0.25
+    - _NoiseEnable: 0
+    - _NoiseMode: 0
+    - _NoiseScale: 8
+    - _OutlineEnable: 0
+    - _OutlineThickness: 2
+    - _ShadowBlur: 4
+    - _ShadowEnable: 0
+    - _ShapeType: 1
+    m_Colors:
+    - _BandingColorA: {r: 1, g: 1, b: 1, a: 0.5}
+    - _BandingColorB: {r: 0, g: 0, b: 0, a: 0.5}
+    - _CornerRadii: {r: 8, g: 8, b: 8, a: 8}
+    - _DotsColor: {r: 1, g: 1, b: 1, a: 1}
+    - _FillColor: {r: 1, g: 1, b: 1, a: 1}
+    - _GradientColorA: {r: 1, g: 1, b: 1, a: 1}
+    - _GradientColorB: {r: 0, g: 0, b: 0, a: 1}
+    - _NoiseColor: {r: 1, g: 1, b: 1, a: 1}
+    - _OutlineColor: {r: 0, g: 0, b: 0, a: 1}
+    - _QuadSize: {r: 0, g: 0, b: 0, a: 0}
+    - _RectSize: {r: 100, g: 100, b: 0, a: 0}
+    - _ShadowColor: {r: 0, g: 0, b: 0, a: 0.5}
+    - _ShadowOffset: {r: 2, g: -2, b: 0, a: 0}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

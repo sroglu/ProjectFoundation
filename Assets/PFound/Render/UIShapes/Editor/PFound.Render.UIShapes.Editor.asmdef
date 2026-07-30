@@ -1,0 +1,19 @@
+{
+    "name": "PFound.Render.UIShapes.Editor",
+    "rootNamespace": "PFound.Render.UIShapes.Editor",
+    "references": [
+        "PFound.Render.UIShapes",
+        "PFound.Render.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

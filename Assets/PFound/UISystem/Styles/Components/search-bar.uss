@@ -1,0 +1,53 @@
+/* =========================================================
+   M3 Search Bar — search-bar.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+.m3-search-bar {
+    flex-direction: row;
+    align-items: center;
+    height: 56px;
+    border-radius: 28px;
+    background-color: var(--m3-surface-container-high);
+    padding-left: 16px;
+    padding-right: 16px;
+    transition-property: background-color, scale;
+    transition-duration: 200ms;
+    transition-timing-function: ease-in-out;
+}
+
+.m3-search-bar--focused {
+    background-color: var(--m3-surface-container-highest);
+    scale: 1.02 1;
+}
+
+/* Leading search icon */
+.m3-search-bar__leading {
+    font-size: 24px;
+    color: var(--m3-on-surface);
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+/* Input field */
+.m3-search-bar__input {
+    flex: 1;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--m3-on-surface);
+    /* Placeholder color override is limited in Unity USS — use on-surface-variant opacity */
+}
+
+/* Trailing action icon */
+.m3-search-bar__trailing {
+    font-size: 24px;
+    color: var(--m3-on-surface-variant);
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    margin-left: 8px;
+    flex-shrink: 0;
+}

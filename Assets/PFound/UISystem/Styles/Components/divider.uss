@@ -1,0 +1,18 @@
+/* =========================================================
+   M3 Divider — divider.uss
+   ========================================================= */
+
+.m3-divider {
+    background-color: var(--m3-outline-variant);
+}
+
+.m3-divider--horizontal {
+    height: 1px;
+    width: 100%;
+}
+
+.m3-divider--vertical {
+    width: 1px;
+    height: 100%;
+    align-self: stretch;
+}

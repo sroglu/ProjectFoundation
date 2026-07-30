@@ -1,0 +1,46 @@
+/*
+ * checkbox.uss — M3 Checkbox Component Styles
+ *
+ * M3 Checkbox spec:
+ *   Box: 18×18dp, 2dp border-radius (shape-extra-small)
+ *   Unchecked: 2dp outline border, no fill
+ *   Checked: primary fill, on-primary checkmark
+ *   Indeterminate: primary fill, on-primary dash
+ *   Touch target: 48dp wrapper
+ */
+
+/* ============================================================ */
+/*  Touch target wrapper                                        */
+/* ============================================================ */
+
+.m3-checkbox {
+    width: 18px;
+    min-height: 48px;
+    justify-content: center;
+    align-items: center;
+    overflow: visible;
+}
+
+/* ============================================================ */
+/*  Box                                                         */
+/* ============================================================ */
+
+.m3-checkbox__box {
+    width: 18px;
+    height: 18px;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path) so the SDF shader can read the per-instance fill colour through
+     * the Vertex.tint encoding. Setting background-color HERE in USS would
+     * clobber the encoded tint bytes and corrupt the shader path. Same gotcha
+     * as fab.uss / chip.uss — only the size + structural rules belong here. */
+}
+
+/* ============================================================ */
+/*  Icon (check / dash)                                         */
+/* ============================================================ */
+
+.m3-checkbox__icon {
+    color: var(--m3-on-primary, rgb(255, 255, 255));
+    font-size: 14px;
+    -unity-text-align: middle-center;
+}

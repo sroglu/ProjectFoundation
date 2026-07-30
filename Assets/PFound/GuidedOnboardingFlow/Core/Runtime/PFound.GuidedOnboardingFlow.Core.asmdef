@@ -1,0 +1,14 @@
+{
+    "name": "PFound.GuidedOnboardingFlow.Core",
+    "rootNamespace": "PFound.GuidedOnboardingFlow.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

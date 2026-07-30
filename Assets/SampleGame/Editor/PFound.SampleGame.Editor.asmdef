@@ -1,0 +1,28 @@
+{
+    "name": "PFound.SampleGame.Editor",
+    "rootNamespace": "PFound.SampleGame.Editor",
+    "references": [
+        "PFound.Utilities.EditorHelpers",
+        "PFound.ContentDelivery.Editor",
+        "PFound.ScreenRouter",
+        "PFound.GuidedOnboardingFlow",
+        "PFound.GuidedOnboardingFlow.Core",
+        "PFound.GameDataStore.Entries",
+        "PFound.TweenPresetLibrary",
+        "PFound.TweenPresetLibrary.Core",
+        "PFound.HubApp",
+        "PFound.SampleGame",
+        "UnityEngine.UI"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

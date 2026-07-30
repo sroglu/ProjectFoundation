@@ -1,0 +1,16 @@
+{
+    "name": "PFound.ECS.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.ECS"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

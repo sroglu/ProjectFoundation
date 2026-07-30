@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6d51addbfab941f6a4fda5ff4873ab9, type: 3}
+  m_Name: SampleFadePreset
+  m_EditorClassIdentifier: PFound.TweenPresetLibrary::PFound.TweenPresetLibrary.TweenPreset
+  Fade:
+    Delay: 0
+    Duration: 0.3
+    Ease: 6
+    ForceInitialValue: 1
+    ForcedInitialValue: 0
+    EndValue: 1
+  Scale:
+    Delay: 0
+    Duration: 0
+    Ease: 0
+    ForceInitialValue: 0
+    ForcedInitialValue: {x: 0, y: 0, z: 0}
+    EndValue: {x: 0, y: 0, z: 0}
+  Move:
+    Delay: 0
+    Duration: 0
+    Ease: 0
+    ForceInitialValue: 0
+    ForcedInitialValue: {x: 0, y: 0}
+    EndValue: {x: 0, y: 0}
+  Rotate:
+    Delay: 0
+    Duration: 0
+    Ease: 0
+    ForceInitialValue: 0
+    ForcedInitialValue: {x: 0, y: 0, z: 0}
+    EndValue: {x: 0, y: 0, z: 0}

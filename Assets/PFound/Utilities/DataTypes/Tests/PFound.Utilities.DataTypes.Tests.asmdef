@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Utilities.DataTypes.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.Utilities.DataTypes"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

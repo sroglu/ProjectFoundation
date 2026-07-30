@@ -1,0 +1,33 @@
+{
+    "name": "PFound.Render.BatchRendering.Tests",
+    "rootNamespace": "PFound.Render.BatchRendering.Tests",
+    "references": [
+        "PFound.Render.BatchRendering",
+        "PFound.Render.Core",
+        "PFound.LoopScheduler",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Jobs",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

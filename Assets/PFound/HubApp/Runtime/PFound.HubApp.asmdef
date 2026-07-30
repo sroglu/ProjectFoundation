@@ -1,0 +1,20 @@
+{
+    "name": "PFound.HubApp",
+    "rootNamespace": "PFound.HubApp",
+    "references": [
+        "PFound.Signaling",
+        "PFound.Utilities.FileSystemTools",
+        "PFound.ContentDelivery",
+        "Unity.Collections",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

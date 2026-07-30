@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a0c4642283d8c486fa174a52f05e54ff, type: 3}
+  m_Name: RobotoTypography
+  m_EditorClassIdentifier: PFound.UISystem::PFound.UISystem.TypographyConfig
+  _display:
+    FontAsset: {fileID: 11400000, guid: 8f95e244ca5af4035aa15ce6652f47cd, type: 2}
+    FontSize: 96
+    FontStyle: 0
+    LineSpacing: 0
+    CharSpacing: 0
+  _headline:
+    FontAsset: {fileID: 11400000, guid: 8f95e244ca5af4035aa15ce6652f47cd, type: 2}
+    FontSize: 73
+    FontStyle: 0
+    LineSpacing: 0
+    CharSpacing: 0
+  _title:
+    FontAsset: {fileID: 11400000, guid: ef6bdc01dfea74a44bd35de2245d6aec, type: 2}
+    FontSize: 58
+    FontStyle: 0
+    LineSpacing: 0
+    CharSpacing: 0
+  _body:
+    FontAsset: {fileID: 11400000, guid: 8f95e244ca5af4035aa15ce6652f47cd, type: 2}
+    FontSize: 42
+    FontStyle: 0
+    LineSpacing: 0
+    CharSpacing: 0
+  _label:
+    FontAsset: {fileID: 11400000, guid: ef6bdc01dfea74a44bd35de2245d6aec, type: 2}
+    FontSize: 37
+    FontStyle: 0
+    LineSpacing: 0
+    CharSpacing: 0
+  _caption:
+    FontAsset: {fileID: 11400000, guid: 8f95e244ca5af4035aa15ce6652f47cd, type: 2}
+    FontSize: 32
+    FontStyle: 0
+    LineSpacing: 0
+    CharSpacing: 0

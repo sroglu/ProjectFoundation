@@ -1,0 +1,21 @@
+{
+    "name": "PFound.Render.Core.Editor",
+    "rootNamespace": "PFound.Render.Core.Editor",
+    "references": [
+        "PFound.Render.Core",
+        "PFound.Utilities.EditorHelpers",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Universal.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

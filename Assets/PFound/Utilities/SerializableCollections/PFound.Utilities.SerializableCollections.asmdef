@@ -1,0 +1,14 @@
+{
+    "name": "PFound.Utilities.SerializableCollections",
+    "rootNamespace": "PFound.Utilities.SerializableCollections",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

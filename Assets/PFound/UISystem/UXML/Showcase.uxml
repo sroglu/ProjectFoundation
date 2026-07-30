@@ -1,0 +1,222 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements"
+         xmlns:components="PFound.UISystem.Components">
+
+    <!-- Core styles -->
+    <ui:Style src="../Styles/typography.uss" />
+    <ui:Style src="../Styles/state-layer.uss" />
+
+    <!-- Component styles -->
+    <ui:Style src="../Styles/Components/button.uss" />
+    <ui:Style src="../Styles/Components/fab.uss" />
+    <ui:Style src="../Styles/Components/segmented-button.uss" />
+    <ui:Style src="../Styles/Components/checkbox.uss" />
+    <ui:Style src="../Styles/Components/chip.uss" />
+    <ui:Style src="../Styles/Components/radio.uss" />
+    <ui:Style src="../Styles/Components/slider.uss" />
+    <ui:Style src="../Styles/Components/toggle.uss" />
+    <ui:Style src="../Styles/Components/textfield.uss" />
+    <ui:Style src="../Styles/Components/search-bar.uss" />
+    <ui:Style src="../Styles/Components/card.uss" />
+    <ui:Style src="../Styles/Components/dialog.uss" />
+    <ui:Style src="../Styles/Components/list.uss" />
+    <ui:Style src="../Styles/Components/menu.uss" />
+    <ui:Style src="../Styles/Components/tabs.uss" />
+    <ui:Style src="../Styles/Components/navigation-bar.uss" />
+    <ui:Style src="../Styles/Components/navigation-drawer.uss" />
+    <ui:Style src="../Styles/Components/navigation-rail.uss" />
+    <ui:Style src="../Styles/Components/top-app-bar.uss" />
+    <ui:Style src="../Styles/Components/bottom-app-bar.uss" />
+    <ui:Style src="../Styles/Components/bottom-sheet.uss" />
+    <ui:Style src="../Styles/Components/snackbar.uss" />
+    <ui:Style src="../Styles/Components/progress-indicator.uss" />
+    <ui:Style src="../Styles/Components/date-picker.uss" />
+    <ui:Style src="../Styles/Components/time-picker.uss" />
+    <ui:Style src="../Styles/Components/badge.uss" />
+    <ui:Style src="../Styles/Components/divider.uss" />
+    <ui:Style src="../Styles/Components/tooltip.uss" />
+
+    <!-- Showcase layout -->
+    <ui:Style src="../Styles/Components/showcase-v2.uss" />
+
+    <!-- Root layout -->
+    <ui:VisualElement class="showcase-root" name="showcase-root">
+
+        <!-- Top App Bar -->
+        <ui:VisualElement class="showcase-top-bar" name="top-bar">
+            <ui:Label class="m3-title-large showcase-top-bar__title" text="UISystem M3 Showcase" name="app-bar-title" />
+            <ui:VisualElement class="showcase-top-bar__actions" name="top-bar-actions">
+                <!-- Theme toggle injected by ShowcaseController -->
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Body: nav + content -->
+        <ui:VisualElement class="showcase-body" name="body">
+
+            <!-- Navigation Panel -->
+            <ui:ScrollView class="showcase-nav" name="nav-panel" mode="Vertical">
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="FOUNDATION" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-principles">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe0b0;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Design Principles" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="ACTIONS" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-button">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe145;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Button" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-fab">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe145;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="FAB" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-segmented-button">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe94d;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Segmented Button" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="SELECTION" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-checkbox">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5ca;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Checkbox" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-chip">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe152;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Chip" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-radio">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe837;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Radio Button" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-slider">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe65f;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Slider" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-toggle">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8f4;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Toggle" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="INPUT" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-textfield">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8b6;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Text Field" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-search-bar">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8b6;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Search Bar" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-date-picker">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe916;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Date Picker" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-time-picker">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8b5;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Time Picker" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="CONTAINMENT" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-card">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe2c7;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Card" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-dialog">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8fd;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Dialog" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-bottom-sheet">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8d4;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Bottom Sheet" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-list">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8ef;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="List" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-menu">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Menu" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="COMMUNICATION" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-snackbar">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe002;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Snackbar" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-tooltip">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe88e;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Tooltip" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-progress-indicator">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe863;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Progress Indicator" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="NAVIGATION" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-navigation-bar">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Navigation Bar" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-navigation-drawer">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Navigation Drawer" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-navigation-rail">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Navigation Rail" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-top-app-bar">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Top App Bar" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-bottom-app-bar">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe5d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Bottom App Bar" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-tabs">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8d8;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Tabs" />
+                </ui:VisualElement>
+
+                <ui:Label class="showcase-nav__section-header m3-label-small" text="STYLES" />
+                <ui:VisualElement class="showcase-nav__item" name="nav-typography">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe8d2;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Typography" />
+                </ui:VisualElement>
+                <ui:VisualElement class="showcase-nav__item" name="nav-color">
+                    <ui:Label class="m3-icon showcase-nav__item-icon" text="&#xe3af;" />
+                    <ui:Label class="m3-label-large showcase-nav__item-label" text="Color" />
+                </ui:VisualElement>
+
+            </ui:ScrollView>
+
+            <!-- Content Panel -->
+            <ui:VisualElement class="showcase-content" name="content-panel">
+
+                <!-- Tab Bar -->
+                <ui:VisualElement class="showcase-tab-bar" name="tab-bar">
+                    <ui:VisualElement class="showcase-tab showcase-tab--active" name="tab-overview">
+                        <ui:Label class="m3-label-large" text="Overview" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="showcase-tab" name="tab-specs">
+                        <ui:Label class="m3-label-large" text="Specs" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="showcase-tab" name="tab-guidelines">
+                        <ui:Label class="m3-label-large" text="Guidelines" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="showcase-tab" name="tab-accessibility">
+                        <ui:Label class="m3-label-large" text="Accessibility" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <!-- Tab Content (dynamically populated by ShowcaseController) -->
+                <ui:ScrollView class="showcase-tab-content" name="tab-content" mode="Vertical">
+                    <!-- Content injected at runtime -->
+                </ui:ScrollView>
+
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+
+</ui:UXML>

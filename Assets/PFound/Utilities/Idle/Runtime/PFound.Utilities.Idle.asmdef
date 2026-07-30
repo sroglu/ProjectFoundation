@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Utilities.Idle",
+    "rootNamespace": "PFound.Utilities.Idle",
+    "references": [
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

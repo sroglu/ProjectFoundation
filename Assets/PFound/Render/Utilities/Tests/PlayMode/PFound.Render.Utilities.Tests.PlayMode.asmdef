@@ -1,0 +1,23 @@
+{
+    "name": "PFound.Render.Utilities.Tests.PlayMode",
+    "rootNamespace": "PFound.Render.Tests",
+    "references": [
+        "PFound.Render.Utilities",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Mathematics"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

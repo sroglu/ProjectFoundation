@@ -1,0 +1,82 @@
+/* =========================================================
+   M3 Menu — menu.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+/* ── Menu surface ── */
+.m3-menu {
+    min-width: 112px;
+    max-width: 280px;
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path). M3Menu.RefreshThemeColors → FillColorOverride = SurfaceContainer.
+     * USS bg here would corrupt the SDF tint encoding — same gotcha as fab /
+     * chip / selection group / textfield / dialog / nav-bar. */
+    border-radius: 4px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    flex-direction: column;
+    /* Elevation 2 shadow applied by M3Surface */
+}
+
+/* ── Divider ── */
+.m3-menu__divider {
+    height: 1px;
+    /* Colour is set inline in C# via theme.GetColor(ColorRole.Outline); USS
+     * here is only a fallback for non-themed authoring environments. */
+    background-color: var(--m3-outline);
+    margin-top: 4px;
+    margin-bottom: 4px;
+}
+
+/* ── Menu item ── */
+.m3-menu-item {
+    flex-direction: row;
+    align-items: center;
+    height: 48px;
+    padding-left: 12px;
+    padding-right: 12px;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.m3-menu-item:hover {
+    background-color: rgba(28, 27, 31, 0.08);
+}
+
+.m3-menu-item:active {
+    background-color: rgba(28, 27, 31, 0.12);
+}
+
+/* Disabled menu item */
+.m3-menu-item--disabled {
+    opacity: 0.38;
+}
+
+/* Leading icon */
+.m3-menu-item__leading {
+    font-size: 24px;
+    color: var(--m3-on-surface-variant);
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+/* Label */
+.m3-menu-item__label {
+    flex: 1;
+    color: var(--m3-on-surface);
+    -unity-text-align: middle-left;
+}
+
+/* Trailing icon */
+.m3-menu-item__trailing {
+    font-size: 20px;
+    color: var(--m3-on-surface-variant);
+    width: 24px;
+    height: 24px;
+    -unity-text-align: middle-center;
+    margin-left: 8px;
+    flex-shrink: 0;
+}

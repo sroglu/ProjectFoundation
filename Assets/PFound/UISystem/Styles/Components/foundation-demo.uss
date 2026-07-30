@@ -1,0 +1,133 @@
+/*
+ * foundation-demo.uss — Component styles for FoundationDemo.uxml
+ * These classes use var(--m3-*) custom properties from light.uss / dark.uss.
+ * Assign light.uss (or dark.uss) + typography.uss + this file to PanelSettings
+ * Theme Style Sheets so that var() references resolve correctly.
+ */
+
+/* ------------------------------------------------------------------ */
+/*  Layout                                                              */
+/* ------------------------------------------------------------------ */
+.foundation-columns {
+    flex-direction: row;
+    flex-grow: 1;
+}
+
+.foundation-column {
+    flex: 1;
+    flex-direction: column;
+    margin: 8px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Card variants                                                       */
+/* ------------------------------------------------------------------ */
+.card-surface {
+    background-color: var(--m3-surface, rgb(255, 251, 254));
+    padding: 16px;
+    margin-bottom: 12px;
+    min-height: 72px;
+    flex-direction: column;
+}
+
+.card-primary-container {
+    background-color: var(--m3-primary-container, rgb(234, 221, 255));
+    padding: 16px;
+    margin-bottom: 12px;
+    min-height: 72px;
+    flex-direction: column;
+}
+
+.card-transparent {
+    background-color: rgba(0, 0, 0, 0);
+    padding: 16px;
+    margin-bottom: 12px;
+    min-height: 72px;
+    flex-direction: column;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Button                                                              */
+/* ------------------------------------------------------------------ */
+.btn-primary {
+    background-color: var(--m3-primary, rgb(103, 80, 164));
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 24px;
+    padding-right: 24px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 8px;
+
+    border-radius: 9999px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Color utility classes                                               */
+/* ------------------------------------------------------------------ */
+.on-surface {
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+}
+
+.on-surface-variant {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+}
+
+.on-primary {
+    color: var(--m3-on-primary, rgb(255, 255, 255));
+}
+
+.on-primary-container {
+    color: var(--m3-on-primary-container, rgb(33, 0, 93));
+}
+
+/* ------------------------------------------------------------------ */
+/*  Typography scale container                                          */
+/* ------------------------------------------------------------------ */
+.type-scale-container {
+    background-color: var(--m3-surface-variant, rgb(231, 224, 236));
+    padding: 16px;
+    border-radius: 12px;
+    flex-direction: column;
+    margin-bottom: 16px;
+}
+
+/* ------------------------------------------------------------------ */
+/*  M3 Spec Reference Panel — bottom-right corner                       */
+/* ------------------------------------------------------------------ */
+.m3-reference-panel {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    flex-direction: column;
+    align-items: flex-end;
+    opacity: 0.85;
+}
+
+.m3-reference-label {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    margin-bottom: 4px;
+}
+
+.m3-reference-image {
+    width: 340px;
+    height: 100px;
+    background-image: url("../../Assets/Reference/M3-Button-Types.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Elevation row                                                       */
+/* ------------------------------------------------------------------ */
+.elevation-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.elev-card {
+    width: 56px;
+    height: 56px;
+    align-items: center;
+    justify-content: center;
+    margin: 4px;
+}

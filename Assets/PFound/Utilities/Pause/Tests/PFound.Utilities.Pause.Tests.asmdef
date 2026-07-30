@@ -1,0 +1,16 @@
+{
+    "name": "PFound.Utilities.Pause.Tests",
+    "rootNamespace": "",
+    "references": [
+        "PFound.Utilities.Pause"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

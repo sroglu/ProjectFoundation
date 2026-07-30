@@ -1,0 +1,308 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="project://database/Assets/PFound/UISystem/Styles/Themes/Papercut/papercut-palette.uss" />
+    <Style src="project://database/Assets/PFound/UISystem/Styles/Themes/Papercut/papercut-treatment.uss" />
+    <Style src="project://database/Assets/PFound/UISystem/Styles/Themes/Papercut/papercut-components.uss" />
+    <Style src="project://database/Assets/PFound/UISystem/UXML/Papercut/PapercutShowcase.uss" />
+
+    <ui:VisualElement class="ps-root">
+        <ui:Label text="STATE COVERAGE — Playnest UI" class="ps-title" />
+
+        <ui:VisualElement class="ps-header">
+            <ui:Label text="" class="ps-row-label" />
+            <ui:Label text="ENABLED" class="ps-col-label" />
+            <ui:Label text="PRESSED" class="ps-col-label" />
+            <ui:Label text="DISABLED" class="ps-col-label" />
+        </ui:VisualElement>
+
+        <!-- BUTTONS row -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="BUTTONS" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-button pc-emphasis--filled">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label text="Button" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-button pc-emphasis--filled pc-force-pressed">
+                    <ui:Label text="Pressed" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-button pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label text="Disabled" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- CARDS row -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="CARDS" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-card pc-emphasis--filled">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label text="Card Title" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-card pc-emphasis--filled pc-force-pressed">
+                    <ui:Label text="Card Title" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-card pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label text="Card Title" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- CHIPS (a) — Selected -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="CHIPS (a)" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-chip pc-emphasis--filled">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label class="pc-chip__icon" text="★" />
+                    <ui:Label text="Selected" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-chip pc-emphasis--filled pc-force-pressed">
+                    <ui:Label class="pc-chip__icon" text="★" />
+                    <ui:Label text="Selected" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-chip pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label class="pc-chip__icon" text="★" />
+                    <ui:Label text="Selected" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- CHIPS (b) — Unselected (Inactive) -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="CHIPS (b)" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-chip pc-emphasis--filled pc-inactive">
+                    <ui:Label class="pc-chip__icon" text="○" />
+                    <ui:Label text="Unselected" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-chip pc-emphasis--filled pc-inactive pc-force-pressed">
+                    <ui:Label class="pc-chip__icon" text="○" />
+                    <ui:Label text="Unselected" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-chip pc-emphasis--filled pc-inactive" enabled="false">
+                    <ui:Label class="pc-chip__icon" text="○" />
+                    <ui:Label text="Unselected" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- CHECKBOX -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="CHECKBOX" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-checkbox">
+                    <ui:VisualElement class="pc-surface pc-checkbox__box pc-emphasis--filled">
+                        <ui:VisualElement class="pc-highlight" />
+                        <ui:Label class="pc-checkbox__check" text="✓" />
+                    </ui:VisualElement>
+                    <ui:Label class="pc-checkbox__label" text="Checkbox" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-checkbox">
+                    <ui:VisualElement class="pc-surface pc-checkbox__box pc-emphasis--filled pc-force-pressed">
+                        <ui:Label class="pc-checkbox__check" text="✓" />
+                    </ui:VisualElement>
+                    <ui:Label class="pc-checkbox__label" text="Checkbox" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-checkbox" enabled="false">
+                    <ui:VisualElement class="pc-surface pc-checkbox__box pc-emphasis--filled">
+                        <ui:VisualElement class="pc-highlight" />
+                        <ui:Label class="pc-checkbox__check" text="✓" />
+                    </ui:VisualElement>
+                    <ui:Label class="pc-checkbox__label" text="Checkbox" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- RADIO -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="RADIO" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-radio">
+                    <ui:VisualElement class="pc-surface pc-radio__circle pc-emphasis--filled">
+                        <ui:VisualElement class="pc-highlight" />
+                        <ui:VisualElement class="pc-radio__dot" />
+                    </ui:VisualElement>
+                    <ui:Label class="pc-radio__label" text="Radio" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-radio">
+                    <ui:VisualElement class="pc-surface pc-radio__circle pc-emphasis--filled pc-force-pressed">
+                        <ui:VisualElement class="pc-radio__dot" />
+                    </ui:VisualElement>
+                    <ui:Label class="pc-radio__label" text="Radio" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-radio" enabled="false">
+                    <ui:VisualElement class="pc-surface pc-radio__circle pc-emphasis--filled">
+                        <ui:VisualElement class="pc-highlight" />
+                        <ui:VisualElement class="pc-radio__dot" />
+                    </ui:VisualElement>
+                    <ui:Label class="pc-radio__label" text="Disabled" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- SWITCH -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="SWITCH" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-switch pc-emphasis--filled">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:VisualElement class="pc-surface pc-switch__knob pc-emphasis--filled">
+                        <ui:VisualElement class="pc-highlight" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-switch pc-emphasis--filled pc-force-pressed">
+                    <ui:VisualElement class="pc-surface pc-switch__knob pc-emphasis--filled pc-force-pressed">
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-switch pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:VisualElement class="pc-surface pc-switch__knob pc-emphasis--filled">
+                        <ui:VisualElement class="pc-highlight" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- SEGMENTED CONTROL -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="SEGMENTED" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-segmented pc-emphasis--filled">
+                    <ui:VisualElement class="pc-segmented__segment pc-selected">
+                        <ui:VisualElement class="pc-highlight" />
+                        <ui:Label text="Seg 1" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="pc-segmented__segment">
+                        <ui:Label text="Seg 2" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-segmented pc-emphasis--filled">
+                    <ui:VisualElement class="pc-segmented__segment pc-selected pc-force-pressed">
+                        <ui:Label text="Seg 1" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="pc-segmented__segment">
+                        <ui:Label text="Seg 2" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-segmented pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-segmented__segment pc-selected">
+                        <ui:VisualElement class="pc-highlight" />
+                        <ui:Label text="Seg 1" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="pc-segmented__segment">
+                        <ui:Label text="Seg 2" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- SLIDER -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="SLIDER" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-slider pc-emphasis--filled">
+                    <ui:VisualElement class="pc-surface pc-slider__handle pc-emphasis--filled" style="left: 60%; margin-left: -18px;">
+                        <ui:VisualElement class="pc-highlight" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-slider pc-emphasis--filled pc-force-pressed">
+                    <ui:VisualElement class="pc-surface pc-slider__handle pc-emphasis--filled pc-force-pressed" style="left: 60%; margin-left: -18px;">
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-slider pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-surface pc-slider__handle pc-emphasis--filled" style="left: 60%; margin-left: -18px;">
+                        <ui:VisualElement class="pc-highlight" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- TEXT FIELDS — placeholder MUST be "Placeholder text" (FR-026) -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="TEXT FIELDS" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-textfield pc-emphasis--filled">
+                    <ui:Label class="pc-textfield__label" text="LABEL" />
+                    <ui:Label class="pc-textfield__input" text="Placeholder text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-textfield pc-emphasis--filled pc-force-pressed">
+                    <ui:Label class="pc-textfield__label" text="LABEL" />
+                    <ui:Label class="pc-textfield__input" text="Placeholder text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-textfield pc-emphasis--filled" enabled="false">
+                    <ui:Label class="pc-textfield__label" text="LABEL" />
+                    <ui:Label class="pc-textfield__input" text="Placeholder text" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- LIST ITEMS -->
+        <ui:VisualElement class="ps-row">
+            <ui:Label text="LIST ITEMS" class="ps-row-label" />
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-listitem pc-emphasis--filled">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label class="pc-listitem__label" text="List Item" />
+                    <ui:Label class="pc-listitem__chevron" text="›" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-listitem pc-emphasis--filled pc-force-pressed">
+                    <ui:Label class="pc-listitem__label" text="List Item" />
+                    <ui:Label class="pc-listitem__chevron" text="›" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="ps-cell">
+                <ui:VisualElement class="pc-surface pc-listitem pc-emphasis--filled" enabled="false">
+                    <ui:VisualElement class="pc-highlight" />
+                    <ui:Label class="pc-listitem__label" text="List Item" />
+                    <ui:Label class="pc-listitem__chevron" text="›" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

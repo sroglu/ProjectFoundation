@@ -1,0 +1,130 @@
+/* =========================================================
+   M3 List — list.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+/* ── List container ── */
+.m3-list {
+    flex-direction: column;
+    background-color: var(--m3-surface);
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+/* ── List item ── */
+.m3-list-item {
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--m3-surface);
+    padding-left: 16px;
+    padding-right: 16px;
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+.m3-list-item--one-line   { height: 56px; }
+.m3-list-item--two-line   { height: 72px; }
+.m3-list-item--three-line { height: 88px; align-items: flex-start; padding-top: 12px; padding-bottom: 12px; }
+
+/* Hover/active: surface + on-surface state layer overlay */
+.m3-list-item:hover {
+    background-color: rgb(236, 234, 238);
+}
+
+.m3-list-item:active {
+    background-color: rgb(230, 228, 232);
+}
+
+/* Leading slot */
+.m3-list-item__leading {
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    margin-right: 16px;
+    flex-shrink: 0;
+}
+
+/* Text column */
+.m3-list-item__text {
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.m3-list-item__headline {
+    color: var(--m3-on-surface);
+    white-space: nowrap;
+    overflow: hidden;
+    -unity-text-overflow-position: end;
+}
+
+.m3-list-item__supporting {
+    color: var(--m3-on-surface-variant);
+    white-space: normal;
+    overflow: hidden;
+    -unity-text-overflow-position: end;
+}
+
+/* Leading slot — icon variant (24x24) */
+.m3-list-item__leading--icon {
+    width: 24px;
+    height: 24px;
+}
+
+/* Leading slot — avatar variant (40x40, circular) */
+.m3-list-item__leading--avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+/* Leading slot — thumbnail variant (56x56) */
+.m3-list-item__leading--thumbnail {
+    width: 56px;
+    height: 56px;
+    border-radius: 0;
+}
+
+/* Trailing slot */
+.m3-list-item__trailing {
+    margin-left: 16px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ── Divider variant ── */
+.m3-list--dividers > .m3-list-item {
+    border-bottom-width: 1px;
+    border-bottom-color: var(--m3-outline-variant);
+}
+
+/* Last item in divider list — remove bottom border (applied via C#) */
+.m3-list--dividers > .m3-list-item.m3-list-item--last {
+    border-bottom-width: 0;
+}
+
+/* ── Segmented variant — each item is a rounded box with gap ── */
+.m3-list--segmented {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.m3-list--segmented > .m3-list-item {
+    background-color: var(--m3-surface-container);
+    border-radius: 12px;
+    margin-bottom: 2px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.m3-list--segmented > .m3-list-item.m3-list-item--last {
+    margin-bottom: 0;
+}
+
+.m3-list--segmented > .m3-list-item:hover {
+    background-color: var(--m3-surface-container-high);
+}

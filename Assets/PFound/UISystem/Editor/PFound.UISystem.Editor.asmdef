@@ -1,0 +1,23 @@
+{
+    "name": "PFound.UISystem.Editor",
+    "rootNamespace": "PFound.UISystem.Editor",
+    "references": [
+        "PFound.UISystem",
+        "Unity.TextMeshPro",
+        "PFound.Utilities.EditorHelpers"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "Sirenix.OdinInspector.Attributes.dll",
+        "Sirenix.OdinInspector.Editor.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

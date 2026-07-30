@@ -1,0 +1,33 @@
+{
+    "name": "PFound.InputRouter.Tests",
+    "rootNamespace": "PFound.InputRouter.Tests",
+    "references": [
+        "PFound.InputRouter.Core",
+        "PFound.InputRouter",
+        "PFound.InputRouter.Samples",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [
+        {
+            "name": "com.unity.inputsystem",
+            "expression": "1.0.0",
+            "define": "PFOUND_INPUTSYSTEM"
+        }
+    ],
+    "noEngineReferences": false
+}

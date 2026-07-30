@@ -1,0 +1,421 @@
+/* ============================================================
+   Papercut Theme — Components (skeleton)
+   ============================================================
+   Per-component classes that compose palette + treatment.
+
+   Components in scope (uiRef.png — 10 rows):
+     .pc-button                 Primary
+     .pc-card                   Surface
+     .pc-chip      / --selected / --unselected   Primary | Inactive
+     .pc-checkbox               Information
+     .pc-radio                  Toggle
+     .pc-switch    (track + knob; knob is a surface too)
+     .pc-segmented (selected = filled, other = inactive)
+     .pc-slider    (track + handle, handle is a surface)
+     .pc-textfield              Input
+     .pc-listitem               Input
+
+   Chip taxonomy: type changes ICON only, never color.
+     Assist=ampul · Filter=funnel+caret · Input=X · Suggestion=sparkle
+
+   States are inherited from papercut-treatment.uss via
+   .pc-surface; component classes only set fill, radius,
+   padding, child layout.
+
+   See: PAPERCUT-THEME-TODO.md Phase 4.
+   ============================================================ */
+
+/* ============================================================
+   Component bodies (T010-T019)
+
+   Each component composes `.pc-surface` (from papercut-treatment.uss)
+   in its UXML class list; this file only sets the palette binding,
+   text colour, padding, radius, and component-specific layout.
+
+   Pressed state (`:active`) overrides the fill colour with the
+   palette's `--pc-*-pressed` variant. `.pc-force-pressed` mirrors
+   this for static Showcase rendering.
+
+   Highlight-curve sizes: defaults to 28x28 (.pc-highlight in
+   papercut-treatment.uss); overridden below for small components.
+   ============================================================ */
+
+/* ------------------------------------------------------------
+   T010 — .pc-button (Primary palette, FR-013)
+   88×88 min hit area baked in (FR-023). Per-context icon buttons
+   that need to stay smaller (top-bar back, home settings, photo
+   viewer close) opt out via `min-width: auto; min-height: auto;`
+   in their own override class.
+   ------------------------------------------------------------ */
+.pc-button {
+    background-color: var(--pc-primary);
+    border-color: var(--pc-primary-edge);
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 20px;
+    padding: 10px 32px;
+    border-radius: 8px;
+    min-width: 88px;
+    min-height: 88px;
+}
+.pc-button:active,
+.pc-button.pc-force-pressed {
+    background-color: var(--pc-primary-pressed);
+}
+
+/* Typography tiers — opt-in modifiers for per-context font sizing.
+   Default base font is 20 px; --sm = 16 px (chip-like text in
+   buttons), --lg = 28 px (hero CTAs, math digits). Per-context
+   classes may also set font-size directly for non-tiered values. */
+.pc-button--sm  { font-size: 16px; }
+.pc-button--md  { font-size: 20px; }
+.pc-button--lg  { font-size: 28px; }
+
+/* Tier-coupled highlight curve sizing — keeps the top-left curve
+   visually proportional. Defaults to .pc-highlight 28×28 (medium);
+   --sm shrinks to 14×14, --lg grows to 36×36. Per-context classes
+   may override again for icon-only buttons. */
+.pc-button--sm > .pc-highlight,
+.pc-button--sm  .pc-highlight { width: 14px; height: 14px; }
+.pc-button--lg > .pc-highlight,
+.pc-button--lg  .pc-highlight { width: 36px; height: 36px; }
+
+/* Outlined tier — transparent fill + coloured outline + dark text.
+   No highlight curve, no edge band (handled in treatment USS). */
+.pc-button.pc-emphasis--outlined {
+    background-color: rgba(0, 0, 0, 0);
+    color: var(--pc-primary-edge);
+}
+
+/* Text tier — no surface treatment at all (FR-008). */
+.pc-button.pc-emphasis--text {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    color: var(--pc-primary-edge);
+    min-width: auto;
+    min-height: auto;
+}
+
+/* Danger modifier — destructive actions (Settings Reset Progress).
+   Replaces the inline red override in Settings.uxml. */
+.pc-button.pc-button--danger {
+    background-color: var(--pc-danger);
+    border-color: var(--pc-danger-edge);
+}
+.pc-button.pc-button--danger:active,
+.pc-button.pc-button--danger.pc-force-pressed {
+    background-color: var(--pc-danger-pressed);
+}
+
+/* ------------------------------------------------------------
+   T011 — .pc-card (Surface palette, FR-014)
+   ------------------------------------------------------------ */
+.pc-card {
+    background-color: var(--pc-surface);
+    border-color: var(--pc-surface-edge);
+    color: rgb(255, 255, 255);
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    font-size: 20px;
+    padding: 14px 32px;
+    border-radius: 8px;
+}
+.pc-card:active,
+.pc-card.pc-force-pressed {
+    background-color: var(--pc-surface-pressed);
+}
+
+/* Card semantic colour modifiers — replace inline overrides in
+   AgeBandPickerModal (3-4 success green / 4-5 info blue tiles). */
+.pc-card.pc-card--success {
+    background-color: var(--pc-success);
+    border-color: var(--pc-success-edge);
+}
+.pc-card.pc-card--success:active,
+.pc-card.pc-card--success.pc-force-pressed {
+    background-color: var(--pc-success-pressed);
+}
+
+.pc-card.pc-card--info {
+    background-color: var(--pc-info);
+    border-color: var(--pc-info-edge);
+}
+.pc-card.pc-card--info:active,
+.pc-card.pc-card--info.pc-force-pressed {
+    background-color: var(--pc-info-pressed);
+}
+
+/* ------------------------------------------------------------
+   T012 — .pc-chip (Primary palette default; .pc-inactive for unselected, FR-018)
+   ------------------------------------------------------------ */
+.pc-chip {
+    background-color: var(--pc-primary);
+    border-color: var(--pc-primary-edge);
+    color: rgb(255, 255, 255);
+    flex-direction: row;
+    align-items: center;
+    font-size: 16px;
+    padding: 6px 18px;
+    border-radius: 8px;
+}
+.pc-chip:active,
+.pc-chip.pc-force-pressed {
+    background-color: var(--pc-primary-pressed);
+}
+
+/* Chip icon slot — colour follows component state. */
+.pc-chip__icon {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+/* Inactive chip — class added by PapercutInactiveModifier; the
+   `.pc-surface.pc-inactive` rules in treatment.uss recolour fill
+   and outline. Inner text + icon must follow suit. */
+.pc-chip.pc-inactive {
+    color: rgb(82, 50, 65);
+}
+.pc-chip.pc-inactive > .pc-chip__icon {
+    -unity-background-image-tint-color: var(--pc-inactive-line);
+}
+
+/* ------------------------------------------------------------
+   T013 — .pc-checkbox (Information palette, FR-015)
+   Compound: a coloured square + label row. The .pc-checkbox host
+   is the row; .pc-checkbox__box is the surface; label is sibling.
+   ------------------------------------------------------------ */
+.pc-checkbox {
+    flex-direction: row;
+    align-items: center;
+}
+.pc-checkbox__box {
+    width: 36px;
+    height: 36px;
+    background-color: var(--pc-info);
+    border-color: var(--pc-info-edge);
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+}
+.pc-checkbox__box:active,
+.pc-checkbox__box.pc-force-pressed {
+    background-color: var(--pc-info-pressed);
+}
+.pc-checkbox__check {
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 20px;
+}
+.pc-checkbox__label {
+    color: rgb(82, 50, 65);
+    margin-left: 12px;
+    font-size: 18px;
+}
+/* Small components get a proportionally smaller highlight ellipse. */
+.pc-checkbox__box .pc-highlight {
+    width: 14px; height: 14px;
+}
+
+/* ------------------------------------------------------------
+   T014 — .pc-radio (Toggle palette, FR-016)
+   Compound: yellow circle + optional inner dot + label row.
+   ------------------------------------------------------------ */
+.pc-radio {
+    flex-direction: row;
+    align-items: center;
+}
+.pc-radio__circle {
+    width: 36px;
+    height: 36px;
+    background-color: var(--pc-toggle);
+    border-color: var(--pc-toggle-edge);
+    border-radius: 9999px;
+    align-items: center;
+    justify-content: center;
+}
+.pc-radio__circle:active,
+.pc-radio__circle.pc-force-pressed {
+    background-color: var(--pc-toggle-pressed);
+}
+.pc-radio__dot {
+    width: 14px;
+    height: 14px;
+    background-color: rgb(255, 255, 255);
+    border-radius: 9999px;
+}
+.pc-radio__label {
+    color: rgb(82, 50, 65);
+    margin-left: 12px;
+    font-size: 18px;
+}
+.pc-radio__circle .pc-highlight {
+    width: 14px; height: 14px;
+}
+
+/* ------------------------------------------------------------
+   T015 — .pc-switch (Toggle palette; track + knob, FR-016 + FR-019)
+   ------------------------------------------------------------ */
+.pc-switch {
+    width: 90px;
+    height: 40px;
+    background-color: var(--pc-toggle);
+    border-color: var(--pc-toggle-edge);
+    border-radius: 10px;
+    justify-content: center;
+}
+.pc-switch:active,
+.pc-switch.pc-force-pressed {
+    background-color: var(--pc-toggle-pressed);
+}
+
+/* Knob is itself a surface — carries its own highlight curve
+   in every non-Disabled state (FR-019). */
+.pc-switch__knob {
+    position: absolute;
+    width: 34px;
+    height: 34px;
+    border-radius: 9999px;
+    background-color: rgb(255, 255, 255);
+    border-color: var(--pc-toggle-edge);
+    border-width: 3px;
+    border-bottom-width: 5px;
+    border-right-width: 5px;
+    top: 1px;
+    /* Default ON: knob at right. */
+    right: 1px;
+}
+.pc-switch__knob .pc-highlight {
+    width: 14px; height: 14px;
+}
+
+/* Inactive Switch — knob slides to the left + track + outline
+   recolours via .pc-surface.pc-inactive base rule. */
+.pc-switch.pc-inactive > .pc-switch__knob {
+    right: auto;
+    left: 1px;
+    border-color: var(--pc-inactive-line);
+}
+
+/* ------------------------------------------------------------
+   T016 — .pc-segmented (Primary on selected, Inactive on other)
+   ------------------------------------------------------------ */
+.pc-segmented {
+    flex-direction: row;
+    background-color: var(--pc-inactive-fill);
+    border-color: var(--pc-inactive-line);
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 2px;
+}
+.pc-segmented__segment {
+    flex: 1 0 auto;
+    padding: 6px 24px;
+    color: rgb(82, 50, 65);
+    -unity-text-align: middle-center;
+    font-size: 16px;
+    border-radius: 6px;
+}
+.pc-segmented__segment.pc-selected {
+    background-color: var(--pc-primary);
+    border-color: var(--pc-primary-edge);
+    border-width: 2px;
+    border-bottom-width: 5px;
+    border-right-width: 5px;
+    color: rgb(255, 255, 255);
+}
+.pc-segmented__segment.pc-selected:active,
+.pc-segmented__segment.pc-selected.pc-force-pressed {
+    background-color: var(--pc-primary-pressed);
+}
+
+/* ------------------------------------------------------------
+   T017 — .pc-slider (Primary palette; track + handle, FR-019)
+   ------------------------------------------------------------ */
+.pc-slider {
+    height: 16px;
+    background-color: var(--pc-primary);
+    border-color: var(--pc-primary-edge);
+    border-radius: 6px;
+    justify-content: center;
+    margin: 18px 24px;
+}
+.pc-slider:active,
+.pc-slider.pc-force-pressed {
+    background-color: var(--pc-primary-pressed);
+}
+
+/* Handle is a surface — carries highlight (FR-019). */
+.pc-slider__handle {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border-radius: 9999px;
+    background-color: rgb(255, 255, 255);
+    border-color: var(--pc-primary-edge);
+    border-width: 3px;
+    border-bottom-width: 5px;
+    border-right-width: 5px;
+    /* Showcase positions the handle around 60% via left-percent. */
+    margin-top: -10px;
+}
+.pc-slider__handle .pc-highlight {
+    width: 14px; height: 14px;
+}
+
+/* ------------------------------------------------------------
+   T018 — .pc-textfield (Input palette, FR-017 + FR-026)
+   Label is a separate child; the field surface uses cream fill
+   with teal outline. Placeholder text MUST be "Placeholder text"
+   not "Plold text" (sheet bug per FR-026).
+   ------------------------------------------------------------ */
+.pc-textfield {
+    background-color: rgb(252, 244, 232);  /* slightly off-white cream */
+    border-color: var(--pc-input);
+    color: rgb(82, 50, 65);
+    border-radius: 10px;
+    padding: 10px 16px;
+}
+.pc-textfield:active,
+.pc-textfield.pc-force-pressed {
+    background-color: rgb(240, 232, 220);
+}
+.pc-textfield__label {
+    color: var(--pc-input);
+    font-size: 11px;
+    -unity-font-style: bold;
+    margin-bottom: 4px;
+}
+.pc-textfield__input {
+    color: rgb(82, 50, 65);
+    font-size: 18px;
+}
+
+/* ------------------------------------------------------------
+   T019 — .pc-listitem (Input palette pill with chevron, FR-017)
+   ------------------------------------------------------------ */
+.pc-listitem {
+    background-color: var(--pc-input);
+    border-color: var(--pc-input-edge);
+    color: rgb(255, 255, 255);
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 24px;
+    border-radius: 8px;
+}
+.pc-listitem:active,
+.pc-listitem.pc-force-pressed {
+    background-color: var(--pc-input-pressed);
+}
+.pc-listitem__label {
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+.pc-listitem__chevron {
+    margin-left: auto;
+    color: rgb(255, 255, 255);
+    -unity-font-style: bold;
+    font-size: 18px;
+}

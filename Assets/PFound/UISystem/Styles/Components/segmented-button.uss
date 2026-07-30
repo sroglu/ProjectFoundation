@@ -1,0 +1,74 @@
+/* =========================================================
+   M3 Segmented Button — segmented-button.uss
+   All colors via var(--m3-*) tokens.
+   ========================================================= */
+
+/* ── Group container ── */
+.m3-segmented-button {
+    flex-direction: row;
+    height: 40px;
+    border-radius: 20px;
+    border-width: 1px;
+    border-color: var(--m3-outline);
+    overflow: hidden;
+}
+
+/* ── Individual segment ── */
+.m3-segmented-item {
+    flex: 1;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgba(0, 0, 0, 0);
+    border-right-width: 1px;
+    border-right-color: var(--m3-outline);
+    transition-property: background-color;
+    transition-duration: 150ms;
+}
+
+/* Remove right border from last segment (applied via C#) */
+.m3-segmented-item--last {
+    border-right-width: 0;
+}
+
+.m3-segmented-item:hover {
+    background-color: rgba(28, 27, 31, 0.08);
+}
+
+/* Active segment — double-class specificity to beat :hover */
+.m3-segmented-item.m3-segmented-item--active {
+    background-color: var(--m3-secondary-container);
+}
+
+.m3-segmented-item.m3-segmented-item--active:hover {
+    background-color: var(--m3-secondary-container);
+}
+
+/* Icons */
+.m3-segmented-item__icon {
+    font-size: 18px;
+    color: var(--m3-on-surface);
+    width: 18px;
+    height: 18px;
+    -unity-text-align: middle-center;
+    margin-right: 8px;
+    flex-shrink: 0;
+}
+
+.m3-segmented-item.m3-segmented-item--active .m3-segmented-item__icon {
+    color: var(--m3-on-secondary-container);
+}
+
+/* Label */
+.m3-segmented-item__label {
+    font-size: 14px;
+    -unity-font-style: bold;
+    color: var(--m3-on-surface);
+    -unity-text-align: middle-center;
+}
+
+.m3-segmented-item.m3-segmented-item--active .m3-segmented-item__label {
+    color: var(--m3-on-secondary-container);
+}

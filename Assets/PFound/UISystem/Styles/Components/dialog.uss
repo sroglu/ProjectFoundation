@@ -1,0 +1,35 @@
+/*
+ * dialog.uss — M3 Dialog Component Styles
+ *
+ * M3 Dialog spec:
+ *   Width: 280-560dp, corners: 28dp
+ *   Colors: surface-container-high bg
+ */
+
+.m3-dialog__scrim {
+    background-color: var(--m3-scrim, rgba(0, 0, 0, 0.32));
+}
+
+.m3-dialog {
+    /* background-color is set in C# via M3Surface.FillColorOverride (palette
+     * path). M3Dialog.RefreshThemeColors → _card.FillColorOverride =
+     * SurfaceContainerHigh. USS bg here would corrupt the SDF tint encoding. */
+    min-width: 280px;
+    max-width: 560px;
+}
+
+.m3-dialog__headline {
+    color: var(--m3-on-surface, rgb(28, 27, 31));
+    font-size: 24px;
+}
+
+.m3-dialog__body {
+    color: var(--m3-on-surface-variant, rgb(73, 69, 79));
+    font-size: 14px;
+    white-space: normal;
+}
+
+.m3-dialog__actions {
+    flex-direction: row;
+    justify-content: flex-end;
+}

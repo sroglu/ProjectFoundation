@@ -1,0 +1,32 @@
+{
+    "name": "PFound.Render.RenderContext.Tests.PlayMode",
+    "rootNamespace": "PFound.Render.RenderContext.Tests",
+    "references": [
+        "PFound.Render.RenderContext.Tests",
+        "PFound.Render.RenderContext",
+        "PFound.Render.Core",
+        "PFound.DependencyContainer",
+        "PFound.LoopScheduler",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Unity.Burst",
+        "Unity.Collections",
+        "Unity.Mathematics",
+        "Unity.Profiling.Core"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

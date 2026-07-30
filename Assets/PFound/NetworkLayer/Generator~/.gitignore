@@ -1,0 +1,7 @@
+# Build artifacts for the Roslyn generator/analyzer project — NOT committed.
+# The shipped artifact is ../Plugins/PFound.NetworkLayer.Generator.dll (built by build.sh).
+# Only the source (*.cs, *.csproj, build.sh) is tracked.
+.pkgs/
+obj/
+bin/
+*.user

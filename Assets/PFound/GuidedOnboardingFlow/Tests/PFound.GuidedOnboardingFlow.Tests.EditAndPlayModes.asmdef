@@ -1,0 +1,26 @@
+{
+    "name": "PFound.GuidedOnboardingFlow.Tests.EditAndPlayModes",
+    "rootNamespace": "PFound.GuidedOnboardingFlow.Tests",
+    "references": [
+        "PFound.GuidedOnboardingFlow.Core",
+        "PFound.GuidedOnboardingFlow",
+        "PFound.UserPrefs",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "PFound.ScreenRouter",
+        "PFound.Signaling"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,71 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:Style src="../../Styles/Components/showcase-v2.uss" />
+
+    <ui:VisualElement class="showcase-tab-panel showcase-tab-panel--active">
+
+        <ui:Label class="m3-headline-small" text="Button — Specifications" style="margin-bottom: 16px;" />
+
+        <!-- Dimensions -->
+        <ui:Label class="m3-title-medium" text="Dimensions" style="margin-bottom: 8px;" />
+
+        <ui:VisualElement class="showcase-spec-table">
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Height" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="40dp" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Min width" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="48dp" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Corner radius" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="Full (20dp)" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Horizontal padding" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="24dp (icon: 16dp left, 24dp right)" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Color tokens -->
+        <ui:Label class="m3-title-medium" text="Color Tokens" style="margin-top: 16px; margin-bottom: 8px;" />
+
+        <ui:VisualElement class="showcase-spec-table">
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Filled bg" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="--m3-primary" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Filled label" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="--m3-on-primary" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Tonal bg" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="--m3-secondary-container" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Outlined border" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="--m3-outline" />
+            </ui:VisualElement>
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="State layer" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="--m3-primary / 0.08 (hover), 0.12 (press)" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <!-- Typography -->
+        <ui:Label class="m3-title-medium" text="Typography" style="margin-top: 16px; margin-bottom: 8px;" />
+        <ui:VisualElement class="showcase-spec-table">
+            <ui:VisualElement class="showcase-spec-row">
+                <ui:Label class="showcase-spec-row__key m3-body-small" text="Label font role" />
+                <ui:Label class="showcase-spec-row__value m3-body-medium" text="Label Large (14sp, Medium weight)" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:Label class="showcase-spec-link m3-label-medium"
+            text="M3 Spec: https://m3.material.io/components/buttons/specs"
+            style="margin-top: 16px;" />
+
+    </ui:VisualElement>
+
+</ui:UXML>

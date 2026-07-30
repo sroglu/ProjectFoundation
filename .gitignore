@@ -1,0 +1,46 @@
+# Planning / internal docs + local instructions — never pushed
+/docs/
+/TODO.md
+CLAUDE.local.md
+
+# Per-project MCP config — machine-specific absolute paths, kept local
+.mcp.json
+
+# Test Runner exports — local only
+/TestResults/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+[Mm]emoryCaptures/
+[Rr]ecordings/
+
+# IDE / OS
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.unityproj
+*.sln
+*.user
+.DS_Store
+
+# Build artifacts
+*.apk
+*.aab
+*.unitypackage
+*.app
+crashlytics-build.properties
+sysinfo.txt
+
+# Local session/agent data
+.claude/
+
+# Unity Test Runner temp PlayMode scenes
+/Assets/InitTestScene*.unity
+/Assets/InitTestScene*.unity.meta

@@ -1,0 +1,20 @@
+{
+    "name": "PFound.Render.RenderContext",
+    "rootNamespace": "PFound.Render.RenderContext",
+    "references": [
+        "PFound.Render.Core",
+        "PFound.DependencyContainer",
+        "PFound.LoopScheduler",
+        "Unity.RenderPipelines.Universal.Runtime",
+        "Unity.RenderPipelines.Core.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

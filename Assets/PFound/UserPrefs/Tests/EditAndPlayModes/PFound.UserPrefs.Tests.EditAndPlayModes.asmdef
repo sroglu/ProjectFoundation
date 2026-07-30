@@ -1,0 +1,22 @@
+{
+    "name": "PFound.UserPrefs.Tests.EditAndPlayModes",
+    "rootNamespace": "PFound.UserPrefs.Tests",
+    "references": [
+        "PFound.UserPrefs",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
