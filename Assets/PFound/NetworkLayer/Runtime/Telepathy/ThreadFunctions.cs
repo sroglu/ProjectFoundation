@@ -228,7 +228,7 @@ namespace PFound.NetworkLayer.Telepathy
             }
             catch (ObjectDisposedException objectDisposedException)
             {
-                // [KOP-26313]: ObjectDisposedException causes thread crashes while downloading on iOS & Android
+                // ObjectDisposedException causes thread crashes while downloading on iOS & Android
                 // Ignoring this seems to be fine, we can get into the game without issues
                 Log.Warning($"ObjectDisposedException at SendLoop: {objectDisposedException}");
             }

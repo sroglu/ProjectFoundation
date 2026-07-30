@@ -8,6 +8,7 @@ namespace PFound.NetworkLayer.Samples
     /// </summary>
     public enum NetDomain : byte
     {
+        Invalid = 0,
         Wallet = 1,    // 0x01 -> opcodes 0x01__
         Alliance = 2,  // 0x02 -> opcodes 0x02__
     }

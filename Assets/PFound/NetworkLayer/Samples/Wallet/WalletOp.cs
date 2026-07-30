@@ -7,6 +7,7 @@ namespace PFound.NetworkLayer.Samples.Wallet
     /// </summary>
     public enum WalletOp : byte
     {
+        Invalid = 0,
         Spend = 1,  // 0x01 -> opcode 0x0101
     }
 }

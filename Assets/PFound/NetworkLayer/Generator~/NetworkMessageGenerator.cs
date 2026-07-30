@@ -10,20 +10,21 @@ using Microsoft.CodeAnalysis.Text;
 namespace PFound.NetworkLayer.Generation
 {
     /// <summary>
-    /// Turns each <c>[NetworkOp]</c> / <c>[NetworkNotify]</c> partial class into its wire types: the
-    /// immutable MessagePack payload struct(s), the poolable envelope(s), and a per-operation
-    /// <c>Register</c>; plus one assembly-wide aggregator that enrols every operation. The declaration the
-    /// developer writes is read as a spec — this generator DECLARES the keyed types itself, because a
-    /// <c>[Key(n)]</c> must sit on the emitted member.
+    /// Turns each <c>[RemoteProcedure]</c> / <c>[Notify]</c> partial class into its runtime wiring: the
+    /// poolable envelope(s) that CARRY a named DTO (a <see cref="PFound.NetworkLayer.IMessagePayload"/> so the
+    /// codec serializes the DTO and never the envelope), a per-operation <c>Register</c>, and a uniform call
+    /// entry point (<c>CallAsync</c> returning the reply DTO for a remote procedure, <c>Send</c> for a notify)
+    /// plus a convenience overload built from the request DTO's keyed members; and one assembly-wide aggregator
+    /// that enrols every operation. The DTO types come from the attribute's <c>typeof</c> arguments — this
+    /// generator no longer synthesizes request/reply structs; every wire type is a first-party
+    /// <c>[MessagePackObject]</c> DTO whose formatter MessagePack's own generator produces.
     /// </summary>
     [Generator(LanguageNames.CSharp)]
     public sealed class NetworkMessageGenerator : IIncrementalGenerator
     {
-        const string OpAttribute = "PFound.NetworkLayer.NetworkOpAttribute";
-        const string NotifyAttribute = "PFound.NetworkLayer.NetworkNotifyAttribute";
-        const string RequestAttribute = "PFound.NetworkLayer.RequestAttribute";
-        const string ReplyAttribute = "PFound.NetworkLayer.ReplyAttribute";
-        const string FieldAttribute = "PFound.NetworkLayer.FieldAttribute";
+        const string OpAttribute = "PFound.NetworkLayer.RemoteProcedureAttribute";
+        const string NotifyAttribute = "PFound.NetworkLayer.NotifyAttribute";
+        const string KeyAttribute = "MessagePack.KeyAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -43,13 +44,9 @@ namespace PFound.NetworkLayer.Generation
                 .Where(static m => m is not null)
                 .Select(static (m, _) => m!);
 
-            // Emit one file per operation.
             context.RegisterSourceOutput(ops, static (spc, m) => spc.AddSource(m.HintName, Emit(m)));
             context.RegisterSourceOutput(notifies, static (spc, m) => spc.AddSource(m.HintName, Emit(m)));
 
-            // Emit one aggregator over every operation in the compilation — but only when this
-            // assembly actually declares operations. An empty aggregator would still reference
-            // MessageCatalog, which would not resolve in an assembly that does not use the layer.
             var all = ops.Collect().Combine(notifies.Collect());
             context.RegisterSourceOutput(all, static (spc, pair) =>
             {
@@ -67,20 +64,21 @@ namespace PFound.NetworkLayer.Generation
             public string? Namespace;
             public ImmutableArray<string> ContainingTypes; // outer→inner, empty when top level
             public string TypeName = "";
-            public string FullyQualifiedName = ""; // global::...Spend
+            public string FullyQualifiedName = "";
             public string DomainExpr = "";
             public string OpExpr = "";
-            public ImmutableArray<FieldModel> RequestFields;
-            public ImmutableArray<FieldModel> ReplyFields;
+            public string RequestTypeFqn = "";              // TRequest / TPayload (notify)
+            public string ReplyTypeFqn = "";                // TReply (RPC only)
+            public ImmutableArray<MemberModel> RequestMembers; // TRequest/TPayload keyed members (for overload)
             public string HintName = "";
         }
 
-        readonly struct FieldModel
+        readonly struct MemberModel
         {
             public readonly int Index;
             public readonly string Name;
             public readonly string TypeFqn;
-            public FieldModel(int index, string name, string typeFqn) { Index = index; Name = name; TypeFqn = typeFqn; }
+            public MemberModel(int index, string name, string typeFqn) { Index = index; Name = name; TypeFqn = typeFqn; }
         }
 
         static OpModel? Describe(GeneratorAttributeSyntaxContext ctx, bool isNotify)
@@ -89,49 +87,59 @@ namespace PFound.NetworkLayer.Generation
                 return null;
 
             var attr = ctx.Attributes[0];
-            if (attr.ConstructorArguments.Length != 2)
+            var args = attr.ConstructorArguments;
+            // RPC: (domain, op, typeof(TRequest), typeof(TReply)); Notify: (domain, op, typeof(TPayload)).
+            if (isNotify ? args.Length != 3 : args.Length != 4)
+                return null;
+
+            var requestType = args[2].Value as INamedTypeSymbol;
+            if (requestType is null)
+                return null;
+            var replyType = isNotify ? null : args[3].Value as INamedTypeSymbol;
+            if (!isNotify && replyType is null)
                 return null;
 
             var model = new OpModel
             {
                 IsNotify = isNotify,
-                Namespace = type.ContainingNamespace is { IsGlobalNamespace: false } ns
-                    ? ns.ToDisplayString()
-                    : null,
+                Namespace = type.ContainingNamespace is { IsGlobalNamespace: false } ns ? ns.ToDisplayString() : null,
                 ContainingTypes = ContainingTypeChain(type),
                 TypeName = type.Name,
                 FullyQualifiedName = type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                DomainExpr = EnumMemberExpression(attr.ConstructorArguments[0]),
-                OpExpr = EnumMemberExpression(attr.ConstructorArguments[1]),
+                DomainExpr = EnumMemberExpression(args[0]),
+                OpExpr = EnumMemberExpression(args[1]),
+                RequestTypeFqn = requestType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                ReplyTypeFqn = replyType?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat) ?? "",
+                RequestMembers = KeyedMembers(requestType),
             };
-
-            var request = new List<FieldModel>();
-            var reply = new List<FieldModel>();
-            foreach (var member in type.GetMembers())
-            {
-                if (member is not IFieldSymbol field || field.IsStatic || field.IsConst)
-                    continue;
-
-                foreach (var fa in field.GetAttributes())
-                {
-                    var name = fa.AttributeClass?.ToDisplayString();
-                    var index = ReadIndex(fa);
-                    if (index < 0)
-                        continue;
-
-                    var fm = new FieldModel(index, field.Name,
-                        field.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat));
-
-                    if (!isNotify && name == RequestAttribute) request.Add(fm);
-                    else if (!isNotify && name == ReplyAttribute) reply.Add(fm);
-                    else if (isNotify && name == FieldAttribute) request.Add(fm); // notify payload rides "request" slot
-                }
-            }
-
-            model.RequestFields = request.OrderBy(f => f.Index).ToImmutableArray();
-            model.ReplyFields = reply.OrderBy(f => f.Index).ToImmutableArray();
             model.HintName = (model.Namespace is null ? "" : model.Namespace + ".") + model.TypeName + ".g.cs";
             return model;
+        }
+
+        static ImmutableArray<MemberModel> KeyedMembers(INamedTypeSymbol dto)
+        {
+            var members = new List<MemberModel>();
+            foreach (var member in dto.GetMembers())
+            {
+                (string Name, ITypeSymbol Type)? m = member switch
+                {
+                    IPropertySymbol p when !p.IsStatic && !p.IsIndexer => (p.Name, p.Type),
+                    IFieldSymbol f when !f.IsStatic && !f.IsConst && !f.IsImplicitlyDeclared => (f.Name, f.Type),
+                    _ => ((string, ITypeSymbol)?)null,
+                };
+                if (m is null)
+                    continue;
+
+                foreach (var ka in member.GetAttributes())
+                {
+                    if (ka.AttributeClass?.ToDisplayString() != KeyAttribute)
+                        continue;
+                    if (ka.ConstructorArguments.Length == 1 && ka.ConstructorArguments[0].Value is int index && index >= 0)
+                        members.Add(new MemberModel(index, m.Value.Name,
+                            m.Value.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+                }
+            }
+            return members.OrderBy(f => f.Index).ToImmutableArray();
         }
 
         static ImmutableArray<string> ContainingTypeChain(INamedTypeSymbol type)
@@ -142,14 +150,6 @@ namespace PFound.NetworkLayer.Generation
             return stack.ToImmutableArray();
         }
 
-        static int ReadIndex(AttributeData fa)
-        {
-            if (fa.ConstructorArguments.Length == 1 && fa.ConstructorArguments[0].Value is int i)
-                return i;
-            return -1;
-        }
-
-        // Recover "global::Ns.EnumType.Member" from an enum-valued attribute constant.
         static string EnumMemberExpression(TypedConstant constant)
         {
             if (constant.Type is not INamedTypeSymbol enumType || enumType.TypeKind != TypeKind.Enum)
@@ -158,14 +158,9 @@ namespace PFound.NetworkLayer.Generation
             var enumFqn = enumType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             foreach (var member in enumType.GetMembers())
             {
-                if (member is IFieldSymbol f && f.HasConstantValue &&
-                    Equals(f.ConstantValue, constant.Value))
-                {
+                if (member is IFieldSymbol f && f.HasConstantValue && Equals(f.ConstantValue, constant.Value))
                     return enumFqn + "." + f.Name;
-                }
             }
-
-            // No named member matched the value — fall back to a checked cast.
             return "(" + enumFqn + ")(" + (constant.Value?.ToString() ?? "0") + ")";
         }
 
@@ -198,17 +193,16 @@ namespace PFound.NetworkLayer.Generation
 
             if (m.IsNotify)
             {
-                EmitStruct(sb, indent, "Data", m.RequestFields);
-                EmitEnvelope(sb, indent, "NotifyMessage", "global::PFound.NetworkLayer.NotifyMessage", "Data", callBase: false);
+                EmitEnvelope(sb, indent, "NotifyMessage", "global::PFound.NetworkLayer.NotifyMessage", m.RequestTypeFqn, callBase: false);
                 EmitNotifyRegister(sb, indent, m);
+                EmitSend(sb, indent, m);
             }
             else
             {
-                EmitStruct(sb, indent, "Req", m.RequestFields);
-                EmitStruct(sb, indent, "Reply", m.ReplyFields);
-                EmitEnvelope(sb, indent, "RequestMessage", "global::PFound.NetworkLayer.RequestMessage", "Req", callBase: false);
-                EmitEnvelope(sb, indent, "ReplyMessage", "global::PFound.NetworkLayer.ReplyMessage", "Reply", callBase: true);
+                EmitEnvelope(sb, indent, "RequestMessage", "global::PFound.NetworkLayer.RequestMessage", m.RequestTypeFqn, callBase: false);
+                EmitEnvelope(sb, indent, "ReplyMessage", "global::PFound.NetworkLayer.ReplyMessage", m.ReplyTypeFqn, callBase: true);
                 EmitOpRegister(sb, indent, m);
+                EmitCall(sb, indent, m);
             }
 
             indent--;
@@ -224,91 +218,26 @@ namespace PFound.NetworkLayer.Generation
             return SourceText.From(sb.ToString(), Encoding.UTF8);
         }
 
-        static void EmitStruct(StringBuilder sb, int indent, string name, ImmutableArray<FieldModel> fields)
+        // A poolable envelope that CARRIES the payload DTO. It is a runtime-only routing/pooling carrier and is
+        // never serialized — the codec reads the DTO out via IMessagePayload and writes the decoded DTO back in.
+        static void EmitEnvelope(StringBuilder sb, int indent, string name, string baseType, string payloadTypeFqn, bool callBase)
         {
             var pad = new string(' ', indent * 4);
             var pad1 = new string(' ', (indent + 1) * 4);
             var pad2 = new string(' ', (indent + 2) * 4);
 
             sb.AppendLine();
-            sb.Append(pad).AppendLine("[global::MessagePack.MessagePackObject]");
-            sb.Append(pad).AppendLine($"public readonly struct {name} : global::System.IEquatable<{name}>");
+            sb.Append(pad).AppendLine($"public sealed class {name} : {baseType}, global::PFound.NetworkLayer.IMessagePayload");
             sb.Append(pad).AppendLine("{");
-
-            foreach (var f in fields)
-                sb.Append(pad1).AppendLine($"[global::MessagePack.Key({f.Index})] public readonly {f.TypeFqn} {f.Name};");
-
-            if (fields.Length > 0)
-            {
-                sb.AppendLine();
-                sb.Append(pad1).AppendLine("[global::MessagePack.SerializationConstructor]");
-                var ctorParams = string.Join(", ", fields.Select(f => $"{f.TypeFqn} {ParamName(f.Name)}"));
-                sb.Append(pad1).AppendLine($"public {name}({ctorParams})");
-                sb.Append(pad1).AppendLine("{");
-                foreach (var f in fields)
-                    sb.Append(pad2).AppendLine($"this.{f.Name} = {ParamName(f.Name)};");
-                sb.Append(pad1).AppendLine("}");
-            }
-
-            // value equality
-            sb.AppendLine();
-            if (fields.Length == 0)
-            {
-                sb.Append(pad1).AppendLine($"public bool Equals({name} other) => true;");
-            }
-            else
-            {
-                sb.Append(pad1).AppendLine($"public bool Equals({name} other) =>");
-                for (int i = 0; i < fields.Length; i++)
-                {
-                    var f = fields[i];
-                    var prefix = i == 0 ? "" : "&& ";
-                    var suffix = i == fields.Length - 1 ? ";" : "";
-                    sb.Append(pad2).AppendLine(
-                        $"{prefix}global::System.Collections.Generic.EqualityComparer<{f.TypeFqn}>.Default.Equals(this.{f.Name}, other.{f.Name}){suffix}");
-                }
-            }
-            sb.Append(pad1).AppendLine($"public override bool Equals(object obj) => obj is {name} other && this.Equals(other);");
-
-            sb.Append(pad1).AppendLine("public override int GetHashCode()");
+            sb.Append(pad1).AppendLine($"public {payloadTypeFqn} Content;");
+            sb.Append(pad1).AppendLine("/// <summary>Zero-copy read of the immutable payload — avoids copying the struct when reading its members.</summary>");
+            sb.Append(pad1).AppendLine($"public ref readonly {payloadTypeFqn} View => ref this.Content;");
+            sb.Append(pad1).AppendLine($"global::System.Type global::PFound.NetworkLayer.IMessagePayload.PayloadType => typeof({payloadTypeFqn});");
+            sb.Append(pad1).AppendLine("object global::PFound.NetworkLayer.IMessagePayload.Payload");
             sb.Append(pad1).AppendLine("{");
-            if (fields.Length == 0)
-            {
-                sb.Append(pad2).AppendLine("return 0;");
-            }
-            else
-            {
-                sb.Append(pad2).AppendLine("unchecked");
-                sb.Append(pad2).AppendLine("{");
-                sb.Append(pad2).AppendLine("    int hash = 17;");
-                foreach (var f in fields)
-                    sb.Append(pad2).AppendLine(
-                        $"    hash = hash * 31 + global::System.Collections.Generic.EqualityComparer<{f.TypeFqn}>.Default.GetHashCode(this.{f.Name});");
-                sb.Append(pad2).AppendLine("    return hash;");
-                sb.Append(pad2).AppendLine("}");
-            }
+            sb.Append(pad2).AppendLine("get => this.Content;");
+            sb.Append(pad2).AppendLine($"set => this.Content = ({payloadTypeFqn})value;");
             sb.Append(pad1).AppendLine("}");
-
-            var toStr = fields.Length == 0
-                ? $"\"{name}()\""
-                : "$\"" + name + "(" + string.Join(", ", fields.Select(f => f.Name + "={this." + f.Name + "}")) + ")\"";
-            sb.Append(pad1).AppendLine($"public override string ToString() => {toStr};");
-
-            sb.Append(pad).AppendLine("}");
-        }
-
-        static void EmitEnvelope(StringBuilder sb, int indent, string name, string baseType, string payloadType, bool callBase)
-        {
-            var pad = new string(' ', indent * 4);
-            var pad1 = new string(' ', (indent + 1) * 4);
-            var pad2 = new string(' ', (indent + 2) * 4);
-
-            sb.AppendLine();
-            sb.Append(pad).AppendLine($"public sealed class {name} : {baseType}");
-            sb.Append(pad).AppendLine("{");
-            sb.Append(pad1).AppendLine($"public {payloadType} Content;");
-            sb.Append(pad1).AppendLine("/// <summary>Zero-copy read of the immutable payload — avoids copying the struct when reading its fields.</summary>");
-            sb.Append(pad1).AppendLine($"public ref readonly {payloadType} View => ref this.Content;");
             sb.Append(pad1).AppendLine("public override void Clear()");
             sb.Append(pad1).AppendLine("{");
             if (callBase)
@@ -325,8 +254,7 @@ namespace PFound.NetworkLayer.Generation
             sb.AppendLine();
             sb.Append(pad).AppendLine("public static void Register(global::PFound.NetworkLayer.MessageCatalog catalog)");
             sb.Append(pad).AppendLine("{");
-            sb.Append(pad1).AppendLine(
-                $"catalog.ForDomain({m.DomainExpr}).Enroll<RequestMessage, ReplyMessage>({m.OpExpr});");
+            sb.Append(pad1).AppendLine($"catalog.ForDomain({m.DomainExpr}).Enroll<RequestMessage, ReplyMessage>({m.OpExpr});");
             sb.Append(pad).AppendLine("}");
         }
 
@@ -339,6 +267,67 @@ namespace PFound.NetworkLayer.Generation
             sb.Append(pad).AppendLine("{");
             sb.Append(pad1).AppendLine($"catalog.ForDomain({m.DomainExpr}).Enroll<NotifyMessage>({m.OpExpr});");
             sb.Append(pad).AppendLine("}");
+        }
+
+        // The uniform call: build the request envelope around the request DTO, send it through the ambient
+        // client, await the correlated reply envelope, and return its reply DTO. A convenience overload accepts
+        // the request DTO's keyed members directly and builds the DTO for the caller.
+        static void EmitCall(StringBuilder sb, int indent, OpModel m)
+        {
+            var pad = new string(' ', indent * 4);
+            var pad1 = new string(' ', (indent + 1) * 4);
+
+            sb.AppendLine();
+            sb.Append(pad).AppendLine("/// <summary>");
+            sb.Append(pad).AppendLine("/// Call this operation and await its reply DTO. Builds the request envelope, sends it through the");
+            sb.Append(pad).AppendLine("/// ambient <see cref=\"global::PFound.NetworkLayer.NetworkClient\"/> (configure <c>Current</c> once at");
+            sb.Append(pad).AppendLine("/// startup), and returns the reply DTO.");
+            sb.Append(pad).AppendLine("/// </summary>");
+            sb.Append(pad).AppendLine($"public static async global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> CallAsync({m.RequestTypeFqn} request)");
+            sb.Append(pad).AppendLine("{");
+            sb.Append(pad1).AppendLine("var envelope = new RequestMessage { Content = request };");
+            sb.Append(pad1).AppendLine("var reply = await global::PFound.NetworkLayer.NetworkClient.Current.CallAsync<ReplyMessage>(envelope);");
+            sb.Append(pad1).AppendLine("return reply.Content;");
+            sb.Append(pad).AppendLine("}");
+
+            if (m.RequestMembers.Length > 0)
+            {
+                var paramList = string.Join(", ", m.RequestMembers.Select(f => $"{f.TypeFqn} {ParamName(f.Name)}"));
+                var init = string.Join(", ", m.RequestMembers.Select(f => $"{f.Name} = {ParamName(f.Name)}"));
+                sb.AppendLine();
+                sb.Append(pad).AppendLine("/// <summary>Convenience overload: pass the request DTO's members directly.</summary>");
+                sb.Append(pad).AppendLine($"public static global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> CallAsync({paramList})");
+                sb.Append(pad1).AppendLine($"=> CallAsync(new {m.RequestTypeFqn} {{ {init} }});");
+            }
+        }
+
+        // The uniform one-way send: build the notify envelope around the payload DTO and fire it fire-and-forget
+        // through the ambient client. A convenience overload accepts the payload DTO's keyed members directly.
+        static void EmitSend(StringBuilder sb, int indent, OpModel m)
+        {
+            var pad = new string(' ', indent * 4);
+            var pad1 = new string(' ', (indent + 1) * 4);
+
+            sb.AppendLine();
+            sb.Append(pad).AppendLine("/// <summary>");
+            sb.Append(pad).AppendLine("/// Fire this notify one-way (no reply) through the ambient");
+            sb.Append(pad).AppendLine("/// <see cref=\"global::PFound.NetworkLayer.NetworkClient\"/> (configure <c>Current</c> once at startup).");
+            sb.Append(pad).AppendLine("/// </summary>");
+            sb.Append(pad).AppendLine($"public static void Send({m.RequestTypeFqn} payload)");
+            sb.Append(pad).AppendLine("{");
+            sb.Append(pad1).AppendLine("var envelope = new NotifyMessage { Content = payload };");
+            sb.Append(pad1).AppendLine("global::PFound.NetworkLayer.NetworkClient.Current.Post(envelope);");
+            sb.Append(pad).AppendLine("}");
+
+            if (m.RequestMembers.Length > 0)
+            {
+                var paramList = string.Join(", ", m.RequestMembers.Select(f => $"{f.TypeFqn} {ParamName(f.Name)}"));
+                var init = string.Join(", ", m.RequestMembers.Select(f => $"{f.Name} = {ParamName(f.Name)}"));
+                sb.AppendLine();
+                sb.Append(pad).AppendLine("/// <summary>Convenience overload: pass the payload DTO's members directly.</summary>");
+                sb.Append(pad).AppendLine($"public static void Send({paramList})");
+                sb.Append(pad1).AppendLine($"=> Send(new {m.RequestTypeFqn} {{ {init} }});");
+            }
         }
 
         static SourceText EmitAggregator(ImmutableArray<OpModel> ops, ImmutableArray<OpModel> notifies)
@@ -362,9 +351,9 @@ namespace PFound.NetworkLayer.Generation
             return SourceText.From(sb.ToString(), Encoding.UTF8);
         }
 
-        static string ParamName(string fieldName)
+        static string ParamName(string memberName)
         {
-            var camel = char.ToLowerInvariant(fieldName[0]) + fieldName.Substring(1);
+            var camel = char.ToLowerInvariant(memberName[0]) + memberName.Substring(1);
             return IsKeyword(camel) ? "@" + camel : camel;
         }
 

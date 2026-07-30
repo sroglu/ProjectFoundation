@@ -43,12 +43,16 @@ THE SOFTWARE.
 
 ## 2. MessagePack for C#
 
-- **Component:** MessagePack-CSharp — extremely fast MessagePack serializer for C#
+- **Component:** MessagePack-CSharp — extremely fast MessagePack serializer for C#, including its official
+  AOT source generator (`MessagePack.SourceGenerator`, shipped in the `MessagePackAnalyzer` package)
+- **Version:** 3.1.8 (runtime + annotations + source generator, kept equal)
 - **Author:** Yoshifumi Kawai (neuecc) and contributors / Cysharp, Inc.
 - **Upstream:** https://github.com/MessagePack-CSharp/MessagePack-CSharp
 - **SPDX-License-Identifier:** MIT
 - **Location in this repo:** `Runtime/Plugins/MessagePack.dll`,
-  `Runtime/Plugins/MessagePack.Annotations.dll`
+  `Runtime/Plugins/MessagePack.Annotations.dll`,
+  `Plugins/MessagePack.SourceGenerator.dll` (Roslyn analyzer / source generator — editor-only, all platforms
+  excluded; generates the AOT-safe wire formatters, so no runtime IL emit or reflection is used)
 
 The MessagePack-CSharp binaries embed portions of `lz4net` (BSD-2-Clause) and
 `BufferWriter.cs` (Apache-2.0). The upstream LICENSE file reproduces all three

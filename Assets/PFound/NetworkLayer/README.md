@@ -14,7 +14,10 @@ production, in-process loopback for tests.
 // reply is opcode-less (decoded by correlation, pooled by type), so there is no separate reply op.
 enum NetDomain : byte { Movement = 1 }   // value = opcode HIGH byte (0x01)
 enum MoveOp    : byte { Move = 1 }
-var catalog = new MessageCatalog(new MessagePackBodyCodec());
+// The codec serializes each message's payload DTO through MessagePack's AOT source generator. A host pushes
+// its assembly's generated resolver — the Instance of a [MessagePack.GeneratedMessagePackResolver] anchor —
+// so there is zero runtime IL and zero reflection (IL2CPP-safe). No dynamic/contractless resolver.
+var catalog = new MessageCatalog(new MessagePackBodyCodec(GameNetworkResolver.Instance));
 catalog.Enroll<MoveRequest, MoveReply>(NetDomain.Movement, MoveOp.Move);   // request/reply PAIR — prefer this for RPC
 // (Also: single-type Enroll<T>(NetDomain.X, XxxOp.Y) for a notify; Enroll<T>(Enum) for a flat enum; Enroll<T>(ushort) for a raw number.)
 // (Re-enrolling the same opcode OR the same type throws NetworkFault — collisions fail fast, never silent.)
@@ -35,7 +38,10 @@ client.Latency.TryGet(Opcode.Of(NetDomain.Movement, MoveOp.Move), out var move);
 
 ## Dependencies
 
-MessagePack-CSharp + Telepathy (both vendored under `Runtime/`); ZString.
+MessagePack-CSharp 3.1.8 — runtime + annotations vendored under `Runtime/Plugins/`, plus its official AOT
+source generator (`MessagePack.SourceGenerator.dll`, a Roslyn analyzer under `Plugins/`); Telepathy (vendored
+under `Runtime/`); ZString. Wire DTOs are authored as `[MessagePackObject]` types with `[Key]` members and
+serialize through compile-time generated formatters — no runtime IL emit, no reflection.
 
 ## Docs
 

@@ -120,8 +120,30 @@ catalog.ForDomain(NetDomain.Wallet).Enroll<SpendCoinsRequest, SpendCoinsReply>(W
 > An immutable value DTO with a value-based `ToString()` gives a stable per-value key, so two runs with
 > value-equal content dedup correctly (see example 5); the DTO's `IEquatable`/value-equality is what makes
 > that projection well-defined. You can hand-write this DTO+envelope shape as above, or let Phase 2's
-> **source generator** emit it from a compact `[NetworkOp]` declaration (`[Request(n)]`/`[Reply(n)]` fields
-> → `[Key(n)]` DTOs, envelopes, and the pair `Register`); see NetworkLayer's MODULE.md "Message codegen".
+> **source generator** emit it from a compact `[RemoteProcedure]` declaration (`[Request(n)]`/`[Reply(n)]` fields
+> → `[Key(n)]` DTOs, envelopes, the pair `Register`, and a uniform `CallAsync`); see NetworkLayer's MODULE.md
+> "Message codegen".
+>
+> **Your operations live in `Assets/GameSpecific/Networking/`** — the canonical, copyable real-game
+> reference. Exactly two folders: `Data/` holds every shared DTO struct, `Operations/` holds every
+> operation (each a `[RemoteProcedure]` spec; `GetPlayerData.cs` is a `playerId in → PlayerData out` **query**,
+> `JoinAlliance.cs` a terser operation, `SpendCoins.cs` additionally keeps a `ServerOperation` lifecycle as
+> the advanced example). Add one via right-click → **Create → PFound → Server Operation** inside an assembly
+> that references `PFound.NetworkLayer` + `PFound.ServerOperation.Core` + `MessagePack.Annotations.dll`.
+>
+> **Uniform call vs advanced lifecycle.** Every operation is a `[RemoteProcedure]` partial, and the primary
+> way to call ANY of them is the generated `var value = await <Op>.CallAsync(args)`, which returns the reply
+> DTO by value. A **query** (`GetPlayerData`) is exactly that — nothing else. A **mutation** that must predict
+> local state then apply the authoritative result can opt into a `ServerOperation` subclass (validate → send →
+> apply) on top of the same generated messages; that lifecycle is the advanced path, not the default.
+>
+> **A reply is ALWAYS a DTO struct, never a bare primitive** — wrap a lone value in a single-field
+> `[MessagePackObject]` DTO (`SpendResult`, `JoinResult`) so it keeps a wire `[Key]` and can grow
+> append-only. (Requests may still carry primitive fields.)
+>
+> **Where things go:** opcodes → the one central `NetOpcodes.cs` (`NetDomain` + one op enum per domain);
+> every DTO struct → `Data/` (e.g. `Data/PlayerData.cs`, reused by any operation); every operation →
+> `Operations/`.
 >
 > **Zero-copy read:** each generated envelope exposes `public ref readonly TContent View => ref Content;`, so
 > a consumer reads the immutable content DTO without copying the struct (`ref readonly var r = ref reply.View;`)
@@ -299,7 +321,7 @@ share the same opcode→type catalog for the request/reply to decode.
   NOT implemented.
 - **Codegen shipped (NetworkLayer).** Request/response DTOs can be hand-written typed NetworkLayer messages
   bound to opcodes via `MessageCatalog`, or emitted by NetworkLayer's Roslyn source generator from a compact
-  `[NetworkOp]` declaration (DTOs + explicit keys + pooling envelopes + the pair `Register`), with a companion
+  `[RemoteProcedure]` declaration (DTOs + explicit keys + pooling envelopes + the pair `Register` + `CallAsync`), with a companion
   analyzer for wire-versioning/opcode rules. See NetworkLayer's MODULE.md "Message codegen".
 - **Cancellation covers post-effects, not the in-flight network hop.** The seam's `CancellationToken`
   governs the cancellable post-effect phase; the underlying `ClientPeer.CallAsync` is deadline-bounded, so a

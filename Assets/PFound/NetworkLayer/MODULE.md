@@ -31,7 +31,10 @@ one-shot request/response **fetch over HTTP**, use the BestHTTP-based modules in
 Namespace: `PFound.NetworkLayer` (vendored Telepathy code lives under `PFound.NetworkLayer.Telepathy`).
 
 ## Dependencies
-- MessagePack-CSharp (precompiled `MessagePack.dll` / `MessagePack.Annotations.dll`, vendored in `Runtime/Plugins/`)
+- MessagePack-CSharp 3.1.8 (precompiled `MessagePack.dll` / `MessagePack.Annotations.dll`, vendored in
+  `Runtime/Plugins/`) + its official AOT source generator `MessagePack.SourceGenerator.dll` (a Roslyn analyzer
+  under `Plugins/`, labeled RoslynAnalyzer, all platforms excluded) — generates the wire formatters at compile
+  time, so serialization uses no runtime IL emit and no reflection
 - Telepathy (vendored MIT TCP library, `Runtime/Telepathy/`) — not called directly by consumers
 - ZString (asmdef reference)
 
@@ -72,7 +75,8 @@ HTTP transport for the ContentDelivery / RemoteResourceCache modules, not for Ne
 ### Serialization (`Runtime/Serialization/`)
 | Type | Description |
 |---|---|
-| `MessagePackBodyCodec` | Production codec (contractless MessagePack). |
+| `MessagePackBodyCodec` | Production codec: serializes each message's payload DTO through MessagePack's AOT source-generated formatters (pushed generated resolver + `BuiltinResolver`; no dynamic/contractless, no reflection). Constructed with the host's `[GeneratedMessagePackResolver]` instance(s). |
+| `IMessagePayload` | Implemented by envelopes that carry a DTO: exposes `PayloadType` + `Payload` so the codec serializes the DTO, not the envelope. |
 | `ReflectionBodyCodec` | Codec for the standalone mono/csc test build (no MessagePack facades). |
 
 ### Core / Config / Diagnostics
@@ -208,20 +212,23 @@ void Update() => client.Update();
 
 ## Wire contract discipline (stable messages across independent deploys)
 
-The default codec is MessagePack **contractless** (plain fields "just work"), which is convenient but
-serializes by member order/name — fragile once the client and server deploy independently. For anything
-that crosses the wire and evolves, use this discipline instead:
+The production codec serializes each message's **payload DTO** through MessagePack's official AOT source
+generator — every wire type is a first-party `[MessagePackObject]` DTO whose formatter is generated at compile
+time (no runtime IL emit, no reflection, IL2CPP-safe). Explicit `[Key(n)]` indices make the contract
+append-only forward/backward compatible. Use this discipline for anything that crosses the wire and evolves:
 
-- **Model the payload CONTENT as an immutable value DTO** — a `readonly struct` marked
-  `[MessagePackObject]` with an explicit `[Key(n)]` on every field + `[SerializationConstructor]`, and
-  `IEquatable<>` for value-equality. Explicit keys are append-only forward/backward compatible, and
-  `[MessagePackObject]` makes a forgotten key a hard error. The `ContractlessStandardResolver` routes
-  attributed types through the stable path automatically — **no codec change**.
-- **Keep the message ENVELOPE (`RequestMessage`/`ReplyMessage` subclass) a plain poolable class** that
-  carries the DTO as a field. Do NOT put `[MessagePackObject]` on the envelope or the base message types:
-  the base types stay MessagePack-attribute-free so the standalone mono/csc core build keeps compiling
-  (it excludes MessagePack). The envelope's only members are the base `Status` + the DTO, so its
-  contractless-ness is a framework constant, not a per-message churn point.
+- **Model the payload CONTENT as an immutable value DTO** — a `[MessagePackObject] readonly partial struct`
+  whose members are `init`-only `[Key(n)]` properties (`[Key(0)] public int Amount { get; init; }`). Write
+  just the keyed members: the PFound generator adds value equality (`IEquatable<>` +
+  `Equals`/`GetHashCode`/`ToString`); MessagePack's own generator adds the wire formatter, which member-sets
+  through the `init` accessors (so no first-party constructor is needed). Because .NET Standard 2.1 lacks
+  `IsExternalInit`, each DTO-authoring assembly carries a one-line `internal static class IsExternalInit` shim
+  (see `GameNetworkResolver.cs`). See "Authoring a DTO" below.
+- **Keep the message ENVELOPE (`RequestMessage`/`ReplyMessage` subclass) a plain poolable carrier** that holds
+  the DTO in a field and implements `IMessagePayload` (the generated envelopes do this for you). The envelope
+  is a runtime-only routing/pooling carrier and is **never serialized** — only its DTO is. Do NOT put
+  `[MessagePackObject]` on the envelope or the base message types: they stay MessagePack-attribute-free so the
+  standalone mono/csc core build keeps compiling (it excludes MessagePack).
 - **Declare opcodes with the banded two-level scheme** — a central `NetDomain : byte` (one entry per
   subsystem) plus a per-domain `XxxOp : byte` with local values — and enroll via
   `Enroll<TRequest, TReply>(NetDomain.X, XxxOp.Y)` for an RPC (the request takes the op; the reply is
@@ -241,81 +248,162 @@ full wire boilerplate — the immutable `[MessagePackObject]` DTO(s) with explic
 envelope(s), and the catalog enrolment — so the discipline above is applied for you and can't be gotten
 subtly wrong.
 
+> **Your operations live in `Assets/GameSpecific/Networking/`** — the canonical, copyable
+> real-game reference. Exactly two folders, no per-domain/per-op nesting: `Data/` holds every shared DTO
+> struct, `Operations/` holds every operation (`SpendCoins.cs`, `JoinAlliance.cs`, `GetPlayerData.cs`); the
+> central `NetOpcodes.cs` + `GameNetworkSetup.cs` sit at the root. To add one: right-click →
+> **Create → PFound → Server Operation** inside an assembly that references `PFound.NetworkLayer` +
+> `PFound.ServerOperation.Core` + `MessagePack.Annotations.dll`. The minimal framework-level opcode sheet
+> in `Samples/` stays as the bare example.
+>
+> **Where things go.** Opcodes → the one central `NetOpcodes.cs` (`NetDomain` + one op enum per domain,
+> each starting `Invalid = 0`); a new op is a single line THERE. Every DTO struct → `Data/` (e.g.
+> `Data/PlayerData.cs`, reused by any operation; single-value replies get their own DTO too — `SpendResult`,
+> `JoinResult`). Every operation → `Operations/`. Every operation is a `[RemoteProcedure]` partial, and the
+> primary way to call ANY of them is the generated uniform entry point: `var value = await
+> <Op>.CallAsync(args)`, which returns the reply DTO by value (`SpendCoins`, `JoinAlliance`, `GetPlayerData`
+> all read the same). A **query** (`GetPlayerData`) is nothing more than that call. A **mutation** that must
+> predict local state then reconcile it can additionally opt into a `ServerOperation` subclass (validate →
+> send → apply authoritative state) — that lifecycle is the advanced path (`SpendCoins` keeps one as the
+> example); it reuses the same generated messages.
+>
+> **A reply is ALWAYS a DTO, never a bare primitive** — wrap a lone value in a single-member DTO (that is what
+> `SpendResult`/`JoinResult` are) so the member keeps an explicit wire `[Key]` index and can grow append-only.
+> Nested data — a DTO as a member of another DTO, or as the reply of an operation — serializes through its
+> generated formatter automatically; `PlayerData` returned by `GetPlayerData` is the reference case.
+
 ### Declaring an operation
 
 ```csharp
+using MessagePack;
 using PFound.NetworkLayer;
 
-[NetworkOp(NetDomain.Wallet, WalletOp.Spend)]     // an RPC: request + reply
-public partial class Spend
-{
-    [Request(0)] public int  Amount;      // request payload fields, explicit wire indices
-    [Request(1)] public long AccountId;
-    [Reply(0)]   public long NewBalance;  // reply payload fields
-}
+// The request and reply are named [MessagePackObject] DTOs (see "Authoring a DTO").
+[MessagePackObject] public readonly partial struct SpendReq    { [Key(0)] public int  Amount    { get; init; } }
+[MessagePackObject] public readonly partial struct SpendResult { [Key(0)] public long NewBalance { get; init; } }
 
-[NetworkNotify(NetDomain.Wallet, WalletOp.BalanceChanged)]   // one-way notify, no reply
-public partial class BalanceChanged
-{
-    [Field(0)] public long NewBalance;
-}
+// The operation REFERENCES the DTO types — no inline fields, no synthesized structs.
+[RemoteProcedure(NetDomain.Wallet, WalletOp.Spend, typeof(SpendReq), typeof(SpendResult))]
+public partial class Spend { }
+
+[Notify(NetDomain.Wallet, WalletOp.BalanceChanged, typeof(BalanceChangedPayload))]   // one-way, no reply
+public partial class BalanceChanged { }
 ```
 
-The generator emits, nested under each partial (names derived by convention):
+The generator emits, nested under each partial:
 
-- `Spend.Req` / `Spend.Reply` (and `BalanceChanged.Data`) — immutable `[MessagePackObject] readonly struct`
-  with `[Key(n)]` taken **verbatim from the `[Request/Reply/Field(n)]` index** (not declaration order),
-  `[SerializationConstructor]`, `IEquatable<>`, and a value `ToString`.
-- `Spend.RequestMessage` / `Spend.ReplyMessage` (and `BalanceChanged.NotifyMessage`) — the poolable
-  envelope carrying a settable `Content` field plus a zero-copy `ref readonly … View` read accessor, and a
-  `Clear()` override for pooling.
+- `Spend.RequestMessage` / `Spend.ReplyMessage` (and `BalanceChanged.NotifyMessage`) — the poolable envelope
+  that CARRIES the DTO in a settable `Content` field, implements `IMessagePayload` (so the codec serializes the
+  DTO, not the envelope), exposes a zero-copy `ref readonly … View` read accessor, and overrides `Clear()` for
+  pooling. The envelope is never serialized.
 - `Spend.Register(catalog)` — enrols **only the request** (`ForDomain(domain).Enroll<RequestMessage,
   ReplyMessage>(op)`); the reply carries no opcode (decoded by correlation) but is registered for pooling by
   type. A notify enrols its single opcode.
+- `Spend.CallAsync(SpendReq request)` — the uniform call entry point: it builds the request envelope, sends it
+  through the ambient `NetworkClient.Current`, awaits the correlated reply, and returns the reply DTO
+  (`SpendResult`) directly. A convenience overload built from the request DTO's members is also emitted
+  (`Spend.CallAsync(int amount)`). A `[Notify]` gets the mirror `Send(payload)` / `Send(members…)` instead
+  (fire-and-forget via `NetworkClient.Current.Post`).
 - one assembly-wide `GeneratedMessages.RegisterAll(catalog)` that calls every generated `Register` — boot a
   catalog with a single call and no operation can be forgotten. (The hand-written `ForDomain`/`EnrollAll`
   path still works for messages you don't generate.)
 
-Usage mirrors the hand-written path: `new Spend.RequestMessage { Content = new Spend.Req(50, id) }`; the
-`ServerOperation` subclass is generic over `Spend.RequestMessage, Spend.ReplyMessage`.
-
-### `[Reserved]` — retired-index discipline (wire versioning)
-
-Explicit indices are **append-only**: gaps are legal, but a deleted field's number must never be reused (an
-old peer's bytes would be read as the new field). Record retired numbers on the type so the source itself is
-the history:
+### Calling an operation (primary usage)
 
 ```csharp
-[NetworkOp(NetDomain.Wallet, WalletOp.Spend)]
-[Reserved(1)]                 // AccountId used to live at index 1 — never reuse
-public partial class Spend { [Request(0)] public int Amount; [Request(2)] public string Note; }
+// once, at boot: after building the catalog + peer, publish the peer as the ambient client.
+GameNetworkSetup.RegisterOperations(catalog);          // GeneratedMessages.RegisterAll(catalog)
+var client = new ClientPeer(link, catalog, options);
+NetworkClient.Current = client;                        // configure ONCE (GameNetworkSetup.UseAsAmbientClient)
+
+// anywhere: every operation is called the same way, and the reply DTO comes back by await.
+PlayerData player = await GetPlayerData.CallAsync(playerId);   // convenience overload → reply DTO
+SpendResult spend = await SpendCoins.CallAsync(50);
+BalanceChanged.Send(newBalance);                              // one-way notify, fire-and-forget
 ```
 
-The compiler has no memory of deleted fields, so without a `[Reserved]` marker there is no cross-version
-protection. (A companion analyzer that enforces reserved-index reuse, duplicate indices, and opcode
-collisions is a separate later piece; the `[Reserved]` attribute already ships so the intent is recorded.)
+`NetworkClient.Current` is a single ambient holder set once at startup; the generated `CallAsync`/`Send` send
+through it. It is left unset by default and has no defensive guard — an unconfigured call faults fast (nothing
+should be null at runtime). The manual path still exists for messages you hand-write:
+`await client.CallAsync<Spend.ReplyMessage>(new Spend.RequestMessage { Content = new SpendReq { Amount = 50 } })`;
+a `ServerOperation` subclass (the advanced lifecycle) is generic over `Spend.RequestMessage, Spend.ReplyMessage`.
 
-### Wiring the generator into a Unity project
+### Authoring a DTO
 
-The generator ships as `Plugins/PFound.NetworkLayer.Generator.dll`, labelled **RoslynAnalyzer** (all
-platforms disabled — it runs in the compiler, not at runtime). Because it sits **outside any `.asmdef`
-folder**, Unity applies it globally to every user assembly, so any assembly that declares `[NetworkOp]` /
-`[NetworkNotify]` partials gets its types generated with no per-assembly wiring. The assembly that declares
-the partials must reference `PFound.NetworkLayer` (for the attributes + `MessageCatalog`) and
-`MessagePack.Annotations.dll` (for the `[Key]`/`[MessagePackObject]` attributes on the generated structs).
+A wire DTO (a request, a reply, a value reused across operations, a member of another DTO) is a
+`[MessagePackObject] readonly partial struct` whose members are `init`-only `[Key(n)]` properties. Write just
+the keyed members — the two generators supply the rest:
 
-Rebuild the DLL from `Generator~/` (a Unity-ignored folder) with `dotnet build -c Release`, or `./build.sh`
-when no .NET SDK is present (compiles with mono `csc` against the Roslyn 4.3 netstandard2.0 reference
-assemblies — the version Unity 6000.3 hosts; System.Collections.Immutable is pinned to 6.0.0 to match, or
-the analyzer silently fails to load). `CodegenSample/` is a runnable example + EditMode round-trip test.
+```csharp
+using MessagePack;
+
+[MessagePackObject]
+public readonly partial struct PlayerData
+{
+    [Key(0)] public int    Level { get; init; }
+    [Key(1)] public long   Coins { get; init; }
+    [Key(2)] public string Name  { get; init; }
+}
+```
+
+- The **PFound generator** adds, into the same `partial struct`: `IEquatable<PlayerData>` +
+  `Equals`/`GetHashCode`/`ToString`. (It only does this for a `partial` type that does not already declare
+  `IEquatable<self>`, so it never fights a hand-authored DTO.)
+- **MessagePack's own source generator** adds the AOT wire formatter and collects every DTO formatter in the
+  assembly into one `[MessagePack.GeneratedMessagePackResolver]`-anchored resolver (e.g. `GameNetworkResolver`,
+  one per DTO-authoring assembly). The formatter member-sets through the `init` accessors on deserialize —
+  which is why the DTO needs **no first-party constructor** (a generator-supplied `[SerializationConstructor]`
+  would be invisible to MessagePack's generator and silently lose data — so it is deliberately NOT used).
+- Explicit `[Key]` indices are append-only forward/backward compatible: add a member at a fresh higher index;
+  never reuse a retired one. MessagePack's own analyzer flags key collisions.
+- The host pushes the assembly's resolver into the codec once at boot —
+  `new MessagePackBodyCodec(GameNetworkResolver.Instance)` (see `GameNetworkSetup.CreateCodec`). The codec
+  composes the pushed resolver(s) ahead of `BuiltinResolver` **only** — no dynamic/contractless resolver, so
+  every wire type is either a generated DTO or a builtin. No reflection discovery.
+
+### Retired-index discipline (wire versioning)
+
+Explicit `[Key]` indices are **append-only**: gaps are legal, but a deleted member's number must never be
+reused (an old peer's bytes would be read as the new member). Add a member at a fresh higher index; leave the
+retired number's gap permanently (a source comment records why). MessagePack's own analyzer flags a duplicate
+`[Key]`; cross-version reuse is a review-time discipline, not an attribute.
+
+### Wiring the generators into a Unity project
+
+Two Roslyn analyzers run at compile time, both labelled **RoslynAnalyzer** (all platforms disabled — they run
+in the compiler, not at runtime), both applied globally because they sit **outside any `.asmdef` folder**:
+
+- `Plugins/PFound.NetworkLayer.Generator.dll` — the PFound generators: expands `[RemoteProcedure]`/`[Notify]`
+  partials into their envelopes/enrolment/`CallAsync`, and adds value equality + `ToString` to `[MessagePackObject]`
+  DTOs.
+- `Plugins/MessagePack.SourceGenerator.dll` — MessagePack's official AOT generator: emits the wire formatter
+  for each `[MessagePackObject]` DTO and the per-assembly `[GeneratedMessagePackResolver]`-anchored resolver.
+
+A DTO/operation-authoring assembly must reference `PFound.NetworkLayer` (for the attributes + `MessageCatalog`
++ `IMessagePayload`), `MessagePack.Annotations.dll` (for `[MessagePackObject]`/`[Key]`), and **`MessagePack.dll`**
+(for the generated resolver's `IFormatterResolver`/formatter types). It must also declare one
+`[MessagePack.GeneratedMessagePackResolver] public partial class <Name> { }` anchor and a one-line
+`internal static class IsExternalInit` shim (for `init` on .NET Standard 2.1). `Assets/GameSpecific/Networking/`
+(`GameNetworkResolver.cs`) is the copyable reference.
+
+> **IL2CPP note:** serialization is fully AOT (generated formatters, no runtime IL, no reflection resolver
+> discovery), so no `link.xml` is needed for the wire path. Keep the resolver push explicit
+> (`new MessagePackBodyCodec(GameNetworkResolver.Instance)`) rather than any reflection scan.
+
+Rebuild the PFound generator DLL from `Generator~/` (a Unity-ignored folder) with `dotnet build -c Release`, or
+`./build.sh` when no .NET SDK is present (compiles with mono `csc` against the Roslyn 4.3 netstandard2.0
+reference assemblies — the version Unity 6000.3 hosts; System.Collections.Immutable is pinned to 6.0.0 to
+match, or the analyzer silently fails to load). MessagePack's analyzer is vendored as-is from its NuGet
+package. `Assets/GameSpecific/Networking/` is the runnable real-game reference (with EditMode round-trip +
+catalog tests under its `Tests/`).
 
 ## File Structure
 ```
 NetworkLayer/
   Runtime/                       # assembly PFound.NetworkLayer
     Messaging/                   # Message hierarchy, MessageCatalog, MessageContractAttribute, IBodyCodec
-    Codegen/                     # [NetworkOp]/[NetworkNotify]/[Request]/[Reply]/[Field]/[Reserved] attributes
-    Endpoints/                   # ClientPeer, ServerPeer (#if BACKEND), RequestExchange<T>, EarlyArrivalBuffer
+    Codegen/                     # [RemoteProcedure]/[Notify] attributes (DTOs use MessagePack's [MessagePackObject]/[Key])
+    Endpoints/                   # ClientPeer, NetworkClient (ambient holder), ServerPeer (#if BACKEND), RequestExchange<T>, EarlyArrivalBuffer
     Transports/                  # IClientLink/IServerLink, Telepathy links, Loopback links + hub, LatencyShapedLink
     Serialization/               # MessagePackBodyCodec (prod), ReflectionBodyCodec (test)
     Config/                      # ClientLinkOptions / ServerLinkOptions
@@ -325,7 +413,7 @@ NetworkLayer/
     Plugins/                     # vendored MessagePack-CSharp
   Plugins/                       # PFound.NetworkLayer.Generator.dll (RoslynAnalyzer, global source generator)
   Generator~/                    # generator source + .csproj + build.sh (Unity-ignored; builds the DLL above)
-  CodegenSample/                 # runnable [NetworkOp]/[NetworkNotify] example + EditMode round-trip test
+  Samples/                       # minimal framework-level opcode sheet (hand-written messages)
   Tests/EditAndPlayModes/        # assembly PFound.NetworkLayer.Tests.EditAndPlayModes
   Tests/Standalone/              # csc/mono runner for engine-free metrics (guarded by PF_STANDALONE_TESTS)
   MODULE.md / README.md / THIRD-PARTY-NOTICES.md

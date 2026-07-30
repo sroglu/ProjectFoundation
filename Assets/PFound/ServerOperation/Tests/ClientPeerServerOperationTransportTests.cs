@@ -69,17 +69,26 @@ namespace PFound.ServerOperation.Tests
     // (W1) The poolable envelopes stay PLAIN classes (NOT [MessagePackObject]); they just carry the
     // stable content DTO as a public field. Wire stability lives in the DTO, which owns the game data
     // that actually evolves — the envelope is a thin, framework-owned shape.
-    public sealed class GrantRewardRequest : RequestMessage
+    public sealed class GrantRewardRequest : RequestMessage, IMessagePayload
     {
         public GrantReward Content;
+        Type IMessagePayload.PayloadType => typeof(GrantReward);
+        object IMessagePayload.Payload { get => Content; set => Content = (GrantReward)value; }
         public override void Clear() { Content = default; }
     }
 
-    public sealed class GrantRewardReply : ReplyMessage
+    public sealed class GrantRewardReply : ReplyMessage, IMessagePayload
     {
         public GrantOutcome Content;
+        Type IMessagePayload.PayloadType => typeof(GrantOutcome);
+        object IMessagePayload.Payload { get => Content; set => Content = (GrantOutcome)value; }
         public override void Clear() { base.Clear(); Content = default; }
     }
+
+    // The MessagePack source-generated resolver for this test assembly's content DTOs. Pushed into the codec
+    // below so the [Key]-attributed DTOs pack/unpack through AOT-safe generated formatters (no dynamic resolver).
+    [GeneratedMessagePackResolver]
+    public partial class RewardTestResolver { }
 
     /// <summary>
     /// Glue coverage: the NetworkLayer adapter maps the engine-free transport seam to
@@ -94,8 +103,9 @@ namespace PFound.ServerOperation.Tests
     {
         static MessageCatalog NewCatalog()
         {
-            // MessagePackBodyCodec so the [Key]-attributed DTOs are really packed/unpacked over the wire.
-            var catalog = new MessageCatalog(new MessagePackBodyCodec());
+            // MessagePackBodyCodec so the [Key]-attributed DTOs are really packed/unpacked over the wire —
+            // through this assembly's AOT source-generated resolver (pushed explicitly, no reflection discovery).
+            var catalog = new MessageCatalog(new MessagePackBodyCodec(RewardTestResolver.Instance));
             // (W3) banded request/reply PAIR in one call: the request takes the op; the reply is decoded by
             // correlation (the caller's known reply type), so it is un-enrolled and merely registered for
             // pooling by type — the two-type Enroll does both.
