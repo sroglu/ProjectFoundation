@@ -46,9 +46,9 @@ namespace GameSpecific.Networking.Operations
         protected override ServerOperationResult PreCheck()
         {
             if (_request.AllianceId.Value == 0)
-                return ServerOperationResult.Failure(-1, "alliance id must be set");
+                return OpResults.Fail(OpResult.AllianceIdMissing, "alliance id must be set");
             if (Membership.IsInAlliance)
-                return ServerOperationResult.Failure(-2, "already in an alliance");
+                return OpResults.Fail(OpResult.AlreadyInAlliance, "already in an alliance");
             return ServerOperationResult.Success();
         }
 
@@ -57,7 +57,7 @@ namespace GameSpecific.Networking.Operations
         protected override ServerOperationResult Interpret(JoinAllianceOperation.ReplyMessage reply)
         {
             if (reply.Status != ReplyStatus.Ok)
-                return ServerOperationResult.Failure((int)reply.Status, $"join refused by server: {reply.Status}");
+                return OpResults.Fail(OpResults.FromReplyStatus(reply.Status), $"join refused by server: {reply.Status}");
             Result = reply.Content;
             return ServerOperationResult.Success();
         }

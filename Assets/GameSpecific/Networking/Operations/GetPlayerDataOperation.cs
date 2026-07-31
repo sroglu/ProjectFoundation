@@ -33,7 +33,7 @@ namespace GameSpecific.Networking.Operations
         protected override ServerOperationResult Interpret(GetPlayerDataOperation.ReplyMessage reply)
         {
             if (reply.Status != ReplyStatus.Ok)
-                return ServerOperationResult.Failure((int)reply.Status, $"player fetch refused by server: {reply.Status}");
+                return OpResults.Fail(OpResults.FromReplyStatus(reply.Status), $"player fetch refused by server: {reply.Status}");
             Result = reply.Content;
             return ServerOperationResult.Success();
         }

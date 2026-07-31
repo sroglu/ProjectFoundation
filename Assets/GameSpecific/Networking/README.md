@@ -112,8 +112,26 @@ sites never touch the flow directly — they use `SpendCoinsOperation.Execute(am
 runs it.
 
 **Boot wiring (once):** `GameNetworkSetup.Configure(peer, catalog)` publishes both the ambient client and the
-ambient `ServerOperationHost` (transport factory + a `LoggingFailurePresenter` + a shared single-flight gate), so
-every `Execute` has what it needs.
+ambient `ServerOperationHost` (transport factory + a localized-toast failure presenter (§5b) + a shared
+single-flight gate), so every `Execute` has what it needs.
+
+## 5b. Error handling → localized toast
+Every failure — a pre-check reject AND a server failure — funnels through the ambient host's failure
+presenter. The default sample wiring resolves the failed result's code to a localized string and shows it
+as a toast, with NO per-error mapping table:
+- Failures report an **`OpResult`** enum value (`OpResults.Fail(OpResult.InsufficientBalance, "log detail")`;
+  a non-Ok reply maps via `OpResults.FromReplyStatus(reply.Status)`). The enum value IS the result code.
+- The framework `LocalizedToastFailurePresenter<TResult, TCode>` turns that code back into the enum member
+  name and looks up the localization key **by convention: `"op.result." + <Name>"`** — e.g.
+  `OpResult.InsufficientBalance` → `op.result.InsufficientBalance`.
+- Resolution order: the conventional key → the generic `op.result.Unknown` → the result's own log diagnostic.
+  The `Invalid = 0` sentinel and any unmapped code land on the generic message.
+
+**To add a user-facing error:** add an `OpResult` value and one localization row `op.result.<Name>`. That is
+the whole change — no switch, no mapping. Keys are seeded in `GameNetworkSetup.CreateSampleLocalization`
+(swap that in-memory seed for a content-file-backed `LocalizationService` in a shipping game). The toast
+destination is `DebugToastPresenter` (logs `[toast] …` for now — swap for a real on-screen widget later);
+`LoggingFailurePresenter` remains a valid alternative presenter.
 
 ## 6. Require ServerOperation project-wide (optional policy)
 `NetworkingPolicy.cs` — uncomment the one line to make the pipeline mandatory:

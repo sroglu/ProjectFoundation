@@ -57,9 +57,9 @@ namespace GameSpecific.Networking.Operations
         protected override ServerOperationResult PreCheck()
         {
             if (_request.Amount <= 0)
-                return ServerOperationResult.Failure(-1, "amount must be positive");
+                return OpResults.Fail(OpResult.AmountNotPositive, "amount must be positive");
             if (Wallet.Balance < _request.Amount)
-                return ServerOperationResult.Failure(-2, "insufficient balance");
+                return OpResults.Fail(OpResult.InsufficientBalance, "insufficient balance");
             return ServerOperationResult.Success();
         }
 
@@ -69,7 +69,7 @@ namespace GameSpecific.Networking.Operations
         protected override ServerOperationResult Interpret(SpendCoinsOperation.ReplyMessage reply)
         {
             if (reply.Status != ReplyStatus.Ok)
-                return ServerOperationResult.Failure((int)reply.Status, $"spend refused by server: {reply.Status}");
+                return OpResults.Fail(OpResults.FromReplyStatus(reply.Status), $"spend refused by server: {reply.Status}");
             Result = reply.Content;
             return ServerOperationResult.Success();
         }

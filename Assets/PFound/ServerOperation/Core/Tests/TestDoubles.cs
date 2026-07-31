@@ -113,6 +113,33 @@ namespace PFound.ServerOperation.Core.Tests
             => (IServerOperationSuccessSink<TResult>)(object)Sink;
     }
 
+    /// <summary>A sample game result enum for the localized-toast presenter tests — mirrors an Invalid=0 sentinel.</summary>
+    internal enum ProbeOpResult
+    {
+        Invalid = 0,
+        AmountNotPositive = 1,
+        InsufficientBalance = 2,
+    }
+
+    /// <summary>Dictionary-backed <see cref="IUserMessageSource"/> so a test can seed exactly which keys resolve.</summary>
+    internal sealed class ProbeUserMessageSource : IUserMessageSource
+    {
+        readonly Dictionary<string, string> _messages = new Dictionary<string, string>();
+
+        public ProbeUserMessageSource Add(string key, string message) { _messages[key] = message; return this; }
+
+        public bool TryGet(string key, out string message) => _messages.TryGetValue(key, out message);
+    }
+
+    /// <summary>Captures the last message shown so a test can assert what the presenter resolved.</summary>
+    internal sealed class ProbeToastPresenter : IToastPresenter
+    {
+        public int Count;
+        public string Last;
+
+        public void Show(string message) { Count++; Last = message; }
+    }
+
     /// <summary>A probe flow constructed WITHOUT an explicit context — it resolves one from the ambient host.</summary>
     internal sealed class AmbientRecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult>
     {

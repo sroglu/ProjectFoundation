@@ -32,6 +32,10 @@ namespace PFound.ServerOperation.Core.Tests
             await LoadingHook_PreCheckFail_NeverShows();
             SuccessSink_And_Analytics_FireOnSuccess();
             await AmbientHost_ResolvesContext_FromCurrent();
+            LocalizedToast_DefinedCode_ShowsConventionalKeyText();
+            LocalizedToast_UnknownCode_ShowsFallbackText();
+            LocalizedToast_InvalidSentinel_ShowsFallbackText();
+            LocalizedToast_MissingKey_ShowsDiagnostic();
         }
 
         // ---- helpers ----
@@ -262,6 +266,56 @@ namespace PFound.ServerOperation.Core.Tests
             TestKit.Check(run.Accepted, "sink: run completed");
             TestKit.Check(sink.Count == 1 && sink.Last.IsSuccess, "sink: success emitter fired once on success");
             TestKit.Check(analytics.Count == 1 && analytics.LastSuccess, "analytics: outcome recorded on success");
+        }
+
+        // ---- localized-toast failure presenter ----
+
+        static LocalizedToastFailurePresenter<ServerOperationResult, ProbeOpResult> NewToastPresenter(
+            ProbeUserMessageSource messages, ProbeToastPresenter toast)
+            => new LocalizedToastFailurePresenter<ServerOperationResult, ProbeOpResult>(messages, toast);
+
+        static void LocalizedToast_DefinedCode_ShowsConventionalKeyText()
+        {
+            var messages = new ProbeUserMessageSource().Add("op.result.InsufficientBalance", "Not enough coins.");
+            var toast = new ProbeToastPresenter();
+            NewToastPresenter(messages, toast).PresentFailure(
+                ServerOperationResult.Failure((int)ProbeOpResult.InsufficientBalance, "insufficient balance"));
+
+            TestKit.Check(toast.Count == 1 && toast.Last == "Not enough coins.",
+                "localized-toast: a defined code resolves the conventional op.result.<Name> text");
+        }
+
+        static void LocalizedToast_UnknownCode_ShowsFallbackText()
+        {
+            var messages = new ProbeUserMessageSource().Add("op.result.Unknown", "Something went wrong.");
+            var toast = new ProbeToastPresenter();
+            NewToastPresenter(messages, toast).PresentFailure(
+                ServerOperationResult.Failure(999, "unmapped code"));
+
+            TestKit.Check(toast.Count == 1 && toast.Last == "Something went wrong.",
+                "localized-toast: an out-of-range code falls back to the generic key text");
+        }
+
+        static void LocalizedToast_InvalidSentinel_ShowsFallbackText()
+        {
+            var messages = new ProbeUserMessageSource().Add("op.result.Unknown", "Something went wrong.");
+            var toast = new ProbeToastPresenter();
+            NewToastPresenter(messages, toast).PresentFailure(
+                ServerOperationResult.Failure((int)ProbeOpResult.Invalid, "sentinel"));
+
+            TestKit.Check(toast.Count == 1 && toast.Last == "Something went wrong.",
+                "localized-toast: the Invalid=0 sentinel falls back to the generic key text");
+        }
+
+        static void LocalizedToast_MissingKey_ShowsDiagnostic()
+        {
+            var messages = new ProbeUserMessageSource(); // neither the conventional key nor the fallback exists
+            var toast = new ProbeToastPresenter();
+            NewToastPresenter(messages, toast).PresentFailure(
+                ServerOperationResult.Failure((int)ProbeOpResult.AmountNotPositive, "amount must be positive"));
+
+            TestKit.Check(toast.Count == 1 && toast.Last == "amount must be positive",
+                "localized-toast: with no localization row and no fallback row, the raw diagnostic is shown");
         }
 
         static async Task AmbientHost_ResolvesContext_FromCurrent()
