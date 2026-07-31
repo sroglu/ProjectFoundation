@@ -91,11 +91,44 @@ namespace PFound.ServerOperation.Core.Tests
         }
     }
 
+    /// <summary>Transport factory that hands back one shared <see cref="ProbeTransport"/> for the probe types.</summary>
+    internal sealed class ProbeTransportFactory : IServerOperationTransportFactory
+    {
+        public readonly ProbeTransport Transport = new ProbeTransport();
+
+        public IServerOperationTransport<TRequest, TResponse> CreateTransport<TRequest, TResponse>()
+            => (IServerOperationTransport<TRequest, TResponse>)(object)Transport;
+    }
+
+    /// <summary>Outcome channels that hand back one shared presenter + sink for <see cref="ServerOperationResult"/>.</summary>
+    internal sealed class ProbeResultChannels : IServerOperationResultChannels
+    {
+        public readonly ProbeFailurePresenter Presenter = new ProbeFailurePresenter();
+        public readonly ProbeSuccessSink Sink = new ProbeSuccessSink();
+
+        public IServerOperationFailurePresenter<TResult> FailurePresenter<TResult>() where TResult : IServerOperationResult
+            => (IServerOperationFailurePresenter<TResult>)(object)Presenter;
+
+        public IServerOperationSuccessSink<TResult> SuccessSink<TResult>() where TResult : IServerOperationResult
+            => (IServerOperationSuccessSink<TResult>)(object)Sink;
+    }
+
+    /// <summary>A probe flow constructed WITHOUT an explicit context — it resolves one from the ambient host.</summary>
+    internal sealed class AmbientRecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult>
+    {
+        public readonly List<string> Log = new List<string>();
+
+        protected override ServerOperationResult PreCheck() { Log.Add("precheck"); return ServerOperationResult.Success(); }
+        protected override ProbeRequest BuildRequest() { Log.Add("build"); return new ProbeRequest(); }
+        protected override ServerOperationResult Interpret(ProbeResponse response) { Log.Add("interpret"); return ServerOperationResult.Success(); }
+        protected override void ApplySuccess(ServerOperationResult result) => Log.Add("apply");
+    }
+
     /// <summary>
     /// A concrete operation whose behaviour is steered by delegates and whose every lifecycle step is logged,
     /// so the suite can assert ordering, short-circuiting, and cancellation without one subclass per case.
     /// </summary>
-    internal class RecordingOperation : ServerOperation<ProbeRequest, ProbeResponse, ServerOperationResult>
+    internal class RecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult>
     {
         public readonly List<string> Log;
         public string Tag = "op";

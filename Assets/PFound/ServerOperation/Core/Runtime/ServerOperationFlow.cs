@@ -21,12 +21,26 @@ namespace PFound.ServerOperation.Core
     /// 7. Optional async, cancellable post-effects (navigation, animation, hand-chaining other operations).
     /// 8. Uniform failure handling — one path for both the pre-check reject and the server failure.
     /// </summary>
-    public abstract class ServerOperation<TRequest, TResponse, TResult>
+    public abstract class ServerOperationFlow<TRequest, TResponse, TResult>
         where TResult : IServerOperationResult
     {
         readonly ServerOperationContext<TRequest, TResponse, TResult> _context;
 
-        protected ServerOperation(ServerOperationContext<TRequest, TResponse, TResult> context)
+        /// <summary>
+        /// The ambient ctor a game flow uses: it resolves the context from <see cref="ServerOperationHost.Current"/>
+        /// so the concrete flow's own ctor takes ONLY the game's parameters and the call site stays clean
+        /// (<c>await new SpendCoinsOperationFlow(amount, wallet).RunAsync()</c>). The host is configured once at boot.
+        /// </summary>
+        protected ServerOperationFlow()
+            : this(ServerOperationHost.Current.CreateContext<TRequest, TResponse, TResult>())
+        {
+        }
+
+        /// <summary>
+        /// The explicit-context ctor: hand the flow a context you built yourself. Tests use this to inject a stub
+        /// transport and recording seams without configuring an ambient host.
+        /// </summary>
+        protected ServerOperationFlow(ServerOperationContext<TRequest, TResponse, TResult> context)
             => _context = context;
 
         /// <summary>
@@ -38,6 +52,14 @@ namespace PFound.ServerOperation.Core
 
         /// <summary>The label reported to analytics. Defaults to the operation type name.</summary>
         protected virtual string OperationName => GetType().Name;
+
+        /// <summary>
+        /// The reply envelope captured from the most recent send in <see cref="RunAsync"/>. Its <c>Content</c> is
+        /// the reply DTO — the generated flow-running <c>Execute</c> returns <c>Reply.Content</c>, so a call that
+        /// runs through a flow returns the very same reply DTO a flowless op would. It stays at its default until a
+        /// send completes (a pre-check reject sends nothing and leaves this unset).
+        /// </summary>
+        public TResponse Reply { get; private set; }
 
         // ---- subclass hooks (the only parts a concrete operation fills) ----
 
@@ -88,6 +110,7 @@ namespace PFound.ServerOperation.Core
                 {
                     // Step 4 — send + await. The client does not decide success; the server does.
                     TResponse response = await _context.Transport.SendAsync(request, cancellation);
+                    Reply = response;
 
                     // Step 5 — interpret the response.
                     TResult outcome = Interpret(response);

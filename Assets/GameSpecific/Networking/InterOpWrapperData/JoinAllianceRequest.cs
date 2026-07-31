@@ -3,7 +3,7 @@ using MessagePack;
 namespace GameSpecific.Networking.Data
 {
     /// <summary>
-    /// The request DTO for <c>JoinAlliance</c>: which alliance to join. A named, immutable
+    /// The request DTO for <c>JoinAllianceOperation</c>: which alliance to join. A named, immutable
     /// <c>[MessagePackObject]</c> DTO with an explicit, append-only <c>[Key]</c> index.
     /// </summary>
     [MessagePackObject]

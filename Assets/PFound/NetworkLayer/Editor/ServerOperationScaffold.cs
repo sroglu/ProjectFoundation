@@ -9,7 +9,7 @@ namespace PFound.NetworkLayer.EditorTools
     /// editable starter file the developer then fills in.
     ///
     /// The file it writes pairs the compact <c>[RemoteProcedure]</c> spec partial (whose <c>RequestMessage</c> /
-    /// <c>ReplyMessage</c> the generator emits) with a matching <c>ServerOperation</c> subclass whose
+    /// <c>ReplyMessage</c> the generator emits) with a matching <c>ServerOperationFlow</c> subclass whose
     /// lifecycle hooks are stubbed. Its opcode references the central <c>NetOpcodes.cs</c> sheet via
     /// <c>NetDomain.TODO</c> / <c>TodoOp.TODO</c> placeholders — the developer points those at a real
     /// domain/op (Alt+Enter → Create member), so a new op is a single line in the one central sheet. It is

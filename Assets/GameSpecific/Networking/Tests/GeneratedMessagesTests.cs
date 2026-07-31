@@ -26,14 +26,14 @@ namespace GameSpecific.Networking.Tests
             var catalog = NewCatalog();
 
             // requests carry a wire opcode = domain << 8 | op…
-            Assert.AreEqual((ushort)0x0101, OpcodeOf<SpendCoins.RequestMessage>(catalog), "Wallet.Spend opcode");
-            Assert.AreEqual((ushort)0x0201, OpcodeOf<JoinAlliance.RequestMessage>(catalog), "Alliance.Join opcode");
-            Assert.AreEqual((ushort)0x0301, OpcodeOf<GetPlayerData.RequestMessage>(catalog), "Player.GetData opcode");
+            Assert.AreEqual((ushort)0x0101, OpcodeOf<SpendCoinsOperation.RequestMessage>(catalog), "Wallet.Spend opcode");
+            Assert.AreEqual((ushort)0x0201, OpcodeOf<JoinAllianceOperation.RequestMessage>(catalog), "Alliance.Join opcode");
+            Assert.AreEqual((ushort)0x0301, OpcodeOf<GetPlayerDataOperation.RequestMessage>(catalog), "Player.GetData opcode");
 
             // …replies do not (decoded by correlation), but are still poolable.
-            Assert.Throws<KeyNotFoundException>(() => catalog.OpcodeFor(typeof(SpendCoins.ReplyMessage)),
+            Assert.Throws<KeyNotFoundException>(() => catalog.OpcodeFor(typeof(SpendCoinsOperation.ReplyMessage)),
                 "reply must NOT be enrolled by opcode");
-            Assert.IsInstanceOf<SpendCoins.ReplyMessage>(catalog.Take<SpendCoins.ReplyMessage>(),
+            Assert.IsInstanceOf<SpendCoinsOperation.ReplyMessage>(catalog.Take<SpendCoinsOperation.ReplyMessage>(),
                 "reply must still be registered for pooling");
         }
 
@@ -50,10 +50,10 @@ namespace GameSpecific.Networking.Tests
         public void Request_dto_round_trips_through_messagepack()
         {
             var codec = GameNetworkSetup.CreateCodec();
-            var sent = new SpendCoins.RequestMessage { Content = new SpendRequest { Amount = 50 } };
+            var sent = new SpendCoinsOperation.RequestMessage { Content = new SpendRequest { Amount = 50 } };
 
             byte[] bytes = codec.Pack(sent);
-            var back = (SpendCoins.RequestMessage)codec.Unpack(typeof(SpendCoins.RequestMessage), new ArraySegment<byte>(bytes));
+            var back = (SpendCoinsOperation.RequestMessage)codec.Unpack(typeof(SpendCoinsOperation.RequestMessage), new ArraySegment<byte>(bytes));
 
             Assert.AreEqual(sent.Content, back.Content, "DTO value-equality survives the round-trip");
             Assert.AreEqual(50, back.Content.Amount);
@@ -69,16 +69,16 @@ namespace GameSpecific.Networking.Tests
             var codec = GameNetworkSetup.CreateCodec();
 
             // JoinAlliance reply IS the JoinResult DTO (never a bare int).
-            var join = new JoinAlliance.ReplyMessage { Content = new AllianceJoinResult { MemberCount = 42 } };
+            var join = new JoinAllianceOperation.ReplyMessage { Content = new AllianceJoinResult { MemberCount = 42 } };
             byte[] joinBytes = codec.Pack(join);
-            var joinBack = (JoinAlliance.ReplyMessage)codec.Unpack(typeof(JoinAlliance.ReplyMessage), new ArraySegment<byte>(joinBytes));
+            var joinBack = (JoinAllianceOperation.ReplyMessage)codec.Unpack(typeof(JoinAllianceOperation.ReplyMessage), new ArraySegment<byte>(joinBytes));
             Assert.AreEqual(new AllianceJoinResult { MemberCount = 42 }, joinBack.Content, "JoinResult value-equality survives");
             Assert.AreEqual(42, joinBack.Content.MemberCount);
 
             // SpendCoins reply IS the SpendResult DTO (never a bare long).
-            var spend = new SpendCoins.ReplyMessage { Content = new SpendResult { NewBalance = 990 } };
+            var spend = new SpendCoinsOperation.ReplyMessage { Content = new SpendResult { NewBalance = 990 } };
             byte[] spendBytes = codec.Pack(spend);
-            var spendBack = (SpendCoins.ReplyMessage)codec.Unpack(typeof(SpendCoins.ReplyMessage), new ArraySegment<byte>(spendBytes));
+            var spendBack = (SpendCoinsOperation.ReplyMessage)codec.Unpack(typeof(SpendCoinsOperation.ReplyMessage), new ArraySegment<byte>(spendBytes));
             Assert.AreEqual(new SpendResult { NewBalance = 990 }, spendBack.Content, "SpendResult value-equality survives");
             Assert.AreEqual(990, spendBack.Content.NewBalance);
         }
@@ -87,10 +87,10 @@ namespace GameSpecific.Networking.Tests
         public void Shared_PlayerData_dto_round_trips_as_a_reply()
         {
             var codec = GameNetworkSetup.CreateCodec();
-            var sent = new GetPlayerData.ReplyMessage { Content = new PlayerData { Level = 7, Coins = 1500, Name = "Ada" } };
+            var sent = new GetPlayerDataOperation.ReplyMessage { Content = new PlayerData { Level = 7, Coins = 1500, Name = "Ada" } };
 
             byte[] bytes = codec.Pack(sent);
-            var back = (GetPlayerData.ReplyMessage)codec.Unpack(typeof(GetPlayerData.ReplyMessage), new ArraySegment<byte>(bytes));
+            var back = (GetPlayerDataOperation.ReplyMessage)codec.Unpack(typeof(GetPlayerDataOperation.ReplyMessage), new ArraySegment<byte>(bytes));
 
             Assert.AreEqual(new PlayerData { Level = 7, Coins = 1500, Name = "Ada" }, back.Content, "PlayerData value-equality survives");
             Assert.AreEqual(7, back.Content.Level);

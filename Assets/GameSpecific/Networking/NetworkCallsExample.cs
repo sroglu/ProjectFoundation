@@ -1,44 +1,49 @@
 using System.Threading.Tasks;
-using PFound.NetworkLayer;                 // .Forget() / .FireAndForget() extensions live here
+using PFound.NetworkLayer;                 // .Forget() extension + [Notify] Notify(...)
 using GameSpecific.Networking.Data;
 using GameSpecific.Networking.Operations;
 
 namespace GameSpecific.Networking
 {
     /// <summary>
-    /// The uniform way game code calls a network operation: one static entry per operation, awaited, returning
-    /// the reply DTO by value. No hand-written helper, no per-call <c>ClientPeer</c> plumbing — the ambient
-    /// <c>NetworkClient.Current</c> (configured once at boot, see <see cref="GameNetworkSetup"/>) is where each
-    /// call is sent. This mirrors what a real screen/controller would write.
+    /// How a screen/controller calls the network under the MANDATORY ServerOperation policy (see
+    /// <see cref="NetworkingPolicy"/>): every reply-bearing call goes through the operation's uniform
+    /// <c>Execute(args)</c> entry point, never the raw direct <c>Execute</c> shortcut (which the policy makes a
+    /// compile error). <c>Execute</c> takes ONLY the operation's own request parameters, runs the operation's flow
+    /// lifecycle, and returns a <see cref="Task"/> — so the caller either <c>await</c>s it (reading the returned DTO
+    /// for a query) or fires it and drops the outcome with <c>.Forget()</c>. The transport, seams, run policy, and
+    /// any mutated game state are all resolved from the ambient host configured once at boot (see
+    /// <see cref="GameNetworkSetup"/>), so nothing is threaded through the call. A one-way <c>[Notify]</c> stays a
+    /// plain <c>Notify(...)</c>: it carries no reply, so the policy leaves it alone.
     /// </summary>
     public static class NetworkCallsExample
     {
-        /// <summary>Every operation reads the same: <c>var value = await &lt;Op&gt;.CallAsync(args);</c>.</summary>
         public static async Task RunAsync(PlayerId playerId, int spendAmount, AllianceId allianceId)
         {
-            // Query — returns the shared PlayerData DTO directly (single-field reply is unwrapped to its value).
-            PlayerData player = await GetPlayerData.CallAsync(playerId);
+            // Query — NO flow needed (changes nothing locally): the generated Execute sends + returns the DTO.
+            PlayerData player = await GetPlayerDataOperation.Execute(playerId);
 
-            // Mutation, the plain uniform way — returns the SpendResult DTO.
-            SpendResult spend = await SpendCoins.CallAsync(spendAmount);
+            // Mutation — the client-predicted spend lifecycle; the authoritative balance lands in the ambient wallet.
+            await SpendCoinsOperation.Execute(spendAmount);
 
-            // Another operation — same shape, returns the JoinResult DTO.
-            AllianceJoinResult allianceJoin = await JoinAlliance.CallAsync(allianceId, playerId);
+            // Another query — same shape, returns the join outcome DTO.
+            AllianceJoinResult allianceJoin = await JoinAllianceOperation.Execute(allianceId, player.PlayerId);
 
             // Fire-and-forget, TWO distinct tools:
 
-            // (a) Notify — genuinely one-way, NO reply on the wire. Send IS the fire-and-forget; it returns void,
-            //     so you never chain .Forget() onto it.
-            PresencePing.Send(playerId, true);
+            // (a) Notify — genuinely one-way, NO reply on the wire. Notify IS the fire-and-forget; it returns
+            //     void, so you never chain .Forget() onto it. Allowed under the mandatory policy.
+            PresencePingOperation.Notify(playerId, true);
 
-            // (b) A reply-bearing RPC you simply don't want to wait for — fire it and drop the reply — the
-            //     familiar fire-and-forget idiom. `.Forget()` and `.FireAndForget()` are the same call (needs the
-            //     `using PFound.NetworkLayer;` above); a fault is routed to FireAndForgetExtensions.OnFault.
-            GetPlayerData.CallAsync(playerId).Forget();
-            SpendCoins.CallAsync(spendAmount).FireAndForget();
+            // (b) A reply-bearing operation you simply don't want to wait for — fire Execute and drop the outcome.
+            //     .Forget() extends Task, and Execute's Task (or Task<DTO>, which is-a Task) binds to it; a fault is
+            //     routed to ForgetExtensions.OnFault.
+            GetPlayerDataOperation.Execute(playerId).Forget();
+            SpendCoinsOperation.Execute(spendAmount).Forget();
 
             // (values used so the sample reads as real call sites)
-            System.Console.WriteLine($"{player.Name} now has {spend.NewBalance} coins; alliance size {allianceJoin.MemberCount}");
+            System.Console.WriteLine(
+                $"{player.Name} now has {PlayerWallet.Current.Balance} coins; alliance size {allianceJoin.MemberCount}");
         }
     }
 }

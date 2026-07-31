@@ -15,7 +15,7 @@ seams. It is NOT part of NetworkLayer core (the transport stays neutral).
 
 ## The lifecycle (sealed order; a subclass only fills the hooks)
 
-A concrete operation subclasses `ServerOperation<TRequest, TResponse, TResult>`. `RunAsync` drives:
+A concrete flow subclasses `ServerOperationFlow<TRequest, TResponse, TResult>`. `RunAsync` drives:
 
 1. **Entry** — admitted or refused by the opt-in run policy.
 2. **Local pre-check (client prediction)** — `PreCheck()`; a failing result rejects instantly and **no
@@ -52,7 +52,7 @@ Namespaces: `PFound.ServerOperation.Core` (lifecycle + seams), `PFound.ServerOpe
 
 | Type | Description |
 |---|---|
-| `ServerOperation<TRequest,TResponse,TResult>` | Abstract base with the sealed `RunAsync` lifecycle; subclass fills `PreCheck` / `BuildRequest` / `Interpret` / `ApplySuccess` / (optional) `RunPostEffectsAsync`. |
+| `ServerOperationFlow<TRequest,TResponse,TResult>` | Abstract base with the sealed `RunAsync` lifecycle; subclass fills `PreCheck` / `BuildRequest` / `Interpret` / `ApplySuccess` / (optional) `RunPostEffectsAsync`. |
 | `ServerOperationContext<TRequest,TResponse,TResult>` | Bundles the injected seams. Transport + failure presenter are required; success sink, analytics, and gate default to no-ops. |
 | `ServerOperationRun<TResult>` | The report of one run: `Disposition` (`Completed` / `DuplicateSuppressed`), `Accepted`, and `Result` (read only when `Accepted`). |
 | `IServerOperationTransport<TRequest,TResponse>` | The send/await seam. Core-side, constraint-free. |
@@ -63,7 +63,9 @@ Namespaces: `PFound.ServerOperation.Core` (lifecycle + seams), `PFound.ServerOpe
 | `IServerOperationAnalytics` | Optional telemetry, fired on every terminal outcome. |
 | `ServerOperationGate` | The opt-in run policy: single-flight duplicate-guard + loading-indicator hook. `Disabled` = no gate. |
 | `IServerOperationLoadingIndicator` | The busy-indicator seam the gate drives (`Show` / `Hide`). |
-| `ClientPeerServerOperationTransport<TRequest,TResponse>` | **Adapter.** Binds the seam to `ClientPeer.CallAsync`; carries the `RequestMessage` / `ReplyMessage` constraints so the Core never does. |
+| `ServerOperationHost` | The ambient host (`Current`) a flow resolves its context from — mirrors `NetworkClient.Current`. Holds the transport factory + outcome channels + shared gate/analytics; the flow's parameterless base ctor calls `CreateContext<…>()`. Lets a flow be `new`ed with only the game's params. |
+| `IServerOperationTransportFactory` / `IServerOperationResultChannels` | The two game-supplied seams the host uses to build a context per flow (transport for the request/response pair; failure presenter + success sink for the result type). |
+| `ClientPeerServerOperationTransport<TRequest,TResponse>` | **Adapter.** Binds the seam to `ClientPeer.CallAsync`; carries the `RequestMessage` / `ReplyMessage` constraints so the Core never does. The engine-free ambient transport factory (whose Core-side signature is constraint-free) builds it reflectively from the flow's concrete envelope types, which satisfy the constraints at runtime. |
 
 ## Use-case examples
 
@@ -121,20 +123,20 @@ catalog.ForDomain(NetDomain.Wallet).Enroll<SpendCoinsRequest, SpendCoinsReply>(W
 > value-equal content dedup correctly (see example 5); the DTO's `IEquatable`/value-equality is what makes
 > that projection well-defined. You can hand-write this DTO+envelope shape as above, or let Phase 2's
 > **source generator** emit it from a compact `[RemoteProcedure]` declaration (`[Request(n)]`/`[Reply(n)]` fields
-> → `[Key(n)]` DTOs, envelopes, the pair `Register`, and a uniform `CallAsync`); see NetworkLayer's MODULE.md
+> → `[Key(n)]` DTOs, envelopes, the pair `Register`, and a uniform `Execute`); see NetworkLayer's MODULE.md
 > "Message codegen".
 >
 > **Your operations live in `Assets/GameSpecific/Networking/`** — the canonical, copyable real-game
 > reference. Exactly two folders: `Data/` holds every shared DTO struct, `Operations/` holds every
-> operation (each a `[RemoteProcedure]` spec; `GetPlayerData.cs` is a `playerId in → PlayerData out` **query**,
-> `JoinAlliance.cs` a terser operation, `SpendCoins.cs` additionally keeps a `ServerOperation` lifecycle as
+> operation (each a `[RemoteProcedure]` spec; `GetPlayerDataOperation.cs` is a `playerId in → PlayerData out` **query**,
+> `JoinAllianceOperation.cs` a terser operation, `SpendCoinsOperation.cs` additionally keeps a `ServerOperationFlow` lifecycle as
 > the advanced example). Add one via right-click → **Create → PFound → Server Operation** inside an assembly
 > that references `PFound.NetworkLayer` + `PFound.ServerOperation.Core` + `MessagePack.Annotations.dll`.
 >
 > **Uniform call vs advanced lifecycle.** Every operation is a `[RemoteProcedure]` partial, and the primary
-> way to call ANY of them is the generated `var value = await <Op>.CallAsync(args)`, which returns the reply
-> DTO by value. A **query** (`GetPlayerData`) is exactly that — nothing else. A **mutation** that must predict
-> local state then apply the authoritative result can opt into a `ServerOperation` subclass (validate → send →
+> way to call ANY of them is the generated `var value = await <Op>.Execute(args)`, which returns the reply
+> DTO by value. A **query** (`GetPlayerDataOperation`) is exactly that — nothing else. A **mutation** that must predict
+> local state then apply the authoritative result can opt into a `ServerOperationFlow` subclass (validate → send →
 > apply) on top of the same generated messages; that lifecycle is the advanced path, not the default.
 >
 > **A reply is ALWAYS a DTO struct, never a bare primitive** — wrap a lone value in a single-field
@@ -159,14 +161,14 @@ catalog.ForDomain(NetDomain.Wallet).Enroll<SpendCoinsRequest, SpendCoinsReply>(W
 
 ```csharp
 // TRequest / TResponse are your NetworkLayer wire messages (see example 0); TResult is your game result.
-public sealed class SpendCoinsOperation
-    : ServerOperation<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult>
+public sealed class SpendCoinsOperationFlow
+    : ServerOperationFlow<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult>
 {
     readonly int _amount;
     readonly Wallet _wallet;
     int _serverBalance;
 
-    public SpendCoinsOperation(
+    public SpendCoinsOperationFlow(
         ServerOperationContext<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult> context,
         Wallet wallet, int amount) : base(context) { _wallet = wallet; _amount = amount; }
 
@@ -195,7 +197,7 @@ var transport = new ClientPeerServerOperationTransport<SpendCoinsRequest, SpendC
 var context   = new ServerOperationContext<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult>(
     transport, myFailurePresenter);
 
-ServerOperationRun<ServerOperationResult> run = await new SpendCoinsOperation(context, wallet, 50).RunAsync();
+ServerOperationRun<ServerOperationResult> run = await new SpendCoinsOperationFlow(context, wallet, 50).RunAsync();
 if (run.Accepted && run.Result.IsSuccess) { /* UI already consistent — ApplySuccess ran */ }
 ```
 
@@ -268,10 +270,10 @@ var context = new ServerOperationContext<AcceptInviteRequest, AcceptInviteReply,
     transport, failurePresenter) { Gate = gate };
 
 // Default key = operation type: any two AcceptInvite runs guard each other.
-await new AcceptInviteOperation(context, inviteId).RunAsync();
+await new AcceptInviteOperationFlow(context, inviteId).RunAsync();
 
 // Per-target key: guard per invitation instead, so different invites can run concurrently.
-public sealed class AcceptInviteOperation : ServerOperation<AcceptInviteRequest, AcceptInviteReply, ServerOperationResult>
+public sealed class AcceptInviteOperationFlow : ServerOperationFlow<AcceptInviteRequest, AcceptInviteReply, ServerOperationResult>
 {
     readonly string _inviteId;
     protected override string DuplicateKey => "AcceptInvite:" + _inviteId;   // per-target dedup
@@ -321,7 +323,7 @@ share the same opcode→type catalog for the request/reply to decode.
   NOT implemented.
 - **Codegen shipped (NetworkLayer).** Request/response DTOs can be hand-written typed NetworkLayer messages
   bound to opcodes via `MessageCatalog`, or emitted by NetworkLayer's Roslyn source generator from a compact
-  `[RemoteProcedure]` declaration (DTOs + explicit keys + pooling envelopes + the pair `Register` + `CallAsync`), with a companion
+  `[RemoteProcedure]` declaration (DTOs + explicit keys + pooling envelopes + the pair `Register` + `Execute`), with a companion
   analyzer for wire-versioning/opcode rules. See NetworkLayer's MODULE.md "Message codegen".
 - **Cancellation covers post-effects, not the in-flight network hop.** The seam's `CancellationToken`
   governs the cancellable post-effect phase; the underlying `ClientPeer.CallAsync` is deadline-bounded, so a

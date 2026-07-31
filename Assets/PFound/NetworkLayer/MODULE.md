@@ -250,7 +250,7 @@ subtly wrong.
 
 > **Your operations live in `Assets/GameSpecific/Networking/`** — the canonical, copyable
 > real-game reference. Exactly two folders, no per-domain/per-op nesting: `Data/` holds every shared DTO
-> struct, `Operations/` holds every operation (`SpendCoins.cs`, `JoinAlliance.cs`, `GetPlayerData.cs`); the
+> struct, `Operations/` holds every operation (`SpendCoinsOperation.cs`, `JoinAllianceOperation.cs`, `GetPlayerDataOperation.cs`); the
 > central `NetOpcodes.cs` + `GameNetworkSetup.cs` sit at the root. To add one: right-click →
 > **Create → PFound → Server Operation** inside an assembly that references `PFound.NetworkLayer` +
 > `PFound.ServerOperation.Core` + `MessagePack.Annotations.dll`. The minimal framework-level opcode sheet
@@ -260,17 +260,18 @@ subtly wrong.
 > each starting `Invalid = 0`); a new op is a single line THERE. Every DTO struct → `Data/` (e.g.
 > `Data/PlayerData.cs`, reused by any operation; single-value replies get their own DTO too — `SpendResult`,
 > `JoinResult`). Every operation → `Operations/`. Every operation is a `[RemoteProcedure]` partial, and the
-> primary way to call ANY of them is the generated uniform entry point: `var value = await
-> <Op>.CallAsync(args)`, which returns the reply DTO by value (`SpendCoins`, `JoinAlliance`, `GetPlayerData`
-> all read the same). A **query** (`GetPlayerData`) is nothing more than that call. A **mutation** that must
-> predict local state then reconcile it can additionally opt into a `ServerOperation` subclass (validate →
-> send → apply authoritative state) — that lifecycle is the advanced path (`SpendCoins` keeps one as the
+> primary way to call ANY of them is the generated uniform entry point `await <Op>.Execute(args)` — always
+> generated, so every operation class stays empty (`SpendCoinsOperation`, `JoinAllianceOperation`,
+> `GetPlayerDataOperation` all read the same). A **query** (`GetPlayerDataOperation`, `JoinAllianceOperation`)
+> returns its reply DTO by value and is nothing more than that call. A **mutation** that must
+> predict local state then reconcile it can additionally opt into a `ServerOperationFlow` subclass (validate →
+> send → apply authoritative state) — that lifecycle is the advanced path (`SpendCoinsOperation` keeps one as the
 > example); it reuses the same generated messages.
 >
 > **A reply is ALWAYS a DTO, never a bare primitive** — wrap a lone value in a single-member DTO (that is what
 > `SpendResult`/`JoinResult` are) so the member keeps an explicit wire `[Key]` index and can grow append-only.
 > Nested data — a DTO as a member of another DTO, or as the reply of an operation — serializes through its
-> generated formatter automatically; `PlayerData` returned by `GetPlayerData` is the reference case.
+> generated formatter automatically; `PlayerData` returned by `GetPlayerDataOperation` is the reference case.
 
 ### Declaring an operation
 
@@ -299,11 +300,15 @@ The generator emits, nested under each partial:
 - `Spend.Register(catalog)` — enrols **only the request** (`ForDomain(domain).Enroll<RequestMessage,
   ReplyMessage>(op)`); the reply carries no opcode (decoded by correlation) but is registered for pooling by
   type. A notify enrols its single opcode.
-- `Spend.CallAsync(SpendReq request)` — the uniform call entry point: it builds the request envelope, sends it
-  through the ambient `NetworkClient.Current`, awaits the correlated reply, and returns the reply DTO
-  (`SpendResult`) directly. A convenience overload built from the request DTO's members is also emitted
-  (`Spend.CallAsync(int amount)`). A `[Notify]` gets the mirror `Send(payload)` / `Send(members…)` instead
-  (fire-and-forget via `NetworkClient.Current.Post`).
+- `Spend.Execute(…)` — the uniform call entry point, ALWAYS generated (the operation class is always empty; no
+  `Execute` is ever hand-written). Two shapes: for a **flowless** op it takes the request DTO (`Execute(SpendReq
+  request)`), builds the request envelope, sends it through the ambient `NetworkClient.Current`, awaits the
+  correlated reply, and returns the reply DTO (`SpendResult`) directly — plus a convenience overload built from the
+  request DTO's members (`Execute(int amount)`). For an op that owns a `<Op>Flow`, the generator instead emits an
+  `Execute(SpendReq request)` (plus the same members overload) that news the flow up, runs its lifecycle, and
+  returns the reply DTO (`flow.Reply.Content`) — so both shapes share the identical `Task<TReply>` signature and a
+  call site never changes. A `[Notify]` gets the mirror `Notify(payload)` / `Notify(members…)` instead (fire-and-forget via
+  `NetworkClient.Current.Post`).
 - one assembly-wide `GeneratedMessages.RegisterAll(catalog)` that calls every generated `Register` — boot a
   catalog with a single call and no operation can be forgotten. (The hand-written `ForDomain`/`EnrollAll`
   path still works for messages you don't generate.)
@@ -317,12 +322,12 @@ var client = new ClientPeer(link, catalog, options);
 NetworkClient.Current = client;                        // configure ONCE (GameNetworkSetup.UseAsAmbientClient)
 
 // anywhere: every operation is called the same way, and the reply DTO comes back by await.
-PlayerData player = await GetPlayerData.CallAsync(playerId);   // convenience overload → reply DTO
-SpendResult spend = await SpendCoins.CallAsync(50);
-BalanceChanged.Send(newBalance);                              // one-way notify, fire-and-forget
+PlayerData player = await GetPlayerDataOperation.Execute(playerId);   // flowless op → generated direct Execute → reply DTO
+await SpendCoinsOperation.Execute(50);                                // flow op → its flow-running Execute runs the lifecycle
+BalanceChanged.Notify(newBalance);                            // one-way notify, fire-and-forget
 ```
 
-`NetworkClient.Current` is a single ambient holder set once at startup; the generated `CallAsync`/`Send` send
+`NetworkClient.Current` is a single ambient holder set once at startup; the generated `Execute`/`Notify` send
 through it. It is left unset by default and has no defensive guard — an unconfigured call faults fast (nothing
 should be null at runtime). The manual path still exists for messages you hand-write:
 `await client.CallAsync<Spend.ReplyMessage>(new Spend.RequestMessage { Content = new SpendReq { Amount = 50 } })`;
@@ -374,7 +379,7 @@ Two Roslyn analyzers run at compile time, both labelled **RoslynAnalyzer** (all 
 in the compiler, not at runtime), both applied globally because they sit **outside any `.asmdef` folder**:
 
 - `Plugins/PFound.NetworkLayer.Generator.dll` — the PFound generators: expands `[RemoteProcedure]`/`[Notify]`
-  partials into their envelopes/enrolment/`CallAsync`, and adds value equality + `ToString` to `[MessagePackObject]`
+  partials into their envelopes/enrolment/`Execute`, and adds value equality + `ToString` to `[MessagePackObject]`
   DTOs.
 - `Plugins/MessagePack.SourceGenerator.dll` — MessagePack's official AOT generator: emits the wire formatter
   for each `[MessagePackObject]` DTO and the per-assembly `[GeneratedMessagePackResolver]`-anchored resolver.

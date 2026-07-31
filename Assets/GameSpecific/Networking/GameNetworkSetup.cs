@@ -1,4 +1,5 @@
 using PFound.NetworkLayer;
+using PFound.ServerOperation.Core;
 
 namespace GameSpecific.Networking
 {
@@ -9,7 +10,7 @@ namespace GameSpecific.Networking
     /// the catalog — the generator-emitted <c>GeneratedMessages.RegisterAll</c> aggregator does them all, so
     /// no operation can be forgotten.</description></item>
     /// <item><description>Publish the connected peer as the ambient <c>NetworkClient.Current</c> so the
-    /// generated <c>&lt;Op&gt;.CallAsync(args)</c> / <c>&lt;Notify&gt;.Send(args)</c> entry points have a
+    /// generated <c>&lt;Op&gt;.Execute(args)</c> / <c>&lt;Notify&gt;.Notify(args)</c> entry points have a
     /// client to send through — set it once, here, and never thread a peer through call sites.</description></item>
     /// </list>
     /// Typical boot: build the catalog, <c>RegisterOperations(catalog)</c>, construct the
@@ -37,16 +38,37 @@ namespace GameSpecific.Networking
         public static void RegisterOperations(MessageCatalog catalog) => GeneratedMessages.RegisterAll(catalog);
 
         /// <summary>
-        /// Publish the connected peer as the ambient client the generated <c>CallAsync</c>/<c>Send</c> entry
+        /// Publish the connected peer as the ambient client the generated <c>Execute</c>/<c>Send</c> entry
         /// points send through. Call once at startup, after the peer is built.
         /// </summary>
         public static void UseAsAmbientClient(ClientPeer clientPeer) => NetworkClient.Current = clientPeer;
 
-        /// <summary>Both boot steps in order: enrol the operations, then make the peer ambient.</summary>
+        /// <summary>
+        /// Publish the ambient <see cref="ServerOperationHost"/> so a flow can be constructed with only the game's
+        /// own parameters (<c>new SpendCoinsOperationFlow(amount, wallet)</c>) — its base ctor resolves the
+        /// context (transport + outcome seams + run policy) from here. The transport factory reads the ambient
+        /// peer at call time, so this may run before or after <see cref="UseAsAmbientClient"/>. Call once at boot.
+        /// The <paramref name="gate"/> defaults to a single-flight, no-spinner run policy shared across flows.
+        /// </summary>
+        public static void UseAsAmbientServerOperationHost(
+            ServerOperationGate gate = null,
+            IServerOperationAnalytics analytics = null)
+        {
+            var host = new ServerOperationHost(
+                new GameServerOperationTransportFactory(),
+                new GameServerOperationResultChannels(new LoggingFailurePresenter()));
+            host.Gate = gate ?? ServerOperationGate.DedupOnly();
+            if (analytics != null)
+                host.Analytics = analytics;
+            ServerOperationHost.Current = host;
+        }
+
+        /// <summary>All boot steps in order: enrol the operations, make the peer ambient, publish the flow host.</summary>
         public static void Configure(ClientPeer clientPeer, MessageCatalog catalog)
         {
             RegisterOperations(catalog);
             UseAsAmbientClient(clientPeer);
+            UseAsAmbientServerOperationHost();
         }
     }
 }

@@ -123,7 +123,7 @@ namespace PFound.ServerOperation.Tests
         // A concrete operation that grants a reward: build the request DTO from its amount, and on a
         // successful reply record the server-authoritative balance into local state (synchronously,
         // per the lifecycle).
-        sealed class GrantRewardOperation : ServerOperation<GrantRewardRequest, GrantRewardReply, ServerOperationResult>
+        sealed class GrantRewardOperation : ServerOperationFlow<GrantRewardRequest, GrantRewardReply, ServerOperationResult>
         {
             readonly GrantReward _content;   // the immutable request DTO; also this run's dedup identity
             int _serverBalance;

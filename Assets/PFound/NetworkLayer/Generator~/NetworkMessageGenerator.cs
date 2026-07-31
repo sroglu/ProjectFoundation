@@ -13,7 +13,7 @@ namespace PFound.NetworkLayer.Generation
     /// Turns each <c>[RemoteProcedure]</c> / <c>[Notify]</c> partial class into its runtime wiring: the
     /// poolable envelope(s) that CARRY a named DTO (a <see cref="PFound.NetworkLayer.IMessagePayload"/> so the
     /// codec serializes the DTO and never the envelope), a per-operation <c>Register</c>, and a uniform call
-    /// entry point (<c>CallAsync</c> returning the reply DTO for a remote procedure, <c>Send</c> for a notify)
+    /// entry point (<c>Execute</c> returning the reply DTO for a remote procedure, <c>Notify</c> for a notify)
     /// plus a convenience overload built from the request DTO's keyed members; and one assembly-wide aggregator
     /// that enrols every operation. The DTO types come from the attribute's <c>typeof</c> arguments — this
     /// generator no longer synthesizes request/reply structs; every wire type is a first-party
@@ -25,6 +25,9 @@ namespace PFound.NetworkLayer.Generation
         const string OpAttribute = "PFound.NetworkLayer.RemoteProcedureAttribute";
         const string NotifyAttribute = "PFound.NetworkLayer.NotifyAttribute";
         const string KeyAttribute = "MessagePack.KeyAttribute";
+        const string ServerOperationFlowType = "ServerOperationFlow";
+        const string ServerOperationNamespace = "PFound.ServerOperation.Core";
+        const string PolicyAttribute = "PFound.NetworkLayer.RequireServerOperationFlowAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
@@ -44,8 +47,31 @@ namespace PFound.NetworkLayer.Generation
                 .Where(static m => m is not null)
                 .Select(static (m, _) => m!);
 
-            context.RegisterSourceOutput(ops, static (spc, m) => spc.AddSource(m.HintName, Emit(m)));
-            context.RegisterSourceOutput(notifies, static (spc, m) => spc.AddSource(m.HintName, Emit(m)));
+            // Every operation whose lifecycle is expressed as a ServerOperationFlow<Op.RequestMessage,
+            // Op.ReplyMessage, ...>. The FLOW-EXISTENCE model: an operation that HAS a flow gets ONLY the
+            // flow-running Execute (news up the flow from the request members, returns the reply DTO); an operation
+            // with NO flow gets the direct request→reply Execute. Either way the operation partial stays empty and
+            // no one hand-writes an Execute. Syntax-driven so it stays incremental: it re-projects only when a flow
+            // class is edited.
+            var flowBackedOperations = context.SyntaxProvider
+                .CreateSyntaxProvider(
+                    predicate: static (node, _) => node is Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax c && c.BaseList is not null,
+                    transform: static (ctx, ct) => FlowTargetOperation(ctx, ct))
+                .Where(static name => name is not null)
+                .Select(static (name, _) => name!)
+                .Collect();
+
+            var serverOperationRequired = context.CompilationProvider
+                .Select(static (compilation, _) => AssemblyRequiresServerOperation(compilation));
+
+            context.RegisterSourceOutput(
+                ops.Combine(flowBackedOperations).Combine(serverOperationRequired),
+                static (spc, pair) => spc.AddSource(
+                    pair.Left.Left.HintName,
+                    Emit(pair.Left.Left, pair.Right, pair.Left.Right.Contains(pair.Left.Left.FullyQualifiedName))));
+            context.RegisterSourceOutput(
+                notifies.Combine(serverOperationRequired),
+                static (spc, pair) => spc.AddSource(pair.Left.HintName, Emit(pair.Left, pair.Right, hasFlow: false)));
 
             var all = ops.Collect().Combine(notifies.Collect());
             context.RegisterSourceOutput(all, static (spc, pair) =>
@@ -79,6 +105,46 @@ namespace PFound.NetworkLayer.Generation
             public readonly string Name;
             public readonly string TypeFqn;
             public MemberModel(int index, string name, string typeFqn) { Index = index; Name = name; TypeFqn = typeFqn; }
+        }
+
+        // True when the compiled assembly carries [assembly: RequireServerOperationFlow] — the global policy that
+        // makes the generated direct Execute shortcut internal (a hard cross-assembly block, so a flowless op must
+        // gain a flow). Absent → free mode, the shortcut stays public.
+        static bool AssemblyRequiresServerOperation(Compilation compilation)
+        {
+            var policyAttribute = compilation.GetTypeByMetadataName(PolicyAttribute);
+            if (policyAttribute is null)
+                return false;
+            foreach (var attribute in compilation.Assembly.GetAttributes())
+            {
+                if (SymbolEqualityComparer.Default.Equals(attribute.AttributeClass, policyAttribute))
+                    return true;
+            }
+            return false;
+        }
+
+        // If this class derives from ServerOperationFlow<Op.RequestMessage, Op.ReplyMessage, ...>, return the
+        // fully-qualified name of the operation it drives (the request envelope's containing type). Otherwise null.
+        static string? FlowTargetOperation(GeneratorSyntaxContext ctx, System.Threading.CancellationToken cancellation)
+        {
+            if (ctx.Node is not Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax declaration)
+                return null;
+            if (ctx.SemanticModel.GetDeclaredSymbol(declaration, cancellation) is not INamedTypeSymbol symbol)
+                return null;
+
+            for (var baseType = symbol.BaseType; baseType is not null; baseType = baseType.BaseType)
+            {
+                if (baseType.Name != ServerOperationFlowType)
+                    continue;
+                if (baseType.ContainingNamespace?.ToDisplayString() != ServerOperationNamespace)
+                    continue;
+                if (baseType.TypeArguments.Length < 1)
+                    continue;
+                if (baseType.TypeArguments[0] is INamedTypeSymbol requestEnvelope
+                    && requestEnvelope.ContainingType is INamedTypeSymbol operation)
+                    return operation.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            }
+            return null;
         }
 
         static OpModel? Describe(GeneratorAttributeSyntaxContext ctx, bool isNotify)
@@ -166,7 +232,7 @@ namespace PFound.NetworkLayer.Generation
 
         // ---- emission ------------------------------------------------------
 
-        static SourceText Emit(OpModel m)
+        static SourceText Emit(OpModel m, bool serverOperationRequired, bool hasFlow)
         {
             var sb = new StringBuilder();
             sb.AppendLine("// <auto-generated/>");
@@ -202,7 +268,14 @@ namespace PFound.NetworkLayer.Generation
                 EmitEnvelope(sb, indent, "RequestMessage", "global::PFound.NetworkLayer.RequestMessage", m.RequestTypeFqn, callBase: false);
                 EmitEnvelope(sb, indent, "ReplyMessage", "global::PFound.NetworkLayer.ReplyMessage", m.ReplyTypeFqn, callBase: true);
                 EmitOpRegister(sb, indent, m);
-                EmitCall(sb, indent, m);
+                // Either way the operation gets ONE generated Execute, so the operation partial itself stays empty.
+                // With a ServerOperationFlow present, Execute runs that flow (constructed from the request members)
+                // and returns the reply DTO; without one, Execute sends the request directly and returns the reply
+                // DTO. Both shapes return Task<TReply>, so turning a flow on or off never changes a call site.
+                if (hasFlow)
+                    EmitFlowCall(sb, indent, m, serverOperationRequired);
+                else
+                    EmitCall(sb, indent, m, serverOperationRequired);
             }
 
             indent--;
@@ -272,10 +345,17 @@ namespace PFound.NetworkLayer.Generation
         // The uniform call: build the request envelope around the request DTO, send it through the ambient
         // client, await the correlated reply envelope, and return its reply DTO. A convenience overload accepts
         // the request DTO's keyed members directly and builds the DTO for the caller.
-        static void EmitCall(StringBuilder sb, int indent, OpModel m)
+        static void EmitCall(StringBuilder sb, int indent, OpModel m, bool serverOperationRequired)
         {
             var pad = new string(' ', indent * 4);
             var pad1 = new string(' ', (indent + 1) * 4);
+
+            // MANDATORY mode emits the shortcut as internal so it is HARD-unreachable from any other assembly
+            // (access modifiers cannot be #pragma-suppressed like a diagnostic can) — the ServerOperation flow,
+            // which drives the transport directly rather than through this direct Execute, is then the only
+            // cross-assembly path. FREE mode keeps it public. The PFNET0010 analyzer still greets same-assembly
+            // callers, who can see the internal method, with the "build a ServerOperation" message.
+            var callVisibility = serverOperationRequired ? "internal" : "public";
 
             sb.AppendLine();
             sb.Append(pad).AppendLine("/// <summary>");
@@ -283,7 +363,7 @@ namespace PFound.NetworkLayer.Generation
             sb.Append(pad).AppendLine("/// ambient <see cref=\"global::PFound.NetworkLayer.NetworkClient\"/> (configure <c>Current</c> once at");
             sb.Append(pad).AppendLine("/// startup), and returns the reply DTO.");
             sb.Append(pad).AppendLine("/// </summary>");
-            sb.Append(pad).AppendLine($"public static async global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> CallAsync({m.RequestTypeFqn} request)");
+            sb.Append(pad).AppendLine($"{callVisibility} static async global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> Execute({m.RequestTypeFqn} request)");
             sb.Append(pad).AppendLine("{");
             sb.Append(pad1).AppendLine("var envelope = new RequestMessage { Content = request };");
             sb.Append(pad1).AppendLine("var reply = await global::PFound.NetworkLayer.NetworkClient.Current.CallAsync<ReplyMessage>(envelope);");
@@ -296,13 +376,59 @@ namespace PFound.NetworkLayer.Generation
                 var init = string.Join(", ", m.RequestMembers.Select(f => $"{f.Name} = {ParamName(f.Name)}"));
                 sb.AppendLine();
                 sb.Append(pad).AppendLine("/// <summary>Convenience overload: pass the request DTO's members directly.</summary>");
-                sb.Append(pad).AppendLine($"public static global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> CallAsync({paramList})");
-                sb.Append(pad1).AppendLine($"=> CallAsync(new {m.RequestTypeFqn} {{ {init} }});");
+                sb.Append(pad).AppendLine($"{callVisibility} static global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> Execute({paramList})");
+                sb.Append(pad1).AppendLine($"=> Execute(new {m.RequestTypeFqn} {{ {init} }});");
             }
         }
 
-        // The uniform one-way send: build the notify envelope around the payload DTO and fire it fire-and-forget
-        // through the ambient client. A convenience overload accepts the payload DTO's keyed members directly.
+        // The uniform call for a flow-backed operation: construct the operation's own ServerOperationFlow from the
+        // request members, run its lifecycle, and return the reply DTO — the SAME shape a flowless op's direct
+        // Execute returns (Task<TReply>), so turning a flow on or off never changes a call site. The flow drives
+        // the transport + outcome seams itself, so there is no direct request→reply shortcut and the operation
+        // partial stays empty. The parameters mirror the flow's ctor, which takes exactly the request members. A
+        // failed run (pre-check reject / server failure) leaves the reply unset, so it returns default.
+        static void EmitFlowCall(StringBuilder sb, int indent, OpModel m, bool serverOperationRequired)
+        {
+            var pad = new string(' ', indent * 4);
+            var pad1 = new string(' ', (indent + 1) * 4);
+
+            // The flow-running Execute is ALWAYS public — it is the sanctioned entry, even under the mandatory
+            // policy. Only the direct request→reply shortcut (EmitCall) turns internal under mandatory; that
+            // accessibility gap is what lets the analyzer flag the direct shortcut and leave the flow entry alone.
+            _ = serverOperationRequired;
+            const string callVisibility = "public";
+            var flowType = m.TypeName + "Flow";
+
+            // Primary overload takes the request DTO (same as the flowless direct Execute), constructs the flow
+            // from it, runs the lifecycle, and returns the reply DTO — the SAME shape a flowless op returns, so a
+            // flow never changes a call site. Await it, or .Forget() it.
+            sb.AppendLine();
+            sb.Append(pad).AppendLine("/// <summary>");
+            sb.Append(pad).AppendLine($"/// Run this operation's server-authoritative lifecycle via <c>{flowType}</c> and return the reply DTO.");
+            sb.Append(pad).AppendLine("/// Await it (read the reply), or <c>.Forget()</c> it.");
+            sb.Append(pad).AppendLine("/// </summary>");
+            sb.Append(pad).AppendLine($"{callVisibility} static async global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> Execute({m.RequestTypeFqn} request)");
+            sb.Append(pad).AppendLine("{");
+            sb.Append(pad1).AppendLine($"var flow = new {flowType}(request);");
+            sb.Append(pad1).AppendLine("await flow.RunAsync();");
+            sb.Append(pad1).AppendLine($"return flow.Reply is null ? default({m.ReplyTypeFqn}) : flow.Reply.Content;");
+            sb.Append(pad).AppendLine("}");
+
+            // Convenience overload: pass the request DTO's keyed members directly (mirrors the flowless op).
+            if (m.RequestMembers.Length > 0)
+            {
+                var paramList = string.Join(", ", m.RequestMembers.Select(f => $"{f.TypeFqn} {ParamName(f.Name)}"));
+                var init = string.Join(", ", m.RequestMembers.Select(f => $"{f.Name} = {ParamName(f.Name)}"));
+                sb.AppendLine();
+                sb.Append(pad).AppendLine("/// <summary>Convenience overload: pass the request DTO's members directly.</summary>");
+                sb.Append(pad).AppendLine($"{callVisibility} static global::System.Threading.Tasks.Task<{m.ReplyTypeFqn}> Execute({paramList})");
+                sb.Append(pad1).AppendLine($"=> Execute(new {m.RequestTypeFqn} {{ {init} }});");
+            }
+        }
+
+        // The uniform one-way notify: build the notify envelope around the payload DTO and fire it
+        // fire-and-forget through the ambient client. A convenience overload accepts the payload DTO's keyed
+        // members directly.
         static void EmitSend(StringBuilder sb, int indent, OpModel m)
         {
             var pad = new string(' ', indent * 4);
@@ -313,7 +439,7 @@ namespace PFound.NetworkLayer.Generation
             sb.Append(pad).AppendLine("/// Fire this notify one-way (no reply) through the ambient");
             sb.Append(pad).AppendLine("/// <see cref=\"global::PFound.NetworkLayer.NetworkClient\"/> (configure <c>Current</c> once at startup).");
             sb.Append(pad).AppendLine("/// </summary>");
-            sb.Append(pad).AppendLine($"public static void Send({m.RequestTypeFqn} payload)");
+            sb.Append(pad).AppendLine($"public static void Notify({m.RequestTypeFqn} payload)");
             sb.Append(pad).AppendLine("{");
             sb.Append(pad1).AppendLine("var envelope = new NotifyMessage { Content = payload };");
             sb.Append(pad1).AppendLine("global::PFound.NetworkLayer.NetworkClient.Current.Post(envelope);");
@@ -325,8 +451,8 @@ namespace PFound.NetworkLayer.Generation
                 var init = string.Join(", ", m.RequestMembers.Select(f => $"{f.Name} = {ParamName(f.Name)}"));
                 sb.AppendLine();
                 sb.Append(pad).AppendLine("/// <summary>Convenience overload: pass the payload DTO's members directly.</summary>");
-                sb.Append(pad).AppendLine($"public static void Send({paramList})");
-                sb.Append(pad1).AppendLine($"=> Send(new {m.RequestTypeFqn} {{ {init} }});");
+                sb.Append(pad).AppendLine($"public static void Notify({paramList})");
+                sb.Append(pad1).AppendLine($"=> Notify(new {m.RequestTypeFqn} {{ {init} }});");
             }
         }
 

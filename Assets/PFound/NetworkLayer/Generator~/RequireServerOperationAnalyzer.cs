@@ -9,8 +9,8 @@ namespace PFound.NetworkLayer.Generation
 {
     /// <summary>
     /// Enforces the project-wide "require ServerOperation" policy at compile time. When the compiled assembly
-    /// carries <c>[assembly: PFound.NetworkLayer.RequireServerOperation]</c>, this reports
-    /// <c>PFNET0010</c> (Error) on every raw <c>CallAsync</c> invocation whose target sits on a
+    /// carries <c>[assembly: PFound.NetworkLayer.RequireServerOperationFlow]</c>, this reports
+    /// <c>PFNET0010</c> (Error) on every raw direct <c>Execute</c> invocation whose target sits on a
     /// <c>[RemoteProcedure]</c> operation — steering those calls onto a <c>ServerOperation</c> instead. A
     /// <c>[Notify]</c> <c>Send(...)</c> is left alone (one-way, no server-authoritative lifecycle), and when the
     /// attribute is absent the analyzer reports nothing at all (free mode, zero friction).
@@ -18,23 +18,24 @@ namespace PFound.NetworkLayer.Generation
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class RequireServerOperationAnalyzer : DiagnosticAnalyzer
     {
-        const string PolicyAttribute = "PFound.NetworkLayer.RequireServerOperationAttribute";
+        const string PolicyAttribute = "PFound.NetworkLayer.RequireServerOperationFlowAttribute";
         const string RemoteProcedureAttribute = "PFound.NetworkLayer.RemoteProcedureAttribute";
-        const string CallEntryPointName = "CallAsync";
+        const string CallEntryPointName = "Execute";
 
         static readonly DiagnosticDescriptor RequireServerOperationRule = new DiagnosticDescriptor(
             id: "PFNET0010",
-            title: "Server calls must go through a ServerOperation",
-            messageFormat: "This assembly requires server calls to go through a ServerOperation "
-                + "([RequireServerOperation] is set). Build a ServerOperation for '{0}' instead of calling "
-                + "CallAsync directly.",
+            title: "Server calls must go through a ServerOperationFlow",
+            messageFormat: "This assembly requires server calls to go through a ServerOperationFlow "
+                + "([RequireServerOperationFlow] is set). Build a ServerOperationFlow for '{0}' instead of calling "
+                + "the direct Execute shortcut.",
             category: "PFound.NetworkLayer",
             defaultSeverity: DiagnosticSeverity.Error,
             isEnabledByDefault: true,
-            description: "When an assembly is marked [assembly: RequireServerOperation], every mutating server "
-                + "call must be expressed as a ServerOperation. The raw generated CallAsync shortcut on a "
-                + "[RemoteProcedure] operation is forbidden so it cannot be reached for by mistake. Remove the "
-                + "assembly attribute to allow CallAsync again (free mode).");
+            description: "When an assembly is marked [assembly: RequireServerOperationFlow], every mutating server "
+                + "call must be expressed as a ServerOperationFlow. The raw generated direct Execute shortcut on a "
+                + "[RemoteProcedure] operation is forbidden so it cannot be reached for by mistake (the "
+                + "flow-running Execute the code fix adds is allowed). Remove the assembly attribute to allow the "
+                + "direct Execute again (free mode).");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics
             => ImmutableArray.Create(RequireServerOperationRule);
@@ -42,7 +43,7 @@ namespace PFound.NetworkLayer.Generation
         public override void Initialize(AnalysisContext context)
         {
             context.EnableConcurrentExecution();
-            // Skip generated code — the generated CallAsync convenience overload itself calls CallAsync, and
+            // Skip generated code — the generated direct Execute convenience overload itself calls Execute, and
             // that internal wiring is not a call site we want to flag.
             context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.None);
 
@@ -81,9 +82,15 @@ namespace PFound.NetworkLayer.Generation
             if (target.Name != CallEntryPointName)
                 return;
 
-            // Flag only CallAsync that lives on a generated [RemoteProcedure] operation — precise, so any
-            // unrelated CallAsync method (a task helper, a third-party client) is never touched. A [Notify]
-            // Send(...) is a different method name and is inherently ignored.
+            // Flag only the raw direct request→reply shortcut, which returns a Task<TReply> (generic). The
+            // flow-running Execute the code fix adds returns a plain non-generic Task and IS the sanctioned entry
+            // point, so it must never be flagged even though it shares the Execute name on the same operation.
+            if (!IsDirectShortcut(target))
+                return;
+
+            // Flag only Execute that lives on a generated [RemoteProcedure] operation — precise, so any unrelated
+            // Execute method (a task helper, a third-party client) is never touched. A [Notify] Send(...) is a
+            // different method name and is inherently ignored.
             if (!HasRemoteProcedureAttribute(target.ContainingType, remoteProcedureAttribute))
                 return;
 
@@ -91,6 +98,12 @@ namespace PFound.NetworkLayer.Generation
             context.ReportDiagnostic(Diagnostic.Create(
                 RequireServerOperationRule, invocation.Syntax.GetLocation(), operationName));
         }
+
+        // Both Executes now return the reply DTO (Task<TReply>), so the flagged one is distinguished by ACCESSIBILITY:
+        // the generator emits the direct request→reply shortcut as INTERNAL under the mandatory policy, while the
+        // sanctioned flow-running Execute is always PUBLIC. So flag only the static, internal Execute.
+        static bool IsDirectShortcut(IMethodSymbol target)
+            => target.IsStatic && target.DeclaredAccessibility == Accessibility.Internal;
 
         static bool HasRemoteProcedureAttribute(INamedTypeSymbol? type, INamedTypeSymbol remoteProcedureAttribute)
         {

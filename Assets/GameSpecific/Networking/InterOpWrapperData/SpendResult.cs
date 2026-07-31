@@ -3,7 +3,7 @@ using MessagePack;
 namespace GameSpecific.Networking.Data
 {
     /// <summary>
-    /// The reply DTO for <c>SpendCoins</c> — a single-element DTO wrapping the authoritative post-spend
+    /// The reply DTO for <c>SpendCoinsOperation</c> — a single-element DTO wrapping the authoritative post-spend
     /// balance. It exists to honour the hard rule: a reply is ALWAYS a DTO, never a bare primitive. Even a
     /// one-value response gets a named <c>[MessagePackObject]</c> so the member has an explicit wire
     /// <c>[Key]</c> index, stays append-only forward/backward compatible, and can grow a second value later

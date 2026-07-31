@@ -7,8 +7,8 @@ namespace PFound.NetworkLayer
     /// Both are named first-party <c>[MessagePackObject]</c> DTO types, passed as <c>typeof</c> arguments — the
     /// operation references them, it does not inline fields. The source generator reads the attribute and emits
     /// the poolable request/reply envelopes (runtime-only carriers of the DTOs), the catalog enrolment, and a
-    /// uniform <c>CallAsync</c> entry point that returns the reply DTO, so a game declares one compact partial
-    /// and calls <c>await MyOp.CallAsync(request)</c>.
+    /// uniform <c>Execute</c> entry point that returns the reply DTO, so a game declares one compact partial
+    /// and calls <c>await MyOp.Execute(request)</c>.
     /// </summary>
     /// <remarks>
     /// <paramref name="domain"/> and <paramref name="op"/> are the same banded pair the catalog consumes (a

@@ -6,8 +6,8 @@ using PFound.ServerOperation.Core;
 
 // The source generator turns this partial into #SCRIPTNAME#.Req / #SCRIPTNAME#.Reply /
 // #SCRIPTNAME#.RequestMessage / #SCRIPTNAME#.ReplyMessage / #SCRIPTNAME#.Register AND the uniform
-// #SCRIPTNAME#.CallAsync(...) entry point — no hand-written DTOs. Most call sites just use the uniform path:
-//     var result = await #SCRIPTNAME#.CallAsync(/* request fields */);   // returns the reply DTO
+// #SCRIPTNAME#.Execute(...) entry point — no hand-written DTOs. Most call sites just use the uniform path:
+//     var result = await #SCRIPTNAME#.Execute(/* request fields */);   // returns the reply DTO
 // Opcodes live in ONE central sheet, never inlined here: add your domain to NetDomain and your op to its op
 // enum in NetOpcodes.cs (Alt+Enter → Create member), then point the two placeholders below at them. Each
 // operation costs ONE op value (the reply has no opcode — it is decoded by correlation).
@@ -19,17 +19,17 @@ public partial class #SCRIPTNAME#
 }
 
 // ADVANCED (opt-in): the server-authoritative lifecycle, only for mutations that predict then apply
-// authoritative state. Fill the four hooks; delete this class if the plain CallAsync path above is enough.
-// (If ServerOperation is unresolved, Alt+Enter → reference PFound.ServerOperation.Core on this assembly.)
-public sealed class #SCRIPTNAME#Operation
-    : ServerOperation<#SCRIPTNAME#.RequestMessage, #SCRIPTNAME#.ReplyMessage, ServerOperationResult>
+// authoritative state. Fill the four hooks; delete this class if the plain Execute path above is enough.
+// (Name the op class so it ends in Operation, e.g. SpendCoinsOperation — the flow below reads SpendCoinsOperationFlow.)
+public sealed class #SCRIPTNAME#Flow
+    : ServerOperationFlow<#SCRIPTNAME#.RequestMessage, #SCRIPTNAME#.ReplyMessage, ServerOperationResult>
 {
-    public #SCRIPTNAME#Operation(
+    public #SCRIPTNAME#Flow(
         ServerOperationContext<#SCRIPTNAME#.RequestMessage, #SCRIPTNAME#.ReplyMessage, ServerOperationResult> context)
         : base(context) { }
 
-    protected override ServerOperationResult PreCheck() => throw new System.NotImplementedException();           // TODO: local pre-check (client prediction)
-    protected override #SCRIPTNAME#.RequestMessage BuildRequest() => throw new System.NotImplementedException(); // TODO: build the request DTO
-    protected override ServerOperationResult Interpret(#SCRIPTNAME#.ReplyMessage reply) => throw new System.NotImplementedException(); // TODO: map the reply to a result
-    protected override void ApplySuccess(ServerOperationResult result) { }                                        // TODO: apply the authoritative state
+    protected override ServerOperationResult PreCheck() => throw new System.NotImplementedException();
+    protected override #SCRIPTNAME#.RequestMessage BuildRequest() => throw new System.NotImplementedException();
+    protected override ServerOperationResult Interpret(#SCRIPTNAME#.ReplyMessage reply) => throw new System.NotImplementedException();
+    protected override void ApplySuccess(ServerOperationResult result) { }
 }

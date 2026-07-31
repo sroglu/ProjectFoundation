@@ -1,0 +1,44 @@
+using GameSpecific.Networking.Data;
+using PFound.NetworkLayer;
+using PFound.ServerOperation.Core;
+
+namespace GameSpecific.Networking.Operations
+{
+    /// <summary>
+    /// The reference QUERY — pass a <see cref="PlayerId"/>, get the shared <see cref="PlayerData"/> DTO back.
+    /// It owns a <see cref="GetPlayerDataOperationFlow"/> so the reply is validated (server status check) and the
+    /// fetched profile is captured before <c>Execute(playerId)</c> returns it; a pure query applies no local state,
+    /// so <c>ApplySuccess</c> is a no-op. (A query that needs none of that can skip the flow entirely — then the
+    /// generator emits a direct <c>Execute</c> that just sends and returns the DTO.) The <c>[RemoteProcedure]</c>
+    /// spec is the whole wire contract — request DTO (<see cref="PlayerId"/>) and reply DTO
+    /// (<see cref="PlayerData"/>, shared from <c>Data/</c>).
+    /// </summary>
+    [RemoteProcedure(NetDomain.Player, PlayerOp.GetData, typeof(PlayerId), typeof(PlayerData))]
+    public partial class GetPlayerDataOperation { }
+    /// <summary>Server-authoritative flow for GetPlayerDataOperation — fill PreCheck / Interpret / ApplySuccess.</summary>
+    public sealed class GetPlayerDataOperationFlow
+        : ServerOperationFlow<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage, ServerOperationResult>
+    {
+        readonly PlayerId _request;
+
+        /// <summary>The fetched profile, captured after a successful run — the same DTO Execute returns.</summary>
+        public PlayerData Result { get; private set; }
+
+        public GetPlayerDataOperationFlow(PlayerId request) => _request = request;
+
+        protected override ServerOperationResult PreCheck() => ServerOperationResult.Success();
+
+        protected override GetPlayerDataOperation.RequestMessage BuildRequest() => new GetPlayerDataOperation.RequestMessage { Content = _request };
+
+        protected override ServerOperationResult Interpret(GetPlayerDataOperation.ReplyMessage reply)
+        {
+            if (reply.Status != ReplyStatus.Ok)
+                return ServerOperationResult.Failure((int)reply.Status, $"player fetch refused by server: {reply.Status}");
+            Result = reply.Content;
+            return ServerOperationResult.Success();
+        }
+
+        // A query mutates no local state — the caller reads the returned PlayerData off Execute. Nothing to apply.
+        protected override void ApplySuccess(ServerOperationResult result) { }
+    }
+}

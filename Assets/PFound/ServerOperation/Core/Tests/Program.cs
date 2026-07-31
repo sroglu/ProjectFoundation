@@ -31,6 +31,7 @@ namespace PFound.ServerOperation.Core.Tests
             await LoadingHook_ShowBeforeSend_HideOnBothSuccessAndFailure();
             await LoadingHook_PreCheckFail_NeverShows();
             SuccessSink_And_Analytics_FireOnSuccess();
+            await AmbientHost_ResolvesContext_FromCurrent();
         }
 
         // ---- helpers ----
@@ -261,6 +262,35 @@ namespace PFound.ServerOperation.Core.Tests
             TestKit.Check(run.Accepted, "sink: run completed");
             TestKit.Check(sink.Count == 1 && sink.Last.IsSuccess, "sink: success emitter fired once on success");
             TestKit.Check(analytics.Count == 1 && analytics.LastSuccess, "analytics: outcome recorded on success");
+        }
+
+        static async Task AmbientHost_ResolvesContext_FromCurrent()
+        {
+            var factory = new ProbeTransportFactory();
+            var channels = new ProbeResultChannels();
+            var analytics = new ProbeAnalytics();
+            var previous = ServerOperationHost.Current;
+            ServerOperationHost.Current = new ServerOperationHost(factory, channels)
+            {
+                Gate = ServerOperationGate.DedupOnly(),
+                Analytics = analytics,
+            };
+
+            try
+            {
+                var op = new AmbientRecordingOperation();     // NO explicit context — resolved from the ambient host
+                var run = await op.RunAsync();
+
+                TestKit.Check(run.Accepted && run.Result.IsSuccess, "ambient: flow ran to success with a host-resolved context");
+                TestKit.Check(factory.Transport.SendCount == 1, "ambient: the host's transport factory supplied the transport (sent once)");
+                TestKit.Check(channels.Sink.Count == 1, "ambient: the host's success sink fired");
+                TestKit.Check(analytics.Count == 1 && analytics.LastSuccess, "ambient: the host's analytics recorded the outcome");
+                TestKit.Check(op.Log.Contains("apply"), "ambient: the lifecycle applied the success");
+            }
+            finally
+            {
+                ServerOperationHost.Current = previous;
+            }
         }
     }
 }
