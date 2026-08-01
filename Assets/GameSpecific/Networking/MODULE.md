@@ -161,6 +161,23 @@ contract (this assembly) as the single source both ends compile against.
   the runtime model — entity types are data-driven via numeric ids (no code type per entity); it does NOT read
   JSON itself. So `PlayerId` the type is code; the player's data is delivered/injected.
 
+### A type can be wire, datastore, or both — attribute opt-in
+Each capability is a separate attribute set; a shared type opts into whichever it needs, and one type may carry both:
+
+| Capability | How to opt in | Example |
+|---|---|---|
+| **Wire** (crosses the socket) | `[MessagePackObject]` + `[Key(n)]` members | `SpendRequest`, `PlayerId` — the current `Data/` DTOs |
+| **Datastore** (a bindable "entity", not a primitive `Entry` value) | `[DataStoreSetup(TypeBindingSetup.ExplicitlySpecifyBindableMembers)]` on the type + `[DataStoreElement]` on each bound member (`[NotDataStoreElement]` excludes) | a structured game object tracked in the runtime model |
+| **Both** (dual-use) | carry BOTH sets on the one type | a `RewardContainer` that travels on the wire AND is a bindable entity |
+
+- A singleton database itself is `[DataStoreConfig] class X : DataStoreClass<X>` (see `PFound.GameDataStore` `Test/BookDataStore`).
+- **Placement follows the attributes:** a **wire-only** type lives in `Data/` (references only MessagePack). A
+  **dual-use** type must reference BOTH MessagePack AND `PFound.GameDataStore`, so it belongs in a shared game
+  assembly (`GameSpecific.Domain`) — NOT the networking assembly (which would then depend on GameDataStore). Add
+  the datastore attributes + move the type only WHEN it actually becomes dual-use; until then keep it wire-only.
+- `RewardContainer` today is wire-only (`[MessagePackObject]`); adding `[DataStoreSetup]` + `[DataStoreElement]`
+  (and moving it to the shared assembly) is all it takes to make it a datastore entity as well.
+
 ## Serialization
 MessagePack's official source generator produces the formatters + `GameNetworkResolver` (AOT-safe, zero
 reflection). The poolable envelope is a runtime-only carrier; only the DTO crosses the wire. See
