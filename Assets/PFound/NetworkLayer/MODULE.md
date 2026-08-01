@@ -241,6 +241,21 @@ append-only forward/backward compatible. Use this discipline for anything that c
 The `ServerOperationFlow` module builds on exactly this discipline (its request/reply DTOs). You can write
 that boilerplate by hand (above) or let the **source generator** emit it from a compact declaration (below).
 
+### Client and server share ONE contract
+The dedicated server is the **other end of this same contract, not a separate client**. Both compile against the
+SAME `[MessagePackObject]` DTOs, the SAME opcode enums, and the SAME `MessageCatalog`: the server references the
+wire assembly and builds the messaging engine with **`BACKEND`** defined (`ServerPeer` / `TelepathyServerLink`
+are `#if BACKEND`). Never hand-write the server's messages separately — duplicated wire types drift and break
+compatibility. The server runs plain authoritative handlers over the messages the client sends:
+```csharp
+serverPeer.Handle<Spend.RequestMessage, Spend.ReplyMessage>((peerId, request) =>
+    new Spend.ReplyMessage { Status = ReplyStatus.Ok, Content = new SpendResult { NewBalance = … } });  // the server DECIDES
+```
+The client's `ServerOperationFlow` (predict → send → interpret → apply) is **client-only**; the server has no
+flow. A wire DTO can ALSO be a `GameDataStore` bindable entity by additionally carrying `[DataStoreSetup]` +
+`[DataStoreElement]` — put such dual-use types in a shared game assembly that references both MessagePack and
+GameDataStore, not in a wire-only folder.
+
 ## Message codegen (source generator)
 
 A Roslyn incremental source generator turns one compact partial-class declaration per operation into the
