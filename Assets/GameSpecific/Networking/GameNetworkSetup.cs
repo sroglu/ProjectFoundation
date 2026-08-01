@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using PFound.LocalizationService;
 using PFound.NetworkLayer;
 using PFound.ServerOperation.Core;
 
@@ -56,9 +54,7 @@ namespace GameSpecific.Networking
             ServerOperationGate gate = null,
             IServerOperationAnalytics analytics = null)
         {
-            var localization = CreateSampleLocalization();
-            var failurePresenter = new LocalizedToastFailurePresenter<ServerOperationResult, OpResult>(
-                new LocalizationUserMessages(localization),
+            var failurePresenter = new CodeToastFailurePresenter<OpResult>(
                 new DebugToastPresenter());
 
             var host = new ServerOperationHost(
@@ -68,30 +64,6 @@ namespace GameSpecific.Networking
             if (analytics != null)
                 host.Analytics = analytics;
             ServerOperationHost.Current = host;
-        }
-
-        /// <summary>
-        /// The sample's English user-message table, keyed by the <see cref="OpResult"/> convention
-        /// (<c>"op.result.&lt;Name&gt;"</c>) plus the generic <c>op.result.Unknown</c> fallback, so a failed
-        /// operation surfaces a real localized toast end-to-end. A shipping game swaps this in-memory seed for its
-        /// content-file-backed <see cref="LocalizationService"/> — the failure pipeline needs no other change.
-        /// </summary>
-        static LocalizationService CreateSampleLocalization()
-        {
-            var english = new LanguageKey("en");
-            var source = new InMemoryLocalizationSource().Add(english, new Dictionary<string, string>
-            {
-                ["op.result.AmountNotPositive"] = "Amount must be positive.",
-                ["op.result.InsufficientBalance"] = "Not enough coins.",
-                ["op.result.AllianceIdMissing"] = "Pick an alliance first.",
-                ["op.result.AlreadyInAlliance"] = "You're already in an alliance.",
-                ["op.result.ServerFaulted"] = "Something went wrong. Try again.",
-                ["op.result.ServerRefused"] = "The server refused that action.",
-                ["op.result.RequestExpired"] = "That took too long. Try again.",
-                ["op.result.Unroutable"] = "That action isn't available right now.",
-                ["op.result.Unknown"] = "Something went wrong.",
-            });
-            return new LocalizationService(source, english);
         }
 
         /// <summary>All boot steps in order: enrol the operations, make the peer ambient, publish the flow host.</summary>

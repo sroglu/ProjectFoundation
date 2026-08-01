@@ -28,8 +28,8 @@ A concrete flow subclasses `ServerOperationFlow<TRequest, TResponse, TResult>`. 
 7. **Optional async, cancellable post-effects** — `RunPostEffectsAsync(result, cancellation)`: navigation,
    animation, and **hand-chaining other operations**.
 8. **Uniform failure handling** — one path for both the pre-check reject and the server failure: the
-   injected failure presenter maps the result code to a user-facing message (localization/UI stays game-side)
-   and analytics records the outcome.
+   injected failure presenter maps the concrete result's typed code to a user-facing message (localization/UI
+   stays game-side) and analytics records the outcome.
 
 ## Assemblies
 
@@ -56,8 +56,8 @@ Namespaces: `PFound.ServerOperation.Core` (lifecycle + seams), `PFound.ServerOpe
 | `ServerOperationContext<TRequest,TResponse,TResult>` | Bundles the injected seams. Transport + failure presenter are required; success sink, analytics, and gate default to no-ops. |
 | `ServerOperationRun<TResult>` | The report of one run: `Disposition` (`Completed` / `DuplicateSuppressed`), `Accepted`, and `Result` (read only when `Accepted`). |
 | `IServerOperationTransport<TRequest,TResponse>` | The send/await seam. Core-side, constraint-free. |
-| `IServerOperationResult` | The game result contract: `IsSuccess`, `ResultCode`, `ErrorMessage`. |
-| `ServerOperationResult` | A ready-made result (`Success(code)` / `Failure(code, message)`). |
+| `IServerOperationResult` | The game result contract the lifecycle branches on: `IsSuccess`, `ErrorMessage`. The status/result CODE is deliberately game-specific and NOT on this interface — it lives on the concrete result type. |
+| `ServerOperationResult<TCode>` | A ready-made result generic over the game's own code enum (`TCode : struct, Enum`): `Success(code)` / `Failure(code, message)`, exposing `TCode ResultCode`. So a game gets `ServerOperationResult<OpResult>` with a typed `OpResult ResultCode`. |
 | `IServerOperationSuccessSink<TResult>` | Success emitter (Signaling-free; injected only). |
 | `IServerOperationFailurePresenter<TResult>` | Maps a failed result to a user-facing message and shows it (game-side). |
 | `IServerOperationAnalytics` | Optional telemetry, fired on every terminal outcome. |
@@ -161,43 +161,47 @@ catalog.ForDomain(NetDomain.Wallet).Enroll<SpendCoinsRequest, SpendCoinsReply>(W
 
 ```csharp
 // TRequest / TResponse are your NetworkLayer wire messages (see example 0); TResult is your game result.
+// The ready-made result is generic over YOUR code enum: ServerOperationResult<TCode>. Declare that enum once —
+// its members ARE the result codes, so ResultCode reads as a named value, not a bare number.
+public enum ResultCode { None = 0, InsufficientFunds = 1, ServerRejected = 2 }
+
 public sealed class SpendCoinsOperationFlow
-    : ServerOperationFlow<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult>
+    : ServerOperationFlow<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult<ResultCode>>
 {
     readonly int _amount;
     readonly Wallet _wallet;
     int _serverBalance;
 
     public SpendCoinsOperationFlow(
-        ServerOperationContext<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult> context,
+        ServerOperationContext<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult<ResultCode>> context,
         Wallet wallet, int amount) : base(context) { _wallet = wallet; _amount = amount; }
 
-    protected override ServerOperationResult PreCheck()          // step 2 — instant local reject
+    protected override ServerOperationResult<ResultCode> PreCheck()          // step 2 — instant local reject
         => _wallet.Balance >= _amount
-            ? ServerOperationResult.Success()
-            : ServerOperationResult.Failure(ResultCodes.InsufficientFunds);
+            ? ServerOperationResult<ResultCode>.Success()
+            : ServerOperationResult<ResultCode>.Failure(ResultCode.InsufficientFunds);
 
     protected override SpendCoinsRequest BuildRequest()          // step 3
         => new SpendCoinsRequest { Amount = _amount };
 
-    protected override ServerOperationResult Interpret(SpendCoinsReply reply)   // step 5
+    protected override ServerOperationResult<ResultCode> Interpret(SpendCoinsReply reply)   // step 5
     {
         _serverBalance = reply.Balance;
         return reply.Status == ReplyStatus.Ok
-            ? ServerOperationResult.Success()
-            : ServerOperationResult.Failure((int)reply.Status);
+            ? ServerOperationResult<ResultCode>.Success()
+            : ServerOperationResult<ResultCode>.Failure(ResultCode.ServerRejected);
     }
 
-    protected override void ApplySuccess(ServerOperationResult result)          // step 6 — synchronous
+    protected override void ApplySuccess(ServerOperationResult<ResultCode> result)          // step 6 — synchronous
         => _wallet.Balance = _serverBalance;                    // authoritative value from the server
 }
 
 // Wiring + running:
 var transport = new ClientPeerServerOperationTransport<SpendCoinsRequest, SpendCoinsReply>(clientPeer);
-var context   = new ServerOperationContext<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult>(
+var context   = new ServerOperationContext<SpendCoinsRequest, SpendCoinsReply, ServerOperationResult<ResultCode>>(
     transport, myFailurePresenter);
 
-ServerOperationRun<ServerOperationResult> run = await new SpendCoinsOperationFlow(context, wallet, 50).RunAsync();
+ServerOperationRun<ServerOperationResult<ResultCode>> run = await new SpendCoinsOperationFlow(context, wallet, 50).RunAsync();
 if (run.Accepted && run.Result.IsSuccess) { /* UI already consistent — ApplySuccess ran */ }
 ```
 
@@ -209,10 +213,10 @@ client can already know is impossible (not enough currency, item not owned, cool
 gets an instant response instead of a round-trip.
 
 ```csharp
-protected override ServerOperationResult PreCheck()
+protected override ServerOperationResult<ResultCode> PreCheck()
     => _wallet.Balance >= _amount
-        ? ServerOperationResult.Success()
-        : ServerOperationResult.Failure(ResultCodes.InsufficientFunds);   // no request ever sent
+        ? ServerOperationResult<ResultCode>.Success()
+        : ServerOperationResult<ResultCode>.Failure(ResultCode.InsufficientFunds);   // no request ever sent
 ```
 
 A pre-check **pass does not imply success** — the server is still authoritative. Only the mapped response
@@ -228,11 +232,11 @@ A pre-check **pass does not imply success** — the server is still authoritativ
   this phase; it never rolls back the synchronous apply.
 
 ```csharp
-protected override void ApplySuccess(ServerOperationResult result)          // consistent immediately
+protected override void ApplySuccess(ServerOperationResult<ResultCode> result)          // consistent immediately
     => _inventory.Add(_itemId, 1);
 
 protected override async Task RunPostEffectsAsync(                            // interruptible follow-up
-    ServerOperationResult result, CancellationToken cancellation)
+    ServerOperationResult<ResultCode> result, CancellationToken cancellation)
 {
     await _ui.PlayGrantAnimationAsync(_itemId, cancellation);
     cancellation.ThrowIfCancellationRequested();
@@ -247,7 +251,7 @@ cancellation between steps, so cancelling the outer run also stops the chained o
 
 ```csharp
 protected override async Task RunPostEffectsAsync(
-    ServerOperationResult result, CancellationToken cancellation)
+    ServerOperationResult<ResultCode> result, CancellationToken cancellation)
 {
     cancellation.ThrowIfCancellationRequested();
     await new ClaimBonusOperation(_bonusContext, _bonusId).RunAsync(cancellation);   // chained lifecycle
@@ -266,14 +270,14 @@ button fires one request. Override `DuplicateKey` to fold in request parameters 
 // One gate shared by the operations that should guard against each other.
 var gate = ServerOperationGate.WithLoading(mySpinner);   // or ServerOperationGate.DedupOnly() for no spinner
 
-var context = new ServerOperationContext<AcceptInviteRequest, AcceptInviteReply, ServerOperationResult>(
+var context = new ServerOperationContext<AcceptInviteRequest, AcceptInviteReply, ServerOperationResult<ResultCode>>(
     transport, failurePresenter) { Gate = gate };
 
 // Default key = operation type: any two AcceptInvite runs guard each other.
 await new AcceptInviteOperationFlow(context, inviteId).RunAsync();
 
 // Per-target key: guard per invitation instead, so different invites can run concurrently.
-public sealed class AcceptInviteOperationFlow : ServerOperationFlow<AcceptInviteRequest, AcceptInviteReply, ServerOperationResult>
+public sealed class AcceptInviteOperationFlow : ServerOperationFlow<AcceptInviteRequest, AcceptInviteReply, ServerOperationResult<ResultCode>>
 {
     readonly string _inviteId;
     protected override string DuplicateKey => "AcceptInvite:" + _inviteId;   // per-target dedup
@@ -288,7 +292,7 @@ if (run.Disposition == ServerOperationDisposition.DuplicateSuppressed) { /* alre
 every run is admitted and nothing is shown — the plain, un-gated behaviour.
 
 ```csharp
-var context = new ServerOperationContext<PingRequest, PingReply, ServerOperationResult>(transport, presenter);
+var context = new ServerOperationContext<PingRequest, PingReply, ServerOperationResult<ResultCode>>(transport, presenter);
 // Gate stays Disabled → concurrent runs are NOT suppressed, no loading indicator.
 ```
 

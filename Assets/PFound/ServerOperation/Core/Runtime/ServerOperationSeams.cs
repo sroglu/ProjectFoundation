@@ -18,14 +18,15 @@ namespace PFound.ServerOperation.Core
     /// <summary>
     /// The game-supplied outcome of an operation. The client never decides success on its own — this is
     /// filled from the local pre-check (an instant reject) or from mapping the server's response. It carries
-    /// just enough for the uniform failure path: a success flag, a status/result code, and a diagnostic
-    /// message. Turning the code into a localized, user-facing string stays entirely game-side (see the
-    /// failure presenter seam), so the Core never references a UI or localization type.
+    /// just enough for the uniform lifecycle: a success flag the Core branches on, and a diagnostic message.
+    /// The status/result CODE is deliberately absent here — it is game-specific (a game's own enum) and lives
+    /// on the concrete result type the game supplies, so the Core never has to name an int or an enum for it.
+    /// Turning a code into a localized, user-facing string stays entirely game-side (see the failure presenter
+    /// seam), so the Core never references a UI or localization type either.
     /// </summary>
     public interface IServerOperationResult
     {
         bool IsSuccess { get; }
-        int ResultCode { get; }
 
         /// <summary>Diagnostic detail for logs; NOT the user-facing message. Absent on success.</summary>
         string ErrorMessage { get; }

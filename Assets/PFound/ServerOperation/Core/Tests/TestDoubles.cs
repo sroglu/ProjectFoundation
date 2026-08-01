@@ -38,24 +38,24 @@ namespace PFound.ServerOperation.Core.Tests
         }
     }
 
-    internal sealed class ProbeFailurePresenter : IServerOperationFailurePresenter<ServerOperationResult>
+    internal sealed class ProbeFailurePresenter : IServerOperationFailurePresenter<ServerOperationResult<ProbeOpResult>>
     {
         public int Count;
-        public ServerOperationResult Last;
+        public ServerOperationResult<ProbeOpResult> Last;
 
-        public void PresentFailure(ServerOperationResult result)
+        public void PresentFailure(ServerOperationResult<ProbeOpResult> result)
         {
             Count++;
             Last = result;
         }
     }
 
-    internal sealed class ProbeSuccessSink : IServerOperationSuccessSink<ServerOperationResult>
+    internal sealed class ProbeSuccessSink : IServerOperationSuccessSink<ServerOperationResult<ProbeOpResult>>
     {
         public int Count;
-        public ServerOperationResult Last;
+        public ServerOperationResult<ProbeOpResult> Last;
 
-        public void OnSuccess(ServerOperationResult result)
+        public void OnSuccess(ServerOperationResult<ProbeOpResult> result)
         {
             Count++;
             Last = result;
@@ -100,7 +100,7 @@ namespace PFound.ServerOperation.Core.Tests
             => (IServerOperationTransport<TRequest, TResponse>)(object)Transport;
     }
 
-    /// <summary>Outcome channels that hand back one shared presenter + sink for <see cref="ServerOperationResult"/>.</summary>
+    /// <summary>Outcome channels that hand back one shared presenter + sink for <see cref="ServerOperationResult{ProbeOpResult}"/>.</summary>
     internal sealed class ProbeResultChannels : IServerOperationResultChannels
     {
         public readonly ProbeFailurePresenter Presenter = new ProbeFailurePresenter();
@@ -113,22 +113,12 @@ namespace PFound.ServerOperation.Core.Tests
             => (IServerOperationSuccessSink<TResult>)(object)Sink;
     }
 
-    /// <summary>A sample game result enum for the localized-toast presenter tests — mirrors an Invalid=0 sentinel.</summary>
+    /// <summary>A sample game result enum for the code-toast presenter tests — mirrors an Invalid=0 sentinel.</summary>
     internal enum ProbeOpResult
     {
         Invalid = 0,
         AmountNotPositive = 1,
         InsufficientBalance = 2,
-    }
-
-    /// <summary>Dictionary-backed <see cref="IUserMessageSource"/> so a test can seed exactly which keys resolve.</summary>
-    internal sealed class ProbeUserMessageSource : IUserMessageSource
-    {
-        readonly Dictionary<string, string> _messages = new Dictionary<string, string>();
-
-        public ProbeUserMessageSource Add(string key, string message) { _messages[key] = message; return this; }
-
-        public bool TryGet(string key, out string message) => _messages.TryGetValue(key, out message);
     }
 
     /// <summary>Captures the last message shown so a test can assert what the presenter resolved.</summary>
@@ -141,32 +131,32 @@ namespace PFound.ServerOperation.Core.Tests
     }
 
     /// <summary>A probe flow constructed WITHOUT an explicit context — it resolves one from the ambient host.</summary>
-    internal sealed class AmbientRecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult>
+    internal sealed class AmbientRecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult<ProbeOpResult>>
     {
         public readonly List<string> Log = new List<string>();
 
-        protected override ServerOperationResult PreCheck() { Log.Add("precheck"); return ServerOperationResult.Success(); }
+        protected override ServerOperationResult<ProbeOpResult> PreCheck() { Log.Add("precheck"); return ServerOperationResult<ProbeOpResult>.Success(); }
         protected override ProbeRequest BuildRequest() { Log.Add("build"); return new ProbeRequest(); }
-        protected override ServerOperationResult Interpret(ProbeResponse response) { Log.Add("interpret"); return ServerOperationResult.Success(); }
-        protected override void ApplySuccess(ServerOperationResult result) => Log.Add("apply");
+        protected override ServerOperationResult<ProbeOpResult> Interpret(ProbeResponse response) { Log.Add("interpret"); return ServerOperationResult<ProbeOpResult>.Success(); }
+        protected override void ApplySuccess(ServerOperationResult<ProbeOpResult> result) => Log.Add("apply");
     }
 
     /// <summary>
     /// A concrete operation whose behaviour is steered by delegates and whose every lifecycle step is logged,
     /// so the suite can assert ordering, short-circuiting, and cancellation without one subclass per case.
     /// </summary>
-    internal class RecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult>
+    internal class RecordingOperation : ServerOperationFlow<ProbeRequest, ProbeResponse, ServerOperationResult<ProbeOpResult>>
     {
         public readonly List<string> Log;
         public string Tag = "op";
 
-        public Func<ServerOperationResult> PreCheckResult = () => ServerOperationResult.Success();
-        public Func<ProbeResponse, ServerOperationResult> InterpretResult = _ => ServerOperationResult.Success();
-        public Func<ServerOperationResult, CancellationToken, Task> PostEffects = (_, __) => Task.CompletedTask;
+        public Func<ServerOperationResult<ProbeOpResult>> PreCheckResult = () => ServerOperationResult<ProbeOpResult>.Success();
+        public Func<ProbeResponse, ServerOperationResult<ProbeOpResult>> InterpretResult = _ => ServerOperationResult<ProbeOpResult>.Success();
+        public Func<ServerOperationResult<ProbeOpResult>, CancellationToken, Task> PostEffects = (_, __) => Task.CompletedTask;
         public string OverrideKey;
 
         public RecordingOperation(
-            ServerOperationContext<ProbeRequest, ProbeResponse, ServerOperationResult> context,
+            ServerOperationContext<ProbeRequest, ProbeResponse, ServerOperationResult<ProbeOpResult>> context,
             List<string> log) : base(context)
         {
             Log = log;
@@ -174,7 +164,7 @@ namespace PFound.ServerOperation.Core.Tests
 
         protected override string DuplicateKey => OverrideKey ?? base.DuplicateKey;
 
-        protected override ServerOperationResult PreCheck()
+        protected override ServerOperationResult<ProbeOpResult> PreCheck()
         {
             Log.Add(Tag + ".precheck");
             return PreCheckResult();
@@ -186,18 +176,18 @@ namespace PFound.ServerOperation.Core.Tests
             return new ProbeRequest();
         }
 
-        protected override ServerOperationResult Interpret(ProbeResponse response)
+        protected override ServerOperationResult<ProbeOpResult> Interpret(ProbeResponse response)
         {
             Log.Add(Tag + ".interpret");
             return InterpretResult(response);
         }
 
-        protected override void ApplySuccess(ServerOperationResult result)
+        protected override void ApplySuccess(ServerOperationResult<ProbeOpResult> result)
         {
             Log.Add(Tag + ".apply");
         }
 
-        protected override Task RunPostEffectsAsync(ServerOperationResult result, CancellationToken cancellation)
+        protected override Task RunPostEffectsAsync(ServerOperationResult<ProbeOpResult> result, CancellationToken cancellation)
         {
             Log.Add(Tag + ".posteffects");
             return PostEffects(result, cancellation);

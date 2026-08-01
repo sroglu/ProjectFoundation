@@ -32,22 +32,20 @@ namespace PFound.ServerOperation.Core.Tests
             await LoadingHook_PreCheckFail_NeverShows();
             SuccessSink_And_Analytics_FireOnSuccess();
             await AmbientHost_ResolvesContext_FromCurrent();
-            LocalizedToast_DefinedCode_ShowsConventionalKeyText();
-            LocalizedToast_UnknownCode_ShowsFallbackText();
-            LocalizedToast_InvalidSentinel_ShowsFallbackText();
-            LocalizedToast_MissingKey_ShowsDiagnostic();
+            CodeToast_DefinedCode_ShowsEnumMemberLabel();
+            CodeToast_UnknownCode_ShowsRawNumberLabel();
         }
 
         // ---- helpers ----
 
-        static (ServerOperationContext<ProbeRequest, ProbeResponse, ServerOperationResult> ctx,
+        static (ServerOperationContext<ProbeRequest, ProbeResponse, ServerOperationResult<ProbeOpResult>> ctx,
                 ProbeTransport transport,
                 ProbeFailurePresenter presenter)
             NewContext()
         {
             var transport = new ProbeTransport();
             var presenter = new ProbeFailurePresenter();
-            var ctx = new ServerOperationContext<ProbeRequest, ProbeResponse, ServerOperationResult>(transport, presenter);
+            var ctx = new ServerOperationContext<ProbeRequest, ProbeResponse, ServerOperationResult<ProbeOpResult>>(transport, presenter);
             return (ctx, transport, presenter);
         }
 
@@ -59,15 +57,15 @@ namespace PFound.ServerOperation.Core.Tests
             var log = new List<string>();
             var op = new RecordingOperation(ctx, log)
             {
-                PreCheckResult = () => ServerOperationResult.Failure(7, "rejected locally")
+                PreCheckResult = () => ServerOperationResult<ProbeOpResult>.Failure((ProbeOpResult)7, "rejected locally")
             };
 
             var run = await op.RunAsync();
 
             TestKit.Check(run.Accepted, "precheck-fail: run reports completed");
-            TestKit.Check(!run.Result.IsSuccess && run.Result.ResultCode == 7, "precheck-fail: carries the pre-check result");
+            TestKit.Check(!run.Result.IsSuccess && run.Result.ResultCode == (ProbeOpResult)7, "precheck-fail: carries the pre-check result");
             TestKit.Check(transport.SendCount == 0, "precheck-fail: transport NOT called");
-            TestKit.Check(presenter.Count == 1 && presenter.Last.ResultCode == 7, "precheck-fail: failure presenter invoked with the pre-check result");
+            TestKit.Check(presenter.Count == 1 && presenter.Last.ResultCode == (ProbeOpResult)7, "precheck-fail: failure presenter invoked with the pre-check result");
             TestKit.Check(!log.Contains("op.build"), "precheck-fail: request not built");
         }
 
@@ -94,15 +92,15 @@ namespace PFound.ServerOperation.Core.Tests
             var log = new List<string>();
             var op = new RecordingOperation(ctx, log)
             {
-                InterpretResult = _ => ServerOperationResult.Failure(42, "server refused")
+                InterpretResult = _ => ServerOperationResult<ProbeOpResult>.Failure((ProbeOpResult)42, "server refused")
             };
 
             var run = await op.RunAsync();
 
-            TestKit.Check(!run.Result.IsSuccess && run.Result.ResultCode == 42, "server-fail: carries the mapped server result");
+            TestKit.Check(!run.Result.IsSuccess && run.Result.ResultCode == (ProbeOpResult)42, "server-fail: carries the mapped server result");
             TestKit.Check(transport.SendCount == 1, "server-fail: the request WAS sent");
             TestKit.Check(!log.Contains("op.apply"), "server-fail: no success apply");
-            TestKit.Check(presenter.Count == 1 && presenter.Last.ResultCode == 42, "server-fail: same failure path as pre-check");
+            TestKit.Check(presenter.Count == 1 && presenter.Last.ResultCode == (ProbeOpResult)42, "server-fail: same failure path as pre-check");
         }
 
         static async Task Cancellation_MidPostEffects_StopsRemainingWorkAndChain()
@@ -232,7 +230,7 @@ namespace PFound.ServerOperation.Core.Tests
             failCtx.Gate = ServerOperationGate.WithLoading(indicator);
             var failOp = new RecordingOperation(failCtx, new List<string>())
             {
-                InterpretResult = _ => ServerOperationResult.Failure(9, "server no")
+                InterpretResult = _ => ServerOperationResult<ProbeOpResult>.Failure((ProbeOpResult)9, "server no")
             };
             await failOp.RunAsync();
             TestKit.Check(indicator.ShowCount == 1 && indicator.HideCount == 1, "loading: hide always runs, even on server failure");
@@ -245,7 +243,7 @@ namespace PFound.ServerOperation.Core.Tests
             ctx.Gate = ServerOperationGate.WithLoading(indicator);
             var op = new RecordingOperation(ctx, new List<string>())
             {
-                PreCheckResult = () => ServerOperationResult.Failure(1, "reject")
+                PreCheckResult = () => ServerOperationResult<ProbeOpResult>.Failure((ProbeOpResult)1, "reject")
             };
 
             await op.RunAsync();
@@ -268,54 +266,26 @@ namespace PFound.ServerOperation.Core.Tests
             TestKit.Check(analytics.Count == 1 && analytics.LastSuccess, "analytics: outcome recorded on success");
         }
 
-        // ---- localized-toast failure presenter ----
+        // ---- code-toast failure presenter ----
 
-        static LocalizedToastFailurePresenter<ServerOperationResult, ProbeOpResult> NewToastPresenter(
-            ProbeUserMessageSource messages, ProbeToastPresenter toast)
-            => new LocalizedToastFailurePresenter<ServerOperationResult, ProbeOpResult>(messages, toast);
-
-        static void LocalizedToast_DefinedCode_ShowsConventionalKeyText()
+        static void CodeToast_DefinedCode_ShowsEnumMemberLabel()
         {
-            var messages = new ProbeUserMessageSource().Add("op.result.InsufficientBalance", "Not enough coins.");
             var toast = new ProbeToastPresenter();
-            NewToastPresenter(messages, toast).PresentFailure(
-                ServerOperationResult.Failure((int)ProbeOpResult.InsufficientBalance, "insufficient balance"));
+            new CodeToastFailurePresenter<ProbeOpResult>(toast).PresentFailure(
+                ServerOperationResult<ProbeOpResult>.Failure(ProbeOpResult.InsufficientBalance, "insufficient balance"));
 
-            TestKit.Check(toast.Count == 1 && toast.Last == "Not enough coins.",
-                "localized-toast: a defined code resolves the conventional op.result.<Name> text");
+            TestKit.Check(toast.Count == 1 && toast.Last == "[ProbeOpResult.InsufficientBalance] insufficient balance",
+                "code-toast: a defined code shows the [<EnumType>.<Member>] diagnostic label");
         }
 
-        static void LocalizedToast_UnknownCode_ShowsFallbackText()
+        static void CodeToast_UnknownCode_ShowsRawNumberLabel()
         {
-            var messages = new ProbeUserMessageSource().Add("op.result.Unknown", "Something went wrong.");
             var toast = new ProbeToastPresenter();
-            NewToastPresenter(messages, toast).PresentFailure(
-                ServerOperationResult.Failure(999, "unmapped code"));
+            new CodeToastFailurePresenter<ProbeOpResult>(toast).PresentFailure(
+                ServerOperationResult<ProbeOpResult>.Failure((ProbeOpResult)999, "unmapped code"));
 
-            TestKit.Check(toast.Count == 1 && toast.Last == "Something went wrong.",
-                "localized-toast: an out-of-range code falls back to the generic key text");
-        }
-
-        static void LocalizedToast_InvalidSentinel_ShowsFallbackText()
-        {
-            var messages = new ProbeUserMessageSource().Add("op.result.Unknown", "Something went wrong.");
-            var toast = new ProbeToastPresenter();
-            NewToastPresenter(messages, toast).PresentFailure(
-                ServerOperationResult.Failure((int)ProbeOpResult.Invalid, "sentinel"));
-
-            TestKit.Check(toast.Count == 1 && toast.Last == "Something went wrong.",
-                "localized-toast: the Invalid=0 sentinel falls back to the generic key text");
-        }
-
-        static void LocalizedToast_MissingKey_ShowsDiagnostic()
-        {
-            var messages = new ProbeUserMessageSource(); // neither the conventional key nor the fallback exists
-            var toast = new ProbeToastPresenter();
-            NewToastPresenter(messages, toast).PresentFailure(
-                ServerOperationResult.Failure((int)ProbeOpResult.AmountNotPositive, "amount must be positive"));
-
-            TestKit.Check(toast.Count == 1 && toast.Last == "amount must be positive",
-                "localized-toast: with no localization row and no fallback row, the raw diagnostic is shown");
+            TestKit.Check(toast.Count == 1 && toast.Last == "[ProbeOpResult.999] unmapped code",
+                "code-toast: an out-of-range code shows the raw number in the label instead of a blank");
         }
 
         static async Task AmbientHost_ResolvesContext_FromCurrent()

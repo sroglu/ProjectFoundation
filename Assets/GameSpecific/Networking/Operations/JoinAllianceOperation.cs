@@ -32,7 +32,7 @@ namespace GameSpecific.Networking.Operations
 
     /// <summary>Server-authoritative flow for JoinAllianceOperation — client-predicts the join, then applies it.</summary>
     public sealed class JoinAllianceOperationFlow
-        : ServerOperationFlow<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage, ServerOperationResult>
+        : ServerOperationFlow<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage, ServerOperationResult<OpResult>>
     {
         readonly JoinAllianceRequest _request;
 
@@ -43,26 +43,26 @@ namespace GameSpecific.Networking.Operations
 
         AllianceMembership Membership => AllianceMembership.Current;
 
-        protected override ServerOperationResult PreCheck()
+        protected override ServerOperationResult<OpResult> PreCheck()
         {
             if (_request.AllianceId.Value == 0)
                 return OpResults.Fail(OpResult.AllianceIdMissing, "alliance id must be set");
             if (Membership.IsInAlliance)
                 return OpResults.Fail(OpResult.AlreadyInAlliance, "already in an alliance");
-            return ServerOperationResult.Success();
+            return OpResults.Ok();
         }
 
         protected override JoinAllianceOperation.RequestMessage BuildRequest() => new JoinAllianceOperation.RequestMessage { Content = _request };
 
-        protected override ServerOperationResult Interpret(JoinAllianceOperation.ReplyMessage reply)
+        protected override ServerOperationResult<OpResult> Interpret(JoinAllianceOperation.ReplyMessage reply)
         {
             if (reply.Status != ReplyStatus.Ok)
                 return OpResults.Fail(OpResults.FromReplyStatus(reply.Status), $"join refused by server: {reply.Status}");
             Result = reply.Content;
-            return ServerOperationResult.Success();
+            return OpResults.Ok();
         }
 
-        protected override void ApplySuccess(ServerOperationResult result)
+        protected override void ApplySuccess(ServerOperationResult<OpResult> result)
         {
             Membership.CurrentAlliance = Result.Id;
             Membership.MemberCount = Result.MemberCount;

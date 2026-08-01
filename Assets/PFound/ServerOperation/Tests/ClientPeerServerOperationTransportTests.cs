@@ -90,6 +90,15 @@ namespace PFound.ServerOperation.Tests
     [GeneratedMessagePackResolver]
     public partial class RewardTestResolver { }
 
+    // A minimal result-code enum so this test's flow reports through the generic ready-made result
+    // (ServerOperationResult<TransportProbeResult>). The adapter round-trip only checks IsSuccess, so two
+    // values — an Ok sentinel and a single Failed code — are all the coverage here needs.
+    public enum TransportProbeResult
+    {
+        Ok = 0,
+        Failed = 1,
+    }
+
     /// <summary>
     /// Glue coverage: the NetworkLayer adapter maps the engine-free transport seam to
     /// <see cref="ClientPeer.CallAsync{TReply}(RequestMessage,int)"/>, driving a real operation lifecycle
@@ -114,23 +123,23 @@ namespace PFound.ServerOperation.Tests
             return catalog;
         }
 
-        sealed class RecordingFailurePresenter : IServerOperationFailurePresenter<ServerOperationResult>
+        sealed class RecordingFailurePresenter : IServerOperationFailurePresenter<ServerOperationResult<TransportProbeResult>>
         {
             public int Count;
-            public void PresentFailure(ServerOperationResult result) => Count++;
+            public void PresentFailure(ServerOperationResult<TransportProbeResult> result) => Count++;
         }
 
         // A concrete operation that grants a reward: build the request DTO from its amount, and on a
         // successful reply record the server-authoritative balance into local state (synchronously,
         // per the lifecycle).
-        sealed class GrantRewardOperation : ServerOperationFlow<GrantRewardRequest, GrantRewardReply, ServerOperationResult>
+        sealed class GrantRewardOperation : ServerOperationFlow<GrantRewardRequest, GrantRewardReply, ServerOperationResult<TransportProbeResult>>
         {
             readonly GrantReward _content;   // the immutable request DTO; also this run's dedup identity
             int _serverBalance;
             public int AppliedBalance = -1;
 
             public GrantRewardOperation(
-                ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult> context,
+                ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult<TransportProbeResult>> context,
                 int amount) : base(context)
                 => _content = new GrantReward(amount);
 
@@ -139,20 +148,22 @@ namespace PFound.ServerOperation.Tests
             // suppressed. Value-equality on GrantReward is what makes the folded key correct for free.
             protected override string DuplicateKey => "GrantReward:" + _content;
 
-            protected override ServerOperationResult PreCheck()
-                => _content.Amount > 0 ? ServerOperationResult.Success() : ServerOperationResult.Failure(1, "non-positive amount");
+            protected override ServerOperationResult<TransportProbeResult> PreCheck()
+                => _content.Amount > 0
+                    ? ServerOperationResult<TransportProbeResult>.Success()
+                    : ServerOperationResult<TransportProbeResult>.Failure(TransportProbeResult.Failed, "non-positive amount");
 
             protected override GrantRewardRequest BuildRequest() => new GrantRewardRequest { Content = _content };
 
-            protected override ServerOperationResult Interpret(GrantRewardReply response)
+            protected override ServerOperationResult<TransportProbeResult> Interpret(GrantRewardReply response)
             {
                 _serverBalance = response.Content.NewBalance; // capture the authoritative value for the apply step
                 return response.Status == ReplyStatus.Ok
-                    ? ServerOperationResult.Success()
-                    : ServerOperationResult.Failure((int)response.Status, "server rejected");
+                    ? ServerOperationResult<TransportProbeResult>.Success()
+                    : ServerOperationResult<TransportProbeResult>.Failure(TransportProbeResult.Failed, "server rejected");
             }
 
-            protected override void ApplySuccess(ServerOperationResult result) => AppliedBalance = _serverBalance;
+            protected override void ApplySuccess(ServerOperationResult<TransportProbeResult> result) => AppliedBalance = _serverBalance;
         }
 
         [UnityTest]
@@ -186,10 +197,10 @@ namespace PFound.ServerOperation.Tests
 
             var transport = new ClientPeerServerOperationTransport<GrantRewardRequest, GrantRewardReply>(client);
             var presenter = new RecordingFailurePresenter();
-            var context = new ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult>(transport, presenter);
+            var context = new ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult<TransportProbeResult>>(transport, presenter);
             var op = new GrantRewardOperation(context, amount: 10);
 
-            Task<ServerOperationRun<ServerOperationResult>> run = op.RunAsync();
+            Task<ServerOperationRun<ServerOperationResult<TransportProbeResult>>> run = op.RunAsync();
 
             // Pump both ends until the lifecycle task settles (CallAsync completes on a ThreadPool bounce).
             for (int i = 0; i < 600 && !run.IsCompleted; i++)
@@ -225,10 +236,10 @@ namespace PFound.ServerOperation.Tests
 
             var transport = new ClientPeerServerOperationTransport<GrantRewardRequest, GrantRewardReply>(client);
             var presenter = new RecordingFailurePresenter();
-            var context = new ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult>(transport, presenter);
+            var context = new ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult<TransportProbeResult>>(transport, presenter);
             var op = new GrantRewardOperation(context, amount: 0); // fails the local pre-check
 
-            Task<ServerOperationRun<ServerOperationResult>> run = op.RunAsync();
+            Task<ServerOperationRun<ServerOperationResult<TransportProbeResult>>> run = op.RunAsync();
 
             for (int i = 0; i < 30 && !run.IsCompleted; i++)
             {
@@ -278,7 +289,7 @@ namespace PFound.ServerOperation.Tests
             var presenter = new RecordingFailurePresenter();
             // One shared gate is what makes two runs of the same content-key guard against each other.
             var gate = ServerOperationGate.DedupOnly();
-            var context = new ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult>(transport, presenter) { Gate = gate };
+            var context = new ServerOperationContext<GrantRewardRequest, GrantRewardReply, ServerOperationResult<TransportProbeResult>>(transport, presenter) { Gate = gate };
 
             // Same amount ⇒ value-equal GrantReward content ⇒ equal DuplicateKey (verify the equality that
             // the key relies on, so this is a genuine content-DTO dedup, not an accidental type-name match).
@@ -288,9 +299,9 @@ namespace PFound.ServerOperation.Tests
 
             // Start the first run: it enters the gate, passes pre-check, sends, and is now awaiting the
             // network hop (RunAsync runs synchronously up to the first await), so it HOLDS the key.
-            Task<ServerOperationRun<ServerOperationResult>> firstRun = opFirst.RunAsync();
+            Task<ServerOperationRun<ServerOperationResult<TransportProbeResult>>> firstRun = opFirst.RunAsync();
             // Start the second while the first is in flight: TryEnter sees the key held ⇒ suppressed.
-            Task<ServerOperationRun<ServerOperationResult>> secondRun = opSecond.RunAsync();
+            Task<ServerOperationRun<ServerOperationResult<TransportProbeResult>>> secondRun = opSecond.RunAsync();
 
             Assert.IsTrue(secondRun.IsCompleted, "the suppressed run completes synchronously (it never awaited)");
             Assert.AreEqual(ServerOperationDisposition.DuplicateSuppressed, secondRun.Result.Disposition,

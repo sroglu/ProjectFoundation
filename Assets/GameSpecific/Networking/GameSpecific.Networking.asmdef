@@ -4,8 +4,7 @@
     "references": [
         "PFound.NetworkLayer",
         "PFound.ServerOperation",
-        "PFound.ServerOperation.Core",
-        "PFound.LocalizationService"
+        "PFound.ServerOperation.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -43,7 +43,7 @@ namespace GameSpecific.Networking.Operations
     /// entry point at call sites; this class is what it news up.
     /// </summary>
     public sealed class SpendCoinsOperationFlow
-        : ServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage, ServerOperationResult>
+        : ServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage, ServerOperationResult<OpResult>>
     {
         readonly SpendRequest _request;
 
@@ -54,27 +54,27 @@ namespace GameSpecific.Networking.Operations
 
         PlayerWallet Wallet => PlayerWallet.Current;
 
-        protected override ServerOperationResult PreCheck()
+        protected override ServerOperationResult<OpResult> PreCheck()
         {
             if (_request.Amount <= 0)
                 return OpResults.Fail(OpResult.AmountNotPositive, "amount must be positive");
             if (Wallet.Balance < _request.Amount)
                 return OpResults.Fail(OpResult.InsufficientBalance, "insufficient balance");
-            return ServerOperationResult.Success();
+            return OpResults.Ok();
         }
 
         protected override SpendCoinsOperation.RequestMessage BuildRequest()
             => new SpendCoinsOperation.RequestMessage { Content = _request };
 
-        protected override ServerOperationResult Interpret(SpendCoinsOperation.ReplyMessage reply)
+        protected override ServerOperationResult<OpResult> Interpret(SpendCoinsOperation.ReplyMessage reply)
         {
             if (reply.Status != ReplyStatus.Ok)
                 return OpResults.Fail(OpResults.FromReplyStatus(reply.Status), $"spend refused by server: {reply.Status}");
             Result = reply.Content;
-            return ServerOperationResult.Success();
+            return OpResults.Ok();
         }
 
-        protected override void ApplySuccess(ServerOperationResult result)
+        protected override void ApplySuccess(ServerOperationResult<OpResult> result)
             => Wallet.Balance = Result.NewBalance;
     }
 }

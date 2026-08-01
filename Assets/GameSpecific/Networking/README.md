@@ -95,43 +95,44 @@ outcome seams + run policy) from the ambient `ServerOperationHost.Current`. See 
 for the full live reference (`SpendCoinsOperationFlow`). Shape:
 ```csharp
 public sealed class SpendCoinsOperationFlow
-    : ServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage, ServerOperationResult>
+    : ServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage, ServerOperationResult<OpResult>>
 {
     readonly SpendRequest _request;                             // the request DTO the generated Execute passes in
     public SpendResult Result { get; private set; }             // capture the reply DTO here if callers need it
     public SpendCoinsOperationFlow(SpendRequest request) => _request = request;   // NO context param — it's ambient
 
-    protected override ServerOperationResult PreCheck()                   { /* client-side reject, no request sent */ }
-    protected override SpendCoinsOperation.RequestMessage BuildRequest()  { /* new RequestMessage { Content = _request } */ }
-    protected override ServerOperationResult Interpret(SpendCoinsOperation.ReplyMessage reply) { /* success/fail */ }
-    protected override void ApplySuccess(ServerOperationResult result) { /* apply authoritative state (ambient) */ }
+    protected override ServerOperationResult<OpResult> PreCheck()                   { /* client-side reject, no request sent */ }
+    protected override SpendCoinsOperation.RequestMessage BuildRequest()            { /* new RequestMessage { Content = _request } */ }
+    protected override ServerOperationResult<OpResult> Interpret(SpendCoinsOperation.ReplyMessage reply) { /* OpResults.Ok() / OpResults.Fail(...) */ }
+    protected override void ApplySuccess(ServerOperationResult<OpResult> result) { /* apply authoritative state (ambient) */ }
 }
 ```
+The result is the framework's ready-made `ServerOperationResult<OpResult>` — its `ResultCode` is the typed
+`OpResult` itself, so `PreCheck`/`Interpret` report through `OpResults.Ok()` / `OpResults.Fail(OpResult.X, "…")`.
 Everything else (send, single-flight, loading, uniform failure) is owned by the base and cannot be skipped. Call
 sites never touch the flow directly — they use `SpendCoinsOperation.Execute(amount)` (§2), which news it up and
 runs it.
 
 **Boot wiring (once):** `GameNetworkSetup.Configure(peer, catalog)` publishes both the ambient client and the
-ambient `ServerOperationHost` (transport factory + a localized-toast failure presenter (§5b) + a shared
-single-flight gate), so every `Execute` has what it needs.
+ambient `ServerOperationHost` (transport factory + a toast failure presenter (§5b) + a shared single-flight
+gate), so every `Execute` has what it needs.
 
-## 5b. Error handling → localized toast
+## 5b. Error handling → toast
 Every failure — a pre-check reject AND a server failure — funnels through the ambient host's failure
-presenter. The default sample wiring resolves the failed result's code to a localized string and shows it
-as a toast, with NO per-error mapping table:
+presenter, so error handling is identical everywhere:
 - Failures report an **`OpResult`** enum value (`OpResults.Fail(OpResult.InsufficientBalance, "log detail")`;
-  a non-Ok reply maps via `OpResults.FromReplyStatus(reply.Status)`). The enum value IS the result code.
-- The framework `LocalizedToastFailurePresenter<TResult, TCode>` turns that code back into the enum member
-  name and looks up the localization key **by convention: `"op.result." + <Name>"`** — e.g.
-  `OpResult.InsufficientBalance` → `op.result.InsufficientBalance`.
-- Resolution order: the conventional key → the generic `op.result.Unknown` → the result's own log diagnostic.
-  The `Invalid = 0` sentinel and any unmapped code land on the generic message.
+  a non-Ok reply maps via `OpResults.FromReplyStatus(reply.Status)`). The result's `ResultCode` IS that typed
+  `OpResult` (the flow's result type is `ServerOperationResult<OpResult>`), not a bare number.
+- The framework `CodeToastFailurePresenter<OpResult>` prints that typed code and shows
+  `[<EnumType>.<Member>] <diagnostic>` through the toast seam — e.g.
+  `[OpResult.InsufficientBalance] insufficient balance`. An out-of-range code shows the raw number
+  (`[OpResult.999] …`) instead of a blank.
 
-**To add a user-facing error:** add an `OpResult` value and one localization row `op.result.<Name>`. That is
-the whole change — no switch, no mapping. Keys are seeded in `GameNetworkSetup.CreateSampleLocalization`
-(swap that in-memory seed for a content-file-backed `LocalizationService` in a shipping game). The toast
+**To add an error:** add an `OpResult` value and fail with it — that is the whole change, no mapping. The toast
 destination is `DebugToastPresenter` (logs `[toast] …` for now — swap for a real on-screen widget later);
-`LoggingFailurePresenter` remains a valid alternative presenter.
+`LoggingFailurePresenter` remains a valid alternative presenter. When you later want translated, user-facing
+copy, swap `CodeToastFailurePresenter` for one that resolves the code through localization — nothing else in
+the pipeline changes.
 
 ## 6. Require ServerOperation project-wide (optional policy)
 `NetworkingPolicy.cs` — uncomment the one line to make the pipeline mandatory:

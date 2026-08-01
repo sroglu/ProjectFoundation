@@ -17,7 +17,7 @@ namespace GameSpecific.Networking.Operations
     public partial class GetPlayerDataOperation { }
     /// <summary>Server-authoritative flow for GetPlayerDataOperation — fill PreCheck / Interpret / ApplySuccess.</summary>
     public sealed class GetPlayerDataOperationFlow
-        : ServerOperationFlow<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage, ServerOperationResult>
+        : ServerOperationFlow<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage, ServerOperationResult<OpResult>>
     {
         readonly PlayerId _request;
 
@@ -26,19 +26,19 @@ namespace GameSpecific.Networking.Operations
 
         public GetPlayerDataOperationFlow(PlayerId request) => _request = request;
 
-        protected override ServerOperationResult PreCheck() => ServerOperationResult.Success();
+        protected override ServerOperationResult<OpResult> PreCheck() => OpResults.Ok();
 
         protected override GetPlayerDataOperation.RequestMessage BuildRequest() => new GetPlayerDataOperation.RequestMessage { Content = _request };
 
-        protected override ServerOperationResult Interpret(GetPlayerDataOperation.ReplyMessage reply)
+        protected override ServerOperationResult<OpResult> Interpret(GetPlayerDataOperation.ReplyMessage reply)
         {
             if (reply.Status != ReplyStatus.Ok)
                 return OpResults.Fail(OpResults.FromReplyStatus(reply.Status), $"player fetch refused by server: {reply.Status}");
             Result = reply.Content;
-            return ServerOperationResult.Success();
+            return OpResults.Ok();
         }
 
         // A query mutates no local state — the caller reads the returned PlayerData off Execute. Nothing to apply.
-        protected override void ApplySuccess(ServerOperationResult result) { }
+        protected override void ApplySuccess(ServerOperationResult<OpResult> result) { }
     }
 }

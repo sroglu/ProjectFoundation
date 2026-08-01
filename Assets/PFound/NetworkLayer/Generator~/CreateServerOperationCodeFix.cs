@@ -19,14 +19,15 @@ namespace PFound.NetworkLayer.Generation
     /// The Alt+Enter fix for <c>PFNET0010</c> ("this assembly requires a ServerOperation"). When the developer
     /// lands on a raw direct <c>&lt;Op&gt;.Execute(...)</c> the policy forbids, this offers
     /// "Create ServerOperation flow for &lt;Op&gt;" and inserts a ready-to-fill
-    /// <c>&lt;Op&gt;Flow : ServerOperationFlow&lt;&lt;Op&gt;.RequestMessage, &lt;Op&gt;.ReplyMessage, ServerOperationResult&gt;</c>
-    /// class into the operation's OWN declaring file, right after the operation class (one file per operation). It
-    /// inserts ONLY the flow — never an <c>Execute</c> on the operation partial: the source generator emits the
-    /// operation's static <c>Execute(&lt;request members&gt;)</c> that news this flow up, so the operation class stays
-    /// empty. The generated request/reply envelopes are already plugged in; the flow's ctor mirrors the request
-    /// DTO's members and the lifecycle hook bodies are left as <c>NotImplementedException</c> so the file still
-    /// compiles. Shipped in the same DLL as the analyzer/generator; the IDE loads it while Unity's own compiler
-    /// ignores it (it only ever looks for analyzers and source generators).
+    /// <c>&lt;Op&gt;Flow : ServerOperationFlow&lt;&lt;Op&gt;.RequestMessage, &lt;Op&gt;.ReplyMessage, ServerOperationResult&lt;TCode&gt;&gt;</c>
+    /// class into the operation's OWN declaring file, right after the operation class (one file per operation), where
+    /// <c>TCode</c> is the assembly's <c>[OperationResultCode]</c>-marked result enum. It inserts ONLY the flow —
+    /// never an <c>Execute</c> on the operation partial: the source generator emits the operation's static
+    /// <c>Execute(&lt;request DTO&gt;)</c> that news this flow up, so the operation class stays empty. The generated
+    /// request/reply envelopes are already plugged in; the flow's ctor takes the request DTO and the lifecycle hook
+    /// bodies are left as <c>NotImplementedException</c> so the file still compiles. Shipped in the same DLL as the
+    /// analyzer/generator; the IDE loads it while Unity's own compiler ignores it (it only ever looks for analyzers
+    /// and source generators).
     /// </summary>
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(CreateServerOperationCodeFix)), Shared]
     public sealed class CreateServerOperationCodeFix : CodeFixProvider
@@ -35,6 +36,7 @@ namespace PFound.NetworkLayer.Generation
         const string RemoteProcedureAttribute = "PFound.NetworkLayer.RemoteProcedureAttribute";
         const string KeyAttribute = "MessagePack.KeyAttribute";
         const string ServerOperationNamespace = "PFound.ServerOperation.Core";
+        const string ResultCodeAttribute = "PFound.ServerOperation.Core.OperationResultCodeAttribute";
 
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(DiagnosticId);
 
@@ -101,14 +103,18 @@ namespace PFound.NetworkLayer.Generation
             public readonly string OperationTypeFqn;
             public readonly string RequestDtoFqn;
             public readonly ImmutableArray<RequestMember> RequestMembers;
+            // The fully-qualified game result-code enum (the assembly's [OperationResultCode]-marked enum), so the
+            // flow is scaffolded against ServerOperationResult<ThatEnum>. Falls back to the PFound-convention name.
+            public readonly string ResultCodeEnumFqn;
 
-            public OperationScaffold(INamedTypeSymbol operationType, string operationName, string operationTypeFqn, string requestDtoFqn, ImmutableArray<RequestMember> requestMembers)
+            public OperationScaffold(INamedTypeSymbol operationType, string operationName, string operationTypeFqn, string requestDtoFqn, ImmutableArray<RequestMember> requestMembers, string resultCodeEnumFqn)
             {
                 OperationType = operationType;
                 OperationName = operationName;
                 OperationTypeFqn = operationTypeFqn;
                 RequestDtoFqn = requestDtoFqn;
                 RequestMembers = requestMembers;
+                ResultCodeEnumFqn = resultCodeEnumFqn;
             }
         }
 
@@ -151,7 +157,51 @@ namespace PFound.NetworkLayer.Generation
                 operationType.Name,
                 operationType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                 requestDto.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                KeyedMembers(requestDto));
+                KeyedMembers(requestDto),
+                FindResultCodeEnumFqn(model.Compilation));
+        }
+
+        // The game's result-code enum for ServerOperationResult<TCode>: the single enum in this assembly marked
+        // [OperationResultCode]. If none is marked, fall back to the PFound-convention name so the scaffold still
+        // reads sensibly (it won't compile until the author marks/defines that enum, which is the intended nudge).
+        // Ambiguity (more than one marked enum) is not resolved here — the OperationResultCodeAnalyzer reports it.
+        static string FindResultCodeEnumFqn(Compilation compilation)
+        {
+            var marker = compilation.GetTypeByMetadataName(ResultCodeAttribute);
+            if (marker is not null)
+            {
+                foreach (var candidate in EnumsInAssembly(compilation.Assembly.GlobalNamespace))
+                {
+                    if (candidate.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, marker)))
+                        return candidate.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                }
+            }
+            return "global::OpResult";
+        }
+
+        static IEnumerable<INamedTypeSymbol> EnumsInAssembly(INamespaceSymbol ns)
+        {
+            foreach (var type in ns.GetTypeMembers())
+            {
+                foreach (var found in EnumsInType(type))
+                    yield return found;
+            }
+            foreach (var child in ns.GetNamespaceMembers())
+            {
+                foreach (var found in EnumsInAssembly(child))
+                    yield return found;
+            }
+        }
+
+        static IEnumerable<INamedTypeSymbol> EnumsInType(INamedTypeSymbol type)
+        {
+            if (type.TypeKind == TypeKind.Enum)
+                yield return type;
+            foreach (var nested in type.GetTypeMembers())
+            {
+                foreach (var found in EnumsInType(nested))
+                    yield return found;
+            }
         }
 
         // The request DTO's [Key]-tagged members, in key order — the flow ctor mirrors these.
@@ -245,23 +295,24 @@ namespace PFound.NetworkLayer.Generation
         {
             var request = op.OperationName + ".RequestMessage";
             var reply = op.OperationName + ".ReplyMessage";
+            var result = "ServerOperationResult<" + op.ResultCodeEnumFqn + ">";
 
             return
 $@"/// <summary>Server-authoritative flow for {op.OperationName} — fill PreCheck / Interpret / ApplySuccess.</summary>
 public sealed class {op.OperationName}Flow
-    : ServerOperationFlow<{request}, {reply}, ServerOperationResult>
+    : ServerOperationFlow<{request}, {reply}, {result}>
 {{
     readonly {op.RequestDtoFqn} _request;
 
     public {op.OperationName}Flow({op.RequestDtoFqn} request) => _request = request;
 
-    protected override ServerOperationResult PreCheck() => ServerOperationResult.Success();
+    protected override {result} PreCheck() => {result}.Success();
 
     protected override {request} BuildRequest() => new {request} {{ Content = _request }};
 
-    protected override ServerOperationResult Interpret({reply} reply) => throw new System.NotImplementedException();
+    protected override {result} Interpret({reply} reply) => throw new System.NotImplementedException();
 
-    protected override void ApplySuccess(ServerOperationResult result) => throw new System.NotImplementedException();
+    protected override void ApplySuccess({result} result) => throw new System.NotImplementedException();
 }}";
         }
 
@@ -307,7 +358,7 @@ public sealed class {op.OperationName}Flow
             var op = scaffold.OperationName;
             var request = scaffold.OperationTypeFqn + ".RequestMessage";
             var reply = scaffold.OperationTypeFqn + ".ReplyMessage";
-            const string result = "global::PFound.ServerOperation.Core.ServerOperationResult";
+            var result = "global::PFound.ServerOperation.Core.ServerOperationResult<" + scaffold.ResultCodeEnumFqn + ">";
 
             // Fallback path: the operation lives in a referenced assembly, so its partial cannot be re-opened here.
             // Only the flow is emitted; construct it directly and await RunAsync. The ctor takes the request DTO
