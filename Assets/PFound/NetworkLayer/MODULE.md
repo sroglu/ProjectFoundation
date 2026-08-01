@@ -271,6 +271,16 @@ engine-free assembly — split the game's networking accordingly:
   failure/toast presenters, and boot wiring. A SINGLE `UnityEngine` reference anywhere in the contract assembly
   (e.g. a `Debug.Log` presenter) breaks the .NET/console server build — keep such code out of the contract.
 
+### Server threading — one thread, pump-driven
+`ServerPeer` is single-threaded: frames are received and replies are sent only inside `Update()` (the pump). So a
+`Handle<>` reply, and any deferred `RequestExchange.Reply(...)`, MUST run on the pump thread. A synchronous
+`Handle<TReq,TReply>` handler is already there. An **async** handler (e.g. a DB hit) completes on a threadpool
+thread — do NOT call `Reply` from that continuation: it races the pump's own deferred-expiry sweep over the
+shared exchange list. Marshal the completion back instead — enqueue `(exchange, reply)` onto a thread-safe queue
+in the continuation, and drain it (calling `exchange.Reply`) at the top of your `Update()`/tick loop, on the pump
+thread. On a handler fault, reply with a `Faulted` `ReplyMessage` so the client fails fast instead of waiting out
+its deadline.
+
 ## Message codegen (source generator)
 
 A Roslyn incremental source generator turns one compact partial-class declaration per operation into the

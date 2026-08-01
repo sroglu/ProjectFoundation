@@ -9,7 +9,8 @@ namespace PFound.NetworkLayer
     /// </summary>
     public abstract class RequestExchangeBase
     {
-        internal int Peer;
+        /// <summary>The connection id the request came from — a deferred handler reads it to attribute the work.</summary>
+        public int Peer { get; internal set; }
         internal uint CallToken;
         internal ushort Opcode;
         internal long StartedMs;
