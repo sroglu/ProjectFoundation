@@ -32,6 +32,10 @@ namespace PFound.NetworkLayer
             {
                 await call;
             }
+            catch (OperationCanceledException)
+            {
+                // A gameloop/session cancel is an expected stop, not a fault — drop it silently.
+            }
             catch (Exception e)
             {
                 OnFault(e);

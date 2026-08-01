@@ -49,6 +49,7 @@ Low-level primitives most modules build on.
 
 ### Networking
 - **NetworkLayer** — transport-agnostic realtime request/reply/notify messaging (Telepathy TCP).
+- **ServerOperationFlow** — client-side server-authoritative operation lifecycle (predict → send → interpret → apply, single-flight, uniform failure) over the NetworkLayer transport seam. Core is engine- and transport-agnostic.
 
 ### Input
 - **InputRouter** — backend-agnostic input-**intent** router (legacy Input Manager + Input System).
@@ -69,6 +70,7 @@ The only hard PFound→PFound edges (everything else is a leaf):
 - AssetPipeline → ContentDelivery → Compression
 - Commerce → RemoteGameConfig → RemoteResourceCache
 - PlayerDataSync → RemoteGameConfig
+- ServerOperationFlow → NetworkLayer (the adapter binds the lifecycle's transport seam to `ClientPeer`; the Core has no deps)
 - GameDataStore / UserPrefs / UISystem → Utilities
 - LocalizationService → Compression, Utilities
 - HubApp → ContentDelivery, Signaling, Utilities
