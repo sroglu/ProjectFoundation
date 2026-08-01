@@ -270,16 +270,32 @@ engine-free assembly — split the game's networking accordingly:
 - **Client-only assembly (may reference `UnityEngine` / `ClientPeer`):** the `ServerOperationFlow` flows, the
   failure/toast presenters, and boot wiring. A SINGLE `UnityEngine` reference anywhere in the contract assembly
   (e.g. a `Debug.Log` presenter) breaks the .NET/console server build — keep such code out of the contract.
+- **The server's OWN logic (handlers, repositories, boot) stays engine-free too**, in an assembly with
+  `noEngineReferences: true` and platform-agnostic (NOT `includePlatforms: ["Editor"]`, which would exclude it
+  from a headless build). A Unity `MonoBehaviour` that merely calls the host's tick each frame is a thin,
+  SEPARATE Unity-only file — never mix it into the engine-free server assembly, or console builds break. The
+  console entry point is a plain `Main()` loop calling the same tick.
 
-### Server threading — one thread, pump-driven
-`ServerPeer` is single-threaded: frames are received and replies are sent only inside `Update()` (the pump). So a
-`Handle<>` reply, and any deferred `RequestExchange.Reply(...)`, MUST run on the pump thread. A synchronous
-`Handle<TReq,TReply>` handler is already there. An **async** handler (e.g. a DB hit) completes on a threadpool
-thread — do NOT call `Reply` from that continuation: it races the pump's own deferred-expiry sweep over the
-shared exchange list. Marshal the completion back instead — enqueue `(exchange, reply)` onto a thread-safe queue
-in the continuation, and drain it (calling `exchange.Reply`) at the top of your `Update()`/tick loop, on the pump
-thread. On a handler fault, reply with a `Faulted` `ReplyMessage` so the client fails fast instead of waiting out
-its deadline.
+### Authoring a server handler
+The server DECIDES the outcome (the client only predicted). Handlers run inside the single-threaded pump; five
+rules keep them correct — get any one wrong and you get a race, a corrupted message, or a client that hangs:
+
+1. **Sync vs async.** `Handle<TReq,TReply>((peerId, request) => reply)` for work that finishes this tick.
+   `HandleDeferred<TReq>(exchange => …)` when the work awaits (a DB/IO hit) and answers across ticks via
+   `exchange.Reply(reply)`. Read the sender with `exchange.Peer`.
+2. **Reply on the pump thread.** `ServerPeer` is single-threaded — frames arrive and replies leave only inside
+   `Update()`. A sync `Handle<>` is already on the pump thread. An **async** handler completes on a threadpool
+   thread, so do NOT call `Reply` from that continuation (it races the pump's deferred-expiry sweep). Enqueue
+   `(exchange, reply)` onto a thread-safe queue in the continuation, and drain it — calling `Reply` — at the top
+   of your `Update()`/tick loop.
+3. **Copy out before you await.** Request/reply messages are POOLED and recycled once the handler returns or the
+   reply is sent. In an async handler, read the values you need out of `exchange.Request.Content` into locals
+   BEFORE the first `await`; never hold the message across an `await`, and build the reply DTO just before replying.
+4. **Reply once, before the deadline.** A deferred request has a serve-deadline; the watchdog reclaims it if you
+   don't answer in time (the client gets `Expired`) and a later `Reply` is then silently ignored. Answer exactly once.
+5. **Fail with a status, not silence.** On a rejection or error, reply a `ReplyMessage` with `ReplyStatus.Faulted`
+   (or a domain status) so the client fails fast — don't just log-and-drop, which leaves the client waiting out its
+   full deadline. The client's flow `Interpret` maps that status into its result.
 
 ## Message codegen (source generator)
 
