@@ -1,4 +1,4 @@
-namespace PFound.ServerOperation.Core
+namespace PFound.ServerOperationFlow.Core
 {
     using System.Collections.Generic;
 

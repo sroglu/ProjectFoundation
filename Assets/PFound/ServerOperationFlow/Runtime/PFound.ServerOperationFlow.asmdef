@@ -1,8 +1,8 @@
 {
-    "name": "PFound.ServerOperation",
-    "rootNamespace": "PFound.ServerOperation",
+    "name": "PFound.ServerOperationFlow",
+    "rootNamespace": "PFound.ServerOperationFlow",
     "references": [
-        "PFound.ServerOperation.Core",
+        "PFound.ServerOperationFlow.Core",
         "PFound.NetworkLayer"
     ],
     "includePlatforms": [],

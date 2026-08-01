@@ -3,7 +3,7 @@
     "rootNamespace": "PFound.NetworkLayer.EditorTools",
     "references": [
         "PFound.NetworkLayer",
-        "PFound.ServerOperation.Core"
+        "PFound.ServerOperationFlow.Core"
     ],
     "includePlatforms": [
         "Editor"

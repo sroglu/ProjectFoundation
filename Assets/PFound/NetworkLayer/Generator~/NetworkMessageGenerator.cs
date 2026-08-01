@@ -26,7 +26,7 @@ namespace PFound.NetworkLayer.Generation
         const string NotifyAttribute = "PFound.NetworkLayer.NotifyAttribute";
         const string KeyAttribute = "MessagePack.KeyAttribute";
         const string ServerOperationFlowType = "ServerOperationFlow";
-        const string ServerOperationNamespace = "PFound.ServerOperation.Core";
+        const string ServerOperationNamespace = "PFound.ServerOperationFlow.Core";
         const string PolicyAttribute = "PFound.NetworkLayer.RequireServerOperationFlowAttribute";
 
         public void Initialize(IncrementalGeneratorInitializationContext context)

@@ -1,8 +1,8 @@
 using System;
 using UnityEngine;
 using PFound.NetworkLayer;
-using PFound.ServerOperation;
-using PFound.ServerOperation.Core;
+using PFound.ServerOperationFlow;
+using PFound.ServerOperationFlow.Core;
 
 namespace GameSpecific.Networking
 {

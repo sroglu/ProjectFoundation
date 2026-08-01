@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PFound.ServerOperation.Core.Tests
+namespace PFound.ServerOperationFlow.Core.Tests
 {
     // ---- sample request / response the tests drive (a game would author typed wire messages) ----
 

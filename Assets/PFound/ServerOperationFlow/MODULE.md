@@ -1,4 +1,4 @@
-# ServerOperation
+# ServerOperationFlow
 
 > **Module group — Networking.** An optional layer on top of `PFound.NetworkLayer`. Grouped by purpose —
 > see the catalog `Assets/PFound/README.md` and each module's **Dependencies** for exact edges.
@@ -35,12 +35,12 @@ A concrete flow subclasses `ServerOperationFlow<TRequest, TResponse, TResult>`. 
 
 | Assembly | Location | Notes |
 |---|---|---|
-| `PFound.ServerOperation.Core` | `Core/Runtime/` | Engine-free lifecycle over the transport seam. `noEngineReferences`, no `PFound.*` deps. mono/csc-testable. |
-| `PFound.ServerOperation.Core.Tests` | `Core/Tests/` | Standalone mono/csc runner (`Program.cs` + `TestKit`). |
-| `PFound.ServerOperation` | `Runtime/` | Thin adapter binding the seam to NetworkLayer's `ClientPeer.CallAsync`. Depends on `PFound.NetworkLayer`. |
-| `PFound.ServerOperation.Tests` | `Tests/` | Unity EditMode glue tests (adapter over the loopback transport). |
+| `PFound.ServerOperationFlow.Core` | `Core/Runtime/` | Engine-free lifecycle over the transport seam. `noEngineReferences`, no `PFound.*` deps. mono/csc-testable. |
+| `PFound.ServerOperationFlow.Core.Tests` | `Core/Tests/` | Standalone mono/csc runner (`Program.cs` + `TestKit`). |
+| `PFound.ServerOperationFlow` | `Runtime/` | Thin adapter binding the seam to NetworkLayer's `ClientPeer.CallAsync`. Depends on `PFound.NetworkLayer`. |
+| `PFound.ServerOperationFlow.Tests` | `Tests/` | Unity EditMode glue tests (adapter over the loopback transport). |
 
-Namespaces: `PFound.ServerOperation.Core` (lifecycle + seams), `PFound.ServerOperation` (adapter).
+Namespaces: `PFound.ServerOperationFlow.Core` (lifecycle + seams), `PFound.ServerOperationFlow` (adapter).
 
 ## Dependencies
 
@@ -131,7 +131,7 @@ catalog.ForDomain(NetDomain.Wallet).Enroll<SpendCoinsRequest, SpendCoinsReply>(W
 > operation (each a `[RemoteProcedure]` spec; `GetPlayerDataOperation.cs` is a `playerId in → PlayerData out` **query**,
 > `JoinAllianceOperation.cs` a terser operation, `SpendCoinsOperation.cs` additionally keeps a `ServerOperationFlow` lifecycle as
 > the advanced example). Add one via right-click → **Create → PFound → Server Operation** inside an assembly
-> that references `PFound.NetworkLayer` + `PFound.ServerOperation.Core` + `MessagePack.Annotations.dll`.
+> that references `PFound.NetworkLayer` + `PFound.ServerOperationFlow.Core` + `MessagePack.Annotations.dll`.
 >
 > **Uniform call vs advanced lifecycle.** Every operation is a `[RemoteProcedure]` partial, and the primary
 > way to call ANY of them is the generated `var value = await <Op>.Execute(args)`, which returns the reply

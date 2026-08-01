@@ -1,6 +1,6 @@
 using System;
 
-namespace PFound.ServerOperation.Core.Tests
+namespace PFound.ServerOperationFlow.Core.Tests
 {
     /// <summary>
     /// Tiny standalone assertion kit for the engine-free ServerOperation suite — no NUnit, so the pure Core

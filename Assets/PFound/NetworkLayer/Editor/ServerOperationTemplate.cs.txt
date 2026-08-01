@@ -1,8 +1,8 @@
 // This file's assembly (.asmdef) must reference: PFound.NetworkLayer + MessagePack.Annotations.dll
-// (and PFound.ServerOperation.Core for the lifecycle below). If a type shows unresolved, Alt+Enter →
+// (and PFound.ServerOperationFlow.Core for the lifecycle below). If a type shows unresolved, Alt+Enter →
 // "Reference '<assembly>'" adds it.
 using PFound.NetworkLayer;
-using PFound.ServerOperation.Core;
+using PFound.ServerOperationFlow.Core;
 
 // The source generator turns this partial into #SCRIPTNAME#.Req / #SCRIPTNAME#.Reply /
 // #SCRIPTNAME#.RequestMessage / #SCRIPTNAME#.ReplyMessage / #SCRIPTNAME#.Register AND the uniform

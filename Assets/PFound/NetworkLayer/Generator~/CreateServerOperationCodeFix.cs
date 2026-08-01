@@ -35,8 +35,8 @@ namespace PFound.NetworkLayer.Generation
         const string DiagnosticId = "PFNET0010";
         const string RemoteProcedureAttribute = "PFound.NetworkLayer.RemoteProcedureAttribute";
         const string KeyAttribute = "MessagePack.KeyAttribute";
-        const string ServerOperationNamespace = "PFound.ServerOperation.Core";
-        const string ResultCodeAttribute = "PFound.ServerOperation.Core.OperationResultCodeAttribute";
+        const string ServerOperationNamespace = "PFound.ServerOperationFlow.Core";
+        const string ResultCodeAttribute = "PFound.ServerOperationFlow.Core.OperationResultCodeAttribute";
 
         public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(DiagnosticId);
 
@@ -288,7 +288,7 @@ namespace PFound.NetworkLayer.Generation
         // flow up, so the operation partial stays empty. The flow's ctor takes the request DTO itself (the exact type
         // the generated Execute passes), and BuildRequest just wraps it — so a single-field DTO reads as its own type
         // (e.g. PlayerId), not a decomposed primitive. Envelope names resolve because the flow sits in the operation's
-        // own namespace, and this file carries `using PFound.ServerOperation.Core;` (added if missing); the base ctor
+        // own namespace, and this file carries `using PFound.ServerOperationFlow.Core;` (added if missing); the base ctor
         // resolves the context from ServerOperationHost.Current — so the author fills only PreCheck / Interpret /
         // ApplySuccess.
         static string BuildFlowClassText(OperationScaffold op)
@@ -358,7 +358,7 @@ public sealed class {op.OperationName}Flow
             var op = scaffold.OperationName;
             var request = scaffold.OperationTypeFqn + ".RequestMessage";
             var reply = scaffold.OperationTypeFqn + ".ReplyMessage";
-            var result = "global::PFound.ServerOperation.Core.ServerOperationResult<" + scaffold.ResultCodeEnumFqn + ">";
+            var result = "global::PFound.ServerOperationFlow.Core.ServerOperationResult<" + scaffold.ResultCodeEnumFqn + ">";
 
             // Fallback path: the operation lives in a referenced assembly, so its partial cannot be re-opened here.
             // Only the flow is emitted; construct it directly and await RunAsync. The ctor takes the request DTO
@@ -367,7 +367,7 @@ public sealed class {op.OperationName}Flow
             var text =
 $@"/// <summary>Server-authoritative flow for {op} — fill PreCheck / Interpret / ApplySuccess.</summary>
 public sealed class {op}Flow
-    : global::PFound.ServerOperation.Core.ServerOperationFlow<{request}, {reply}, {result}>
+    : global::PFound.ServerOperationFlow.Core.ServerOperationFlow<{request}, {reply}, {result}>
 {{
     readonly {scaffold.RequestDtoFqn} _request;
 

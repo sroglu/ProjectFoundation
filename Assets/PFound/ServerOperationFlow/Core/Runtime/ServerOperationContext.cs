@@ -1,4 +1,4 @@
-namespace PFound.ServerOperation.Core
+namespace PFound.ServerOperationFlow.Core
 {
     /// <summary>How a single <c>RunAsync</c> ended.</summary>
     public enum ServerOperationDisposition

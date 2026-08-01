@@ -1,4 +1,4 @@
-namespace PFound.ServerOperation.Core
+namespace PFound.ServerOperationFlow.Core
 {
     /// <summary>
     /// A ready-made <see cref="IServerOperationResult"/> so a game (or a test) need not hand-roll one for

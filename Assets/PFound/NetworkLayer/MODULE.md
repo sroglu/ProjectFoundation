@@ -238,7 +238,7 @@ append-only forward/backward compatible. Use this discipline for anything that c
   within-domain dupes. Each operation costs ONE op value (no reply half). For a small single-subsystem game
   a single flat enum via `Enroll<T>(Enum)` is a fine simpler alternative.
 
-The `ServerOperation` module builds on exactly this discipline (its request/reply DTOs). You can write
+The `ServerOperationFlow` module builds on exactly this discipline (its request/reply DTOs). You can write
 that boilerplate by hand (above) or let the **source generator** emit it from a compact declaration (below).
 
 ## Message codegen (source generator)
@@ -253,7 +253,7 @@ subtly wrong.
 > struct, `Operations/` holds every operation (`SpendCoinsOperation.cs`, `JoinAllianceOperation.cs`, `GetPlayerDataOperation.cs`); the
 > central `NetOpcodes.cs` + `GameNetworkSetup.cs` sit at the root. To add one: right-click →
 > **Create → PFound → Server Operation** inside an assembly that references `PFound.NetworkLayer` +
-> `PFound.ServerOperation.Core` + `MessagePack.Annotations.dll`. The minimal framework-level opcode sheet
+> `PFound.ServerOperationFlow.Core` + `MessagePack.Annotations.dll`. The minimal framework-level opcode sheet
 > in `Samples/` stays as the bare example.
 >
 > **Where things go.** Opcodes → the one central `NetOpcodes.cs` (`NetDomain` + one op enum per domain,
@@ -331,7 +331,7 @@ BalanceChanged.Notify(newBalance);                            // one-way notify,
 through it. It is left unset by default and has no defensive guard — an unconfigured call faults fast (nothing
 should be null at runtime). The manual path still exists for messages you hand-write:
 `await client.CallAsync<Spend.ReplyMessage>(new Spend.RequestMessage { Content = new SpendReq { Amount = 50 } })`;
-a `ServerOperation` subclass (the advanced lifecycle) is generic over `Spend.RequestMessage, Spend.ReplyMessage`.
+a `ServerOperationFlow` subclass (the advanced lifecycle) is generic over `Spend.RequestMessage, Spend.ReplyMessage`.
 
 ### Authoring a DTO
 

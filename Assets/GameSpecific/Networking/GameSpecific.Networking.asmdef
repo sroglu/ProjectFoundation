@@ -3,8 +3,8 @@
     "rootNamespace": "GameSpecific.Networking",
     "references": [
         "PFound.NetworkLayer",
-        "PFound.ServerOperation",
-        "PFound.ServerOperation.Core"
+        "PFound.ServerOperationFlow",
+        "PFound.ServerOperationFlow.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

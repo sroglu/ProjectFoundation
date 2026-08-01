@@ -5,9 +5,9 @@ using MessagePack;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 using PFound.NetworkLayer;
-using PFound.ServerOperation.Core;
+using PFound.ServerOperationFlow.Core;
 
-namespace PFound.ServerOperation.Tests
+namespace PFound.ServerOperationFlow.Tests
 {
     // ---------------------------------------------------------------------------------------------
     // Wire contract discipline (MODULE.md "### 0. Wire contract discipline"; SPEC §4a "Model Y").

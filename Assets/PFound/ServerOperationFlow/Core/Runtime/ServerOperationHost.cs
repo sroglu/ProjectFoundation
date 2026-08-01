@@ -1,4 +1,4 @@
-namespace PFound.ServerOperation.Core
+namespace PFound.ServerOperationFlow.Core
 {
     /// <summary>
     /// Builds the transport seam for a flow's request/response pair. The game supplies one implementation at

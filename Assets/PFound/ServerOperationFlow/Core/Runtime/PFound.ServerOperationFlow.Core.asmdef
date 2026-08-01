@@ -1,9 +1,7 @@
 {
-    "name": "PFound.ServerOperation.Core.Tests",
-    "rootNamespace": "PFound.ServerOperation.Core.Tests",
-    "references": [
-        "PFound.ServerOperation.Core"
-    ],
+    "name": "PFound.ServerOperationFlow.Core",
+    "rootNamespace": "PFound.ServerOperationFlow.Core",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

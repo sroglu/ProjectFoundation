@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace PFound.ServerOperation.Core.Tests
+namespace PFound.ServerOperationFlow.Core.Tests
 {
     /// <summary>
     /// Standalone mono/csc runner for the engine-free ServerOperation lifecycle: pre-check short-circuit,
@@ -15,7 +15,7 @@ namespace PFound.ServerOperation.Core.Tests
         static int Main()
         {
             RunAll().GetAwaiter().GetResult();
-            return TestKit.Summary("ServerOperation.Core");
+            return TestKit.Summary("ServerOperationFlow.Core");
         }
 
         static async Task RunAll()

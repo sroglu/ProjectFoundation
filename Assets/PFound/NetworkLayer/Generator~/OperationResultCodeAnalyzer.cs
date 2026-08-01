@@ -18,7 +18,7 @@ namespace PFound.NetworkLayer.Generation
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public sealed class OperationResultCodeAnalyzer : DiagnosticAnalyzer
     {
-        const string ResultCodeAttribute = "PFound.ServerOperation.Core.OperationResultCodeAttribute";
+        const string ResultCodeAttribute = "PFound.ServerOperationFlow.Core.OperationResultCodeAttribute";
 
         static readonly DiagnosticDescriptor MultipleResultCodeEnumsRule = new DiagnosticDescriptor(
             id: "PFNET0011",

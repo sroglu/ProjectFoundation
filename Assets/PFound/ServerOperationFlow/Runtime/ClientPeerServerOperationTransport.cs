@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
 using PFound.NetworkLayer;
-using PFound.ServerOperation.Core;
+using PFound.ServerOperationFlow.Core;
 
-namespace PFound.ServerOperation
+namespace PFound.ServerOperationFlow
 {
     /// <summary>
     /// The one place the engine-free lifecycle's transport seam is bound to the realtime request/reply

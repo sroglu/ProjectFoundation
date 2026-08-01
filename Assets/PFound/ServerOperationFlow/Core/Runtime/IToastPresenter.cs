@@ -1,4 +1,4 @@
-namespace PFound.ServerOperation.Core
+namespace PFound.ServerOperationFlow.Core
 {
     /// <summary>
     /// The game-side destination a resolved failure message is shown through — a toast, a banner, an inline
