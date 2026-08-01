@@ -4,7 +4,10 @@
     "references": [
         "GameSpecific.Backend",
         "GameSpecific.Networking",
-        "PFound.NetworkLayer"
+        "PFound.NetworkLayer",
+        "PFound.Backend",
+        "PFound.Backend.Core",
+        "PFound.ServerOperationFlow.Core"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
