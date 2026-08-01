@@ -256,6 +256,21 @@ flow. A wire DTO can ALSO be a `GameDataStore` bindable entity by additionally c
 `[DataStoreElement]` — put such dual-use types in a shared game assembly that references both MessagePack and
 GameDataStore, not in a wire-only folder.
 
+### Hosting the server — console/.NET or Unity-headless
+`ServerPeer` runs in either host, because NetworkLayer is engine-free where it counts: the only `UnityEngine`
+use (`Telepathy/Log.cs`) is `#if UNITY`-guarded, and `ReflectionBodyCodec` provides a MessagePack-free codec for a
+standalone build. So the same server hosts as a **plain .NET console app** OR a **Unity-headless build** (define
+`BACKEND` either way). For a console/.NET host to reference the contract, the wire types MUST live in an
+engine-free assembly — split the game's networking accordingly:
+
+- **Wire-contract assembly (engine-free, referenced by BOTH client and server):** the `[RemoteProcedure]` /
+  `[Notify]` declarations, their DTOs, the opcode enums, the generated envelopes, and the resolver anchor. The
+  DTOs are plain structs, so this is natural. MessagePack's source generator runs here, so the server gets the
+  exact same formatters.
+- **Client-only assembly (may reference `UnityEngine` / `ClientPeer`):** the `ServerOperationFlow` flows, the
+  failure/toast presenters, and boot wiring. A SINGLE `UnityEngine` reference anywhere in the contract assembly
+  (e.g. a `Debug.Log` presenter) breaks the .NET/console server build — keep such code out of the contract.
+
 ## Message codegen (source generator)
 
 A Roslyn incremental source generator turns one compact partial-class declaration per operation into the
