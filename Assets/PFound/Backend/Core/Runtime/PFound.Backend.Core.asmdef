@@ -1,0 +1,13 @@
+{
+    "name": "PFound.Backend.Core",
+    "rootNamespace": "PFound.Backend.Core",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "noEngineReferences": true
+}
