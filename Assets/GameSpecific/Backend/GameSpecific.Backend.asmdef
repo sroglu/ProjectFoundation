@@ -1,0 +1,19 @@
+{
+    "name": "GameSpecific.Backend",
+    "rootNamespace": "GameSpecific.Backend",
+    "references": [
+        "PFound.Backend.Core",
+        "PFound.Backend",
+        "PFound.NetworkLayer",
+        "GameSpecific.Networking"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
