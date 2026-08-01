@@ -12,10 +12,12 @@ namespace GameSpecific.Backend.Operations
         : IOperationHandler<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage>
     {
         readonly IWalletRepository _wallets;
+        readonly ISessionStore _sessions;
 
-        public SpendCoinsHandler(IWalletRepository wallets)
+        public SpendCoinsHandler(IWalletRepository wallets, ISessionStore sessions)
         {
             _wallets = wallets;
+            _sessions = sessions;
         }
 
         public async Task<SpendCoinsOperation.ReplyMessage> HandleAsync(
@@ -26,8 +28,19 @@ namespace GameSpecific.Backend.Operations
             // RULE 3: Copy request values BEFORE await
             int amount = req.Content.Amount;
 
+            // Resolve the player ID from the authenticated session
+            if (!_sessions.TryGet(peerId, out var session))
+            {
+                return new SpendCoinsOperation.ReplyMessage
+                {
+                    Status = ReplyStatus.Refused,
+                    Content = default
+                };
+            }
+            long playerId = session.PlayerId;
+
             // RULE 3: All awaits after extraction
-            var wallet = await _wallets.GetAsync(1, ct); // hardcoded playerId for MVP
+            var wallet = await _wallets.GetAsync(playerId, ct);
 
             // RULE 5: Check before reply, fail with status
             if (wallet.Coins < amount)

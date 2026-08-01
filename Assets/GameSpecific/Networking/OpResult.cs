@@ -22,5 +22,8 @@ namespace GameSpecific.Networking
         ServerRefused = 6,
         RequestExpired = 7,
         Unroutable = 8,
+        InvalidCredentials = 9,
+        AuthenticationFailed = 10,
+        NotAuthenticated = 11,
     }
 }

@@ -38,13 +38,15 @@ namespace PFound.Backend
                     _ = handler.HandleAsync(exchange.Peer, exchange.Request, CancellationToken.None)
                         .ContinueWith(task =>
                         {
-                            if (task.IsCompletedSuccessfully)
-                            {
-                                // Capture typed exchange and handler result in closure.
-                                // Queue the reply action to run on pump thread (RULE 2).
-                                var reply = (TReply)task.Result;
-                                _replyQueue.Enqueue(() => exchange.Reply(reply));
-                            }
+                            // RULE 5: Always reply, success or failure. If task fails, return Faulted
+                            // so client doesn't hang waiting for a reply that never comes.
+                            TReply reply = task.IsCompletedSuccessfully
+                                ? (TReply)task.Result
+                                : new TReply { Status = ReplyStatus.Faulted };
+
+                            // Capture typed exchange and handler result in closure.
+                            // Queue the reply action to run on pump thread (RULE 2).
+                            _replyQueue.Enqueue(() => exchange.Reply(reply));
                         });
                 });
             });

@@ -13,6 +13,7 @@ namespace GameSpecific.Networking
         Wallet = 1,    // 0x01 -> opcodes 0x01__
         Alliance = 2,  // 0x02 -> opcodes 0x02__
         Player = 3,    // 0x03 -> opcodes 0x03__
+        Auth = 4,      // 0x04 -> opcodes 0x04__
     }
 
     /// <summary>
@@ -47,5 +48,16 @@ namespace GameSpecific.Networking
         Invalid = 0,
         GetData = 1,  // 0x01 -> opcode 0x0301
         Presence = 2,  // 0x02 -> opcode 0x0302
+    }
+
+    /// <summary>
+    /// The Auth subsystem's operations — the LOW byte of each opcode, folded against
+    /// <see cref="NetDomain.Auth"/> at declaration time. Same one-value-per-operation rule as
+    /// <see cref="WalletOp"/>.
+    /// </summary>
+    public enum AuthOp : byte
+    {
+        Invalid = 0,
+        Login = 1,  // 0x01 -> opcode 0x0401
     }
 }

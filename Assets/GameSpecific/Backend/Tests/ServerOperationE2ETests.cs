@@ -41,6 +41,7 @@ namespace GameSpecific.Backend.Tests
         private ClientPeer _clientPeer;
         private BackendHost _backendHost;
         private MessageCatalog _catalog;
+        private PFound.Backend.Core.InMemorySessionStore _sessions;
 
         private void Setup()
         {
@@ -61,14 +62,19 @@ namespace GameSpecific.Backend.Tests
 
             // Wire handlers via OperationHandlerRegistry
             // (RULE 2: Registry enqueues replies to concurrent queue, BackendHost.Tick drains them)
+            _sessions = new PFound.Backend.Core.InMemorySessionStore();
+            var authenticator = new GameSpecific.Backend.Auth.GameAuthenticator();
+
             var replyQueue = new System.Collections.Concurrent.ConcurrentQueue<System.Action>();
             var registry = new OperationHandlerRegistry(replyQueue)
+                .Register<LoginOperation.RequestMessage, LoginOperation.ReplyMessage>(
+                    new GameSpecific.Backend.Operations.LoginHandler(authenticator, _sessions))
                 .Register<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage>(
-                    new SpendCoinsHandler(wallets))
+                    new SpendCoinsHandler(wallets, _sessions))
                 .Register<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage>(
-                    new GetPlayerDataHandler(players, wallets))
+                    new GetPlayerDataHandler(players, wallets, _sessions))
                 .Register<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage>(
-                    new JoinAllianceHandler());
+                    new GameSpecific.Backend.Operations.JoinAllianceHandler(_sessions));
             registry.AttachTo(_serverPeer);
 
             // Create BackendHost (owns the reply queue and drains it each Tick)
@@ -87,6 +93,9 @@ namespace GameSpecific.Backend.Tests
 
             // Initialize client wallet to 1000 coins
             PlayerWallet.Current = new PlayerWallet { Balance = 1000 };
+
+            // Perform login to establish session binding
+            PerformLogin();
         }
 
         private void Teardown()
@@ -94,6 +103,40 @@ namespace GameSpecific.Backend.Tests
             _backendHost?.Halt();
             _clientPeer?.Close();
             _serverLink?.Halt();
+        }
+
+        private void PerformLogin()
+        {
+            // Login to establish session binding (required for other operations)
+            // This is a synchronous helper that pumps until login completes
+            Console.WriteLine("Authenticating...");
+
+            // Create a login request
+            var loginFlow = new GameSpecific.Networking.Operations.LoginOperationFlow(
+                new GameSpecific.Networking.Data.LoginRequest
+                {
+                    Username = "testuser",
+                    Password = "testpass"
+                });
+
+            // Fire the login operation
+            var loginTask = loginFlow.RunAsync();
+
+            // Pump both sides until login completes
+            PumpBothSidesUntilComplete(loginTask, 100);
+
+            // Verify login succeeded
+            AssertTaskCompleted(loginTask, "login operation did not complete");
+            if (!loginTask.Result.Accepted)
+                throw new Exception("login should be accepted");
+            if (!loginTask.Result.Result.IsSuccess)
+                throw new Exception($"login should succeed: {loginTask.Result.Result.Code}");
+
+            // Verify session was bound on server side (optional check)
+            if (!_sessions.TryGet(0, out var session))
+                throw new Exception("session should be bound for peer 0 after login");
+
+            Console.WriteLine("  ✓ Authenticated\n");
         }
 
         private void PumpBothSidesUntilComplete(Task task, int maxIterations = 600)

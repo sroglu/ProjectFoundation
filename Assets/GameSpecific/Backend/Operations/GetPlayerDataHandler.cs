@@ -13,11 +13,13 @@ namespace GameSpecific.Backend.Operations
     {
         readonly IPlayerRepository _players;
         readonly IWalletRepository _wallets;
+        readonly ISessionStore _sessions;
 
-        public GetPlayerDataHandler(IPlayerRepository players, IWalletRepository wallets)
+        public GetPlayerDataHandler(IPlayerRepository players, IWalletRepository wallets, ISessionStore sessions)
         {
             _players = players;
             _wallets = wallets;
+            _sessions = sessions;
         }
 
         public async Task<GetPlayerDataOperation.ReplyMessage> HandleAsync(
@@ -25,8 +27,16 @@ namespace GameSpecific.Backend.Operations
             GetPlayerDataOperation.RequestMessage req,
             CancellationToken ct)
         {
-            // RULE 3: Copy request values BEFORE await
-            var playerId = req.Content.Value;
+            // Resolve the player ID from the authenticated session
+            if (!_sessions.TryGet(peerId, out var session))
+            {
+                return new GetPlayerDataOperation.ReplyMessage
+                {
+                    Status = ReplyStatus.Refused,
+                    Content = default
+                };
+            }
+            long playerId = session.PlayerId;
 
             // RULE 3: All awaits after extraction
             var profile = await _players.GetAsync(playerId, ct);
@@ -38,7 +48,7 @@ namespace GameSpecific.Backend.Operations
                 Status = ReplyStatus.Ok,
                 Content = new PlayerData
                 {
-                    PlayerId = req.Content,
+                    PlayerId = new PlayerId { Value = playerId },
                     Level = profile.Level,
                     Name = profile.Name,
                     Coins = wallet.Coins

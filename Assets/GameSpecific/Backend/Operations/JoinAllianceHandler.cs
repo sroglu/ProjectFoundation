@@ -10,8 +10,11 @@ namespace GameSpecific.Backend.Operations
     public sealed class JoinAllianceHandler
         : IOperationHandler<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage>
     {
-        public JoinAllianceHandler()
+        readonly ISessionStore _sessions;
+
+        public JoinAllianceHandler(ISessionStore sessions)
         {
+            _sessions = sessions;
         }
 
         public Task<JoinAllianceOperation.ReplyMessage> HandleAsync(
@@ -19,6 +22,16 @@ namespace GameSpecific.Backend.Operations
             JoinAllianceOperation.RequestMessage req,
             CancellationToken ct)
         {
+            // Resolve the player ID from the authenticated session
+            if (!_sessions.TryGet(peerId, out var session))
+            {
+                return Task.FromResult(new JoinAllianceOperation.ReplyMessage
+                {
+                    Status = ReplyStatus.Refused,
+                    Content = default
+                });
+            }
+
             // RULE 3: Copy request values BEFORE await
             var allianceId = req.Content.AllianceId;
 

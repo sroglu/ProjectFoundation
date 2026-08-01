@@ -24,18 +24,26 @@ namespace GameSpecific.Backend
             var wallets = new InMemoryWalletRepository();
             var players = new InMemoryPlayerRepository();
 
-            // 4. Create & wire handlers
+            // 4. Create session store for peer ↔ player binding
+            var sessions = new InMemorySessionStore();
+
+            // 5. Create authenticator
+            var authenticator = new GameAuthenticator();
+
+            // 6. Create & wire handlers
             var replyQueue = new ConcurrentQueue<System.Action>();
             var registry = new OperationHandlerRegistry(replyQueue)
+                .Register<LoginOperation.RequestMessage, LoginOperation.ReplyMessage>(
+                    new LoginHandler(authenticator, sessions))
                 .Register<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage>(
-                    new SpendCoinsHandler(wallets))
+                    new SpendCoinsHandler(wallets, sessions))
                 .Register<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage>(
-                    new GetPlayerDataHandler(players, wallets))
+                    new GetPlayerDataHandler(players, wallets, sessions))
                 .Register<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage>(
-                    new JoinAllianceHandler());
+                    new JoinAllianceHandler(sessions));
             registry.AttachTo(serverPeer);
 
-            // 5. Create host
+            // 7. Create host
             var host = new BackendHost(serverPeer, replyQueue);
             return host;
         }
