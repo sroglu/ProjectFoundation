@@ -2,6 +2,7 @@ namespace GameSpecific.Backend.Unity
 {
     using UnityEngine;
     using GameSpecific.Backend;
+    using PFound.Backend;
 
     /// <summary>
     /// Editor-only MonoBehaviour host for the backend server. Runs the same boot sequence

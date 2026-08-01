@@ -5,6 +5,7 @@ namespace GameSpecific.Backend.Tests
     using System.Threading;
     using System.Threading.Tasks;
     using PFound.NetworkLayer;
+    using PFound.Backend.Core;
     using GameSpecific.Networking.Operations;
     using GameSpecific.Networking.Data;
     using GameSpecific.Backend.Repositories;
@@ -35,7 +36,9 @@ namespace GameSpecific.Backend.Tests
             Console.WriteLine("Test: SpendCoinsHandler - Success");
 
             var wallets = new InMemoryWalletRepository();
-            var handler = new SpendCoinsHandler(wallets);
+            var sessions = new InMemorySessionStore();
+            sessions.Bind(1, new PlayerSession { PlayerId = 1 });
+            var handler = new SpendCoinsHandler(wallets, sessions);
 
             var request = new SpendCoinsOperation.RequestMessage
             {
@@ -58,7 +61,9 @@ namespace GameSpecific.Backend.Tests
             Console.WriteLine("Test: SpendCoinsHandler - Insufficient Balance");
 
             var wallets = new InMemoryWalletRepository();
-            var handler = new SpendCoinsHandler(wallets);
+            var sessions = new InMemorySessionStore();
+            sessions.Bind(1, new PlayerSession { PlayerId = 1 });
+            var handler = new SpendCoinsHandler(wallets, sessions);
 
             var request = new SpendCoinsOperation.RequestMessage
             {
@@ -80,7 +85,9 @@ namespace GameSpecific.Backend.Tests
 
             var players = new InMemoryPlayerRepository();
             var wallets = new InMemoryWalletRepository();
-            var handler = new GetPlayerDataHandler(players, wallets);
+            var sessions = new InMemorySessionStore();
+            sessions.Bind(1, new PlayerSession { PlayerId = 1 });
+            var handler = new GetPlayerDataHandler(players, wallets, sessions);
 
             var request = new GetPlayerDataOperation.RequestMessage
             {
@@ -106,7 +113,9 @@ namespace GameSpecific.Backend.Tests
         {
             Console.WriteLine("Test: JoinAllianceHandler - Success");
 
-            var handler = new JoinAllianceHandler();
+            var sessions = new InMemorySessionStore();
+            sessions.Bind(1, new PlayerSession { PlayerId = 1 });
+            var handler = new JoinAllianceHandler(sessions);
 
             var request = new JoinAllianceOperation.RequestMessage
             {
@@ -132,7 +141,9 @@ namespace GameSpecific.Backend.Tests
         {
             Console.WriteLine("Test: JoinAllianceHandler - Invalid Alliance ID");
 
-            var handler = new JoinAllianceHandler();
+            var sessions = new InMemorySessionStore();
+            sessions.Bind(1, new PlayerSession { PlayerId = 1 });
+            var handler = new JoinAllianceHandler(sessions);
 
             var request = new JoinAllianceOperation.RequestMessage
             {

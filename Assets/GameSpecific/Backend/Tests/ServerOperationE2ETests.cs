@@ -12,6 +12,10 @@ namespace GameSpecific.Backend.Tests
     using GameSpecific.Networking.Data;
     using GameSpecific.Backend.Repositories;
     using GameSpecific.Backend.Operations;
+    // Disambiguate the wire/reply DTO (has static Current + Balance) from the
+    // server storage model GameSpecific.Backend.Repositories.PlayerWallet. Every
+    // PlayerWallet reference in this file is the client-side wire DTO.
+    using PlayerWallet = GameSpecific.Networking.Operations.PlayerWallet;
 
     /// <summary>
     /// End-to-end test of the server ↔ client round-trip via loopback transport.
@@ -42,6 +46,8 @@ namespace GameSpecific.Backend.Tests
         private BackendHost _backendHost;
         private MessageCatalog _catalog;
         private PFound.Backend.Core.InMemorySessionStore _sessions;
+        // Kept as a field so a test can seed the server-authoritative balance independent of the client prediction.
+        private InMemoryWalletRepository _wallets;
 
         private void Setup()
         {
@@ -57,7 +63,8 @@ namespace GameSpecific.Backend.Tests
             _serverPeer = new ServerPeer(_serverLink, _catalog, ServerLinkOptions.Default);
 
             // Create repositories
-            var wallets = new InMemoryWalletRepository();
+            _wallets = new InMemoryWalletRepository();
+            var wallets = _wallets;
             var players = new InMemoryPlayerRepository();
 
             // Wire handlers via OperationHandlerRegistry
@@ -101,7 +108,7 @@ namespace GameSpecific.Backend.Tests
         private void Teardown()
         {
             _backendHost?.Halt();
-            _clientPeer?.Close();
+            _clientPeer?.Disconnect();
             _serverLink?.Halt();
         }
 
@@ -130,18 +137,26 @@ namespace GameSpecific.Backend.Tests
             if (!loginTask.Result.Accepted)
                 throw new Exception("login should be accepted");
             if (!loginTask.Result.Result.IsSuccess)
-                throw new Exception($"login should succeed: {loginTask.Result.Result.Code}");
+                throw new Exception($"login should succeed: {loginTask.Result.Result.ResultCode}");
 
-            // Verify session was bound on server side (optional check)
-            if (!_sessions.TryGet(0, out var session))
-                throw new Exception("session should be bound for peer 0 after login");
+            // Verify session was bound on server side. The loopback transport assigns the
+            // single connected client the fixed id LoopbackHub.PeerKey (not the port passed to Connect).
+            if (!_sessions.TryGet(LoopbackHub.PeerKey, out _))
+                throw new Exception($"session should be bound for peer {LoopbackHub.PeerKey} after login");
 
             Console.WriteLine("  ✓ Authenticated\n");
         }
 
-        private void PumpBothSidesUntilComplete(Task task, int maxIterations = 600)
+        private void PumpBothSidesUntilComplete(Task task, int timeoutMs = 2000)
         {
-            for (int i = 0; i < maxIterations && !task.IsCompleted; i++)
+            // Pump until the awaited task completes, yielding each iteration and
+            // bounding on a wall-clock deadline. The reply crosses the thread pool
+            // twice (server reply-marshal + client TCS RunContinuationsAsynchronously),
+            // so a yield-free fixed-count loop can finish all iterations before either
+            // pooled continuation is scheduled. Thread.Yield() hands the CPU to the
+            // pool so the continuation lands, then we re-check task.IsCompleted.
+            var deadline = System.Diagnostics.Stopwatch.StartNew();
+            while (!task.IsCompleted && deadline.ElapsedMilliseconds < timeoutMs)
             {
                 // Server: pump network frames + drain reply queue (RULE 2)
                 _serverLink.Pump(8);
@@ -149,6 +164,9 @@ namespace GameSpecific.Backend.Tests
 
                 // Client: pump network responses
                 _clientPeer.Update();
+
+                // Let any pooled reply-continuation run before the next re-check.
+                System.Threading.Thread.Yield();
             }
         }
 
@@ -264,8 +282,12 @@ namespace GameSpecific.Backend.Tests
 
             try
             {
-                // Set balance to 950
+                // Seed BOTH sides to 950. Setup() rebuilds a fresh 1000-coin server wallet each test,
+                // so without seeding the server the single spend settles to 950 (1000-50), not 900.
                 PlayerWallet.Current.Balance = 950;
+                _ = _wallets.SaveAsync(
+                    new GameSpecific.Backend.Repositories.PlayerWallet { PlayerId = 1, Coins = 950 },
+                    CancellationToken.None);
 
                 // Configure a shared gate for deduplication (single-flight)
                 var gate = ServerOperationGate.DedupOnly();
@@ -307,10 +329,9 @@ namespace GameSpecific.Backend.Tests
 
         /// <summary>
         /// Test 4: Server Error Path (Handler Returns Faulted)
-        /// Pre-state: wallet.Balance == 900
-        /// Server handler: detects insufficient balance, returns ReplyStatus.Faulted
-        /// Client flow: interprets Faulted status, returns OpResult.Failed
-        /// Assert: wallet.Balance == 900 (unchanged)
+        /// Client predicts 1000 (>= amount, so PreCheck passes and the request is sent) while the
+        /// server wallet is seeded to 900 (< amount) — the only condition that reaches the server's
+        /// Faulted guard. Assert: Accepted, result == ServerFaulted, client balance unchanged (1000).
         /// </summary>
         public void Test4_ServerReturns_Faulted_ClientInterpretsAsFailure()
         {
@@ -320,13 +341,15 @@ namespace GameSpecific.Backend.Tests
 
             try
             {
-                // Set balance to 900
-                PlayerWallet.Current.Balance = 900;
+                // Client stays optimistic at 1000 so PreCheck passes and the request is sent;
+                // seed the server wallet to 900 (< 1000) so the server authoritatively rejects it.
+                _ = _wallets.SaveAsync(
+                    new GameSpecific.Backend.Repositories.PlayerWallet { PlayerId = 1, Coins = 900 },
+                    CancellationToken.None);
 
                 // Reset gate for this test (no dedup)
                 ServerOperationHost<ServerOperationResult<OpResult>>.Current.Gate = ServerOperationGate.Disabled;
 
-                // Attempt to spend more than available (900 < 1000)
                 Task<ServerOperationRun<ServerOperationResult<OpResult>>> runTask =
                     new SpendCoinsOperationFlow(new SpendRequest { Amount = 1000 }).RunAsync();
 
@@ -339,8 +362,10 @@ namespace GameSpecific.Backend.Tests
                     throw new Exception("operation should be accepted (sent to server)");
                 if (runTask.Result.Result.IsSuccess)
                     throw new Exception("operation should fail (server returned Faulted)");
-                if (PlayerWallet.Current.Balance != 900)
-                    throw new Exception($"balance should remain 900, got {PlayerWallet.Current.Balance}");
+                if (runTask.Result.Result.ResultCode != OpResult.ServerFaulted)
+                    throw new Exception($"expected ServerFaulted from server, got {runTask.Result.Result.ResultCode}");
+                if (PlayerWallet.Current.Balance != 1000)
+                    throw new Exception($"client balance must not be debited on server fault, got {PlayerWallet.Current.Balance}");
 
                 Console.WriteLine("  ✓ Passed\n");
             }

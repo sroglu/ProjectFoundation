@@ -2,7 +2,8 @@
     "name": "GameSpecific.Backend.Unity",
     "rootNamespace": "GameSpecific.Backend.Unity",
     "references": [
-        "GameSpecific.Backend"
+        "GameSpecific.Backend",
+        "PFound.Backend"
     ],
     "includePlatforms": [
         "Editor"

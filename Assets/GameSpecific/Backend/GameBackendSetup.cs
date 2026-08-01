@@ -5,6 +5,7 @@ namespace GameSpecific.Backend
     using PFound.Backend.Core;
     using PFound.NetworkLayer;
     using GameSpecific.Networking;
+    using GameSpecific.Networking.Operations;
     using GameSpecific.Backend.Repositories;
     using GameSpecific.Backend.Auth;
     using GameSpecific.Backend.Operations;
