@@ -1,0 +1,19 @@
+{
+  "name": "PFound.Backend",
+  "rootNamespace": "PFound.Backend",
+  "references": [
+    "PFound.Backend.Core",
+    "PFound.NetworkLayer"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [
+    "BACKEND"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": true
+}
