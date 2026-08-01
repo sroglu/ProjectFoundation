@@ -1,3 +1,4 @@
+using System.Threading;
 using PFound.NetworkLayer;
 using PFound.ServerOperationFlow.Core;
 
@@ -44,34 +45,30 @@ namespace GameSpecific.Networking
         public static void UseAsAmbientClient(ClientPeer clientPeer) => NetworkClient.Current = clientPeer;
 
         /// <summary>
-        /// Publish the ambient <see cref="ServerOperationHost"/> so a flow can be constructed with only the game's
-        /// own parameters (<c>new SpendCoinsOperationFlow(amount, wallet)</c>) — its base ctor resolves the
-        /// context (transport + outcome seams + run policy) from here. The transport factory reads the ambient
-        /// peer at call time, so this may run before or after <see cref="UseAsAmbientClient"/>. Call once at boot.
-        /// The <paramref name="gate"/> defaults to a single-flight, no-spinner run policy shared across flows.
+        /// Publish the ambient host so a flow resolves its context with only the game's own params. Call once at boot.
+        /// <paramref name="sessionCancellation"/> is the gameloop-cancelled token that aborts flows on session/scene end.
         /// </summary>
         public static void UseAsAmbientServerOperationHost(
+            CancellationToken sessionCancellation = default,
             ServerOperationGate gate = null,
             IServerOperationAnalytics analytics = null)
         {
-            var failurePresenter = new CodeToastFailurePresenter<OpResult>(
-                new DebugToastPresenter());
-
-            var host = new ServerOperationHost(
+            var host = new ServerOperationHost<ServerOperationResult<OpResult>>(
                 new GameServerOperationTransportFactory(),
-                new GameServerOperationResultChannels(failurePresenter));
+                new CodeToastFailurePresenter<OpResult>(new DebugToastPresenter()));
             host.Gate = gate ?? ServerOperationGate.DedupOnly();
+            host.Cancellation = sessionCancellation;
             if (analytics != null)
                 host.Analytics = analytics;
-            ServerOperationHost.Current = host;
+            ServerOperationHost<ServerOperationResult<OpResult>>.Current = host;
         }
 
-        /// <summary>All boot steps in order: enrol the operations, make the peer ambient, publish the flow host.</summary>
-        public static void Configure(ClientPeer clientPeer, MessageCatalog catalog)
+        /// <summary>All boot steps: enrol operations, make the peer ambient, publish the flow host. Pass a gameloop-cancelled token to abort flows on teardown.</summary>
+        public static void Configure(ClientPeer clientPeer, MessageCatalog catalog, CancellationToken sessionCancellation = default)
         {
             RegisterOperations(catalog);
             UseAsAmbientClient(clientPeer);
-            UseAsAmbientServerOperationHost();
+            UseAsAmbientServerOperationHost(sessionCancellation);
         }
     }
 }

@@ -91,11 +91,14 @@ op HAS a reply you just don't want to await.
 Each reply-bearing op owns a flow (client-prediction + send + interpret + apply, with single-flight + loading).
 It reuses the SAME generated messages — no extra wire declaration — and lives in the op's OWN file (one file per
 op). The flow is constructed with ONLY the request DTO; its base ctor resolves the context (transport +
-outcome seams + run policy) from the ambient `ServerOperationHost.Current`. See `Operations/SpendCoinsOperation.cs`
-for the full live reference (`SpendCoinsOperationFlow`). Shape:
+failure presenter + run policy + ambient cancellation) from the ambient host. Game flows extend
+**`GameServerOperationFlow<TRequest,TResponse>`** — a thin game base that fixes the result type to
+`ServerOperationResult<OpResult>` so a flow's declaration never repeats it. (The Alt+Enter scaffold emits the
+framework base with the result type spelled out; both compile — switch to `GameServerOperationFlow` for the
+shorter form.) See `Operations/SpendCoinsOperation.cs` for the full live reference. Shape:
 ```csharp
 public sealed class SpendCoinsOperationFlow
-    : ServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage, ServerOperationResult<OpResult>>
+    : GameServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage>
 {
     readonly SpendRequest _request;                             // the request DTO the generated Execute passes in
     public SpendResult Result { get; private set; }             // capture the reply DTO here if callers need it

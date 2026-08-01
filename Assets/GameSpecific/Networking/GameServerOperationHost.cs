@@ -26,27 +26,6 @@ namespace GameSpecific.Networking
     }
 
     /// <summary>
-    /// The game's outcome seams for the ambient host. Every flow in this game reports through
-    /// <see cref="ServerOperationResult{OpResult}"/>, so the failure presenter is a single concrete instance the
-    /// generic accessor hands back (the object cast is the standard bridge from a generic ambient accessor to a
-    /// fixed-result-type seam — it always holds because <c>TResult</c> is <see cref="ServerOperationResult{OpResult}"/>
-    /// at every call site). The success notification is not needed here, so the no-op Core sink is returned.
-    /// </summary>
-    public sealed class GameServerOperationResultChannels : IServerOperationResultChannels
-    {
-        readonly IServerOperationFailurePresenter<ServerOperationResult<OpResult>> _failurePresenter;
-
-        public GameServerOperationResultChannels(IServerOperationFailurePresenter<ServerOperationResult<OpResult>> failurePresenter)
-            => _failurePresenter = failurePresenter;
-
-        public IServerOperationFailurePresenter<TResult> FailurePresenter<TResult>() where TResult : IServerOperationResult
-            => (IServerOperationFailurePresenter<TResult>)(object)_failurePresenter;
-
-        public IServerOperationSuccessSink<TResult> SuccessSink<TResult>() where TResult : IServerOperationResult
-            => new SilentSuccessSink<TResult>();
-    }
-
-    /// <summary>
     /// One place a failed operation is surfaced to the developer for this sample game. Still a valid choice — it
     /// logs the diagnostic so a rejected pre-check or a server failure is visible in the console — but the default
     /// sample wiring instead routes the result code through a <see cref="CodeToastFailurePresenter{TCode}"/>

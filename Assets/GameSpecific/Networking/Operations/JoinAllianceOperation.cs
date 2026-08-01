@@ -32,7 +32,7 @@ namespace GameSpecific.Networking.Operations
 
     /// <summary>Server-authoritative flow for JoinAllianceOperation — client-predicts the join, then applies it.</summary>
     public sealed class JoinAllianceOperationFlow
-        : ServerOperationFlow<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage, ServerOperationResult<OpResult>>
+        : GameServerOperationFlow<JoinAllianceOperation.RequestMessage, JoinAllianceOperation.ReplyMessage>
     {
         readonly JoinAllianceRequest _request;
 

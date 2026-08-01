@@ -125,3 +125,18 @@ used by both the editor generator and the reflection oracle.
 - Core: `csc -nologo -warn:0 -out:/tmp/pf_ecs.exe Assets/PFound/ECS/Runtime/*.cs Assets/PFound/ECS/Tests/*.cs && mono /tmp/pf_ecs.exe` → `failed=0`.
 - Unity: console clean (errors + warnings), and a visual/behavior check for anything that runs.
 - Hot-path changes: re-confirm GC = 0.
+
+---
+
+## 8. Names carry meaning; comments are rare
+
+The name does the explaining. Method and type names may be long — even absurdly long — as long as they
+state what they do; that beats a short name plus a comment. Long comments get skipped on sight, so
+don't write them.
+
+- Prefer a self-documenting long name over any comment: `RebuildScheduleOnStructuralChange()`, not
+  `Rebuild()` with a comment next to it.
+- Never write a comment that just restates the name or the signature.
+- Comment ONLY when the logic is genuinely non-obvious (a subtle algorithm, a non-local invariant, a
+  "why this and not the obvious thing") — then keep it to one tight line.
+- XML `<summary>`: one line, and only when it says something the name doesn't. No multi-paragraph prose.

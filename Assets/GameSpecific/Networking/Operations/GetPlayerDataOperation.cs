@@ -17,7 +17,7 @@ namespace GameSpecific.Networking.Operations
     public partial class GetPlayerDataOperation { }
     /// <summary>Server-authoritative flow for GetPlayerDataOperation — fill PreCheck / Interpret / ApplySuccess.</summary>
     public sealed class GetPlayerDataOperationFlow
-        : ServerOperationFlow<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage, ServerOperationResult<OpResult>>
+        : GameServerOperationFlow<GetPlayerDataOperation.RequestMessage, GetPlayerDataOperation.ReplyMessage>
     {
         readonly PlayerId _request;
 

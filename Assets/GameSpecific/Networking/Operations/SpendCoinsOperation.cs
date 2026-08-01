@@ -43,7 +43,7 @@ namespace GameSpecific.Networking.Operations
     /// entry point at call sites; this class is what it news up.
     /// </summary>
     public sealed class SpendCoinsOperationFlow
-        : ServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage, ServerOperationResult<OpResult>>
+        : GameServerOperationFlow<SpendCoinsOperation.RequestMessage, SpendCoinsOperation.ReplyMessage>
     {
         readonly SpendRequest _request;
 
