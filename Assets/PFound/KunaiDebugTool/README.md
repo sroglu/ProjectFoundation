@@ -32,4 +32,6 @@ Full detail in [MODULE.md](MODULE.md).
 ## Docs
 
 - Deep reference: [MODULE.md](MODULE.md)
+- Zero-allocation render path — how the one-draw-call / no-GC guarantee actually works, and where
+  it does not hold: [ZERO-ALLOCATION.md](ZERO-ALLOCATION.md)
 - History: [CHANGELOG.md](CHANGELOG.md)
