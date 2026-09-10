@@ -1,0 +1,90 @@
+[submodule "Assets/PFound/AssetPipeline"]
+	path = Assets/PFound/AssetPipeline
+	url = git@github.com:sroglu/AssetPipeline.git
+[submodule "Assets/PFound/Backend"]
+	path = Assets/PFound/Backend
+	url = git@github.com:sroglu/Backend.git
+[submodule "Assets/PFound/Collections"]
+	path = Assets/PFound/Collections
+	url = git@github.com:sroglu/Collections.git
+[submodule "Assets/PFound/Commerce"]
+	path = Assets/PFound/Commerce
+	url = git@github.com:sroglu/Commerce.git
+[submodule "Assets/PFound/Compression"]
+	path = Assets/PFound/Compression
+	url = git@github.com:sroglu/Compression.git
+[submodule "Assets/PFound/ContentDelivery"]
+	path = Assets/PFound/ContentDelivery
+	url = git@github.com:sroglu/ContentDelivery.git
+[submodule "Assets/PFound/DependencyContainer"]
+	path = Assets/PFound/DependencyContainer
+	url = git@github.com:sroglu/DependencyContainer.git
+[submodule "Assets/PFound/ECS"]
+	path = Assets/PFound/ECS
+	url = git@github.com:sroglu/ECS.git
+[submodule "Assets/PFound/EpochClock"]
+	path = Assets/PFound/EpochClock
+	url = git@github.com:sroglu/EpochClock.git
+[submodule "Assets/PFound/GameDataStore"]
+	path = Assets/PFound/GameDataStore
+	url = git@github.com:sroglu/GameDataStore.git
+[submodule "Assets/PFound/GuidedOnboardingFlow"]
+	path = Assets/PFound/GuidedOnboardingFlow
+	url = git@github.com:sroglu/GuidedOnboardingFlow.git
+[submodule "Assets/PFound/HubApp"]
+	path = Assets/PFound/HubApp
+	url = git@github.com:sroglu/HubApp.git
+[submodule "Assets/PFound/InputRouter"]
+	path = Assets/PFound/InputRouter
+	url = git@github.com:sroglu/InputRouter.git
+[submodule "Assets/PFound/KunaiDebugTool"]
+	path = Assets/PFound/KunaiDebugTool
+	url = git@github.com:sroglu/KunaiDebugTool.git
+[submodule "Assets/PFound/LocalizationService"]
+	path = Assets/PFound/LocalizationService
+	url = git@github.com:sroglu/LocalizationService.git
+[submodule "Assets/PFound/LoopScheduler"]
+	path = Assets/PFound/LoopScheduler
+	url = git@github.com:sroglu/LoopScheduler.git
+[submodule "Assets/PFound/MVC"]
+	path = Assets/PFound/MVC
+	url = git@github.com:sroglu/MVC.git
+[submodule "Assets/PFound/NetworkLayer"]
+	path = Assets/PFound/NetworkLayer
+	url = git@github.com:sroglu/NetworkLayer.git
+[submodule "Assets/PFound/PlayerDataSync"]
+	path = Assets/PFound/PlayerDataSync
+	url = git@github.com:sroglu/PlayerDataSync.git
+[submodule "Assets/PFound/RemoteGameConfig"]
+	path = Assets/PFound/RemoteGameConfig
+	url = git@github.com:sroglu/RemoteGameConfig.git
+[submodule "Assets/PFound/RemoteResourceCache"]
+	path = Assets/PFound/RemoteResourceCache
+	url = git@github.com:sroglu/RemoteResourceCache.git
+[submodule "Assets/PFound/Render"]
+	path = Assets/PFound/Render
+	url = git@github.com:sroglu/Render.git
+[submodule "Assets/PFound/ScreenRouter"]
+	path = Assets/PFound/ScreenRouter
+	url = git@github.com:sroglu/ScreenRouter.git
+[submodule "Assets/PFound/ServerOperationFlow"]
+	path = Assets/PFound/ServerOperationFlow
+	url = git@github.com:sroglu/ServerOperationFlow.git
+[submodule "Assets/PFound/Signaling"]
+	path = Assets/PFound/Signaling
+	url = git@github.com:sroglu/Signaling.git
+[submodule "Assets/PFound/StartupOrchestration"]
+	path = Assets/PFound/StartupOrchestration
+	url = git@github.com:sroglu/StartupOrchestration.git
+[submodule "Assets/PFound/TweenPresetLibrary"]
+	path = Assets/PFound/TweenPresetLibrary
+	url = git@github.com:sroglu/TweenPresetLibrary.git
+[submodule "Assets/PFound/UISystem"]
+	path = Assets/PFound/UISystem
+	url = git@github.com:sroglu/UISystem.git
+[submodule "Assets/PFound/UserPrefs"]
+	path = Assets/PFound/UserPrefs
+	url = git@github.com:sroglu/UserPrefs.git
+[submodule "Assets/PFound/Utilities"]
+	path = Assets/PFound/Utilities
+	url = git@github.com:sroglu/Utilities.git
